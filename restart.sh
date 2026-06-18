@@ -25,6 +25,9 @@ for arg in "$@"; do
   esac
 done
 
+echo "==> Installing dependencies (npm install)..."
+npm install
+
 echo "==> Stopping any running arcade server..."
 # Stop by recorded PID first.
 if [[ -f "$PID_FILE" ]]; then
@@ -43,11 +46,6 @@ if command -v lsof >/dev/null 2>&1; then
     kill $PORT_PIDS 2>/dev/null || true
     sleep 1
   fi
-fi
-
-if [[ ! -d node_modules ]]; then
-  echo "==> Installing dependencies..."
-  npm install
 fi
 
 echo "==> Applying database schema (drizzle push)..."
