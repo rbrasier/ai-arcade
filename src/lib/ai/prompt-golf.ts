@@ -1,7 +1,11 @@
 import { z } from "zod";
 
-import { generateJson, isConfigured } from "./connector";
-import { mockEvaluatePromptGolf, mockPromptGolfRound } from "./prompt-golf-mock";
+import { generateJson, generatePlainText, isConfigured } from "./connector";
+import {
+  mockEvaluatePromptGolf,
+  mockPromptGolfOutput,
+  mockPromptGolfRound,
+} from "./prompt-golf-mock";
 
 /**
  * "Prompt Golf" generates a fresh corporate scenario for each of the game's
@@ -206,6 +210,38 @@ export async function evaluatePromptGolfSubmission(input: {
     return { criteria, feedback: raw.feedback };
   } catch {
     return mockEvaluatePromptGolf(scenario, prompt);
+  }
+}
+
+const OUTPUT_SYSTEM = `You are the AI assistant the player is prompting in "Prompt Golf". Execute their prompt and return ONLY the deliverable it asks for — no preamble, no meta commentary, no quotation marks around the whole thing.
+
+If the prompt refers to source material that wasn't provided (an article, a complaint, this quarter's numbers), invent a brief, plausible example so the deliverable is concrete and shows what the prompt would actually produce. Keep it realistic and tight — a few short paragraphs or a short list at most.`;
+
+/**
+ * Produce the deliverable a player's prompt would generate, so the scorecard
+ * can show the prompt and its output side by side. Uses the AI connector when
+ * configured; otherwise falls back to a deterministic mock.
+ */
+export async function generatePromptGolfOutput(input: {
+  scenario: PromptGolfScenario;
+  prompt: string;
+}): Promise<string> {
+  const { scenario, prompt } = input;
+  if (!prompt.trim()) return "";
+
+  if (!isConfigured()) {
+    return mockPromptGolfOutput(scenario, prompt);
+  }
+
+  try {
+    const text = await generatePlainText({
+      system: OUTPUT_SYSTEM,
+      prompt: `Context (for grounding only — do not address it directly): a colleague needs a "${scenario.goal}".\n\nThe player's prompt to you:\n"""\n${prompt}\n"""\n\nProduce the deliverable.`,
+      maxOutputTokens: 600,
+    });
+    return text.trim() || mockPromptGolfOutput(scenario, prompt);
+  } catch {
+    return mockPromptGolfOutput(scenario, prompt);
   }
 }
 

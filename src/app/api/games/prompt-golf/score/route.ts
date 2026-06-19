@@ -5,30 +5,36 @@ import { NextResponse } from "next/server";
 import {
   countWords,
   evaluatePromptGolfSubmission,
+  generatePromptGolfOutput,
   type PromptGolfScenario,
 } from "@/lib/ai/prompt-golf";
 import { db } from "@/lib/db/client";
 import { attempts, challenges, players, promptGolfRounds } from "@/lib/db/schema";
 import { getOrCreatePlayer } from "@/lib/player";
+import {
+  economyFor,
+  isExceptional,
+  scoreRatioFor,
+} from "@/lib/prompt-golf-scoring";
 import { bonusForScoreRatio, levelForXp } from "@/lib/xp";
 
 /**
  * Score a "Prompt Golf" submission. The player's prompt is judged for
  * **precision** (the share of the round's criteria it covers, via the AI
- * connector or its mock) and **word economy** (how close to / under par it is).
+ * connector or its mock) and **word economy** (how close to the *fewest
+ * possible* words it lands). Landing on par is a solid clear, not a top score:
+ * full economy demands approaching the "ace". The prompt is also executed so
+ * the scorecard can show what it actually produced.
  *
  *   precision = criteriaMet / criteriaTotal
- *   economy   = wordRatio <= 1 ? 1 : max(0, 1 - (wordRatio - 1))   // wordRatio = words / par
+ *   economy   = economyFor(words, par)   // 1 only near the ace, PAR_ECONOMY at par
  *   scoreRatio = 0.7 * precision + 0.3 * economy
  *
  * Precision is the gate: a brief but off-target prompt can't clear. See
- * docs/GAME-RULES.md.
+ * docs/GAME-RULES.md and src/lib/prompt-golf-scoring.ts.
  *
  * Body: { roundId: string, prompt: string }
  */
-const PRECISION_WEIGHT = 0.7;
-const ECONOMY_WEIGHT = 0.3;
-
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   const roundId = body?.roundId as string | undefined;
@@ -65,22 +71,26 @@ export async function POST(request: Request) {
   const words = countWords(prompt);
   const par = scenario.par;
 
-  // Precision — judged against the stored ground-truth criteria.
-  const evaluation = await evaluatePromptGolfSubmission({ scenario, prompt });
+  // Precision — judged against the stored ground-truth criteria — and the
+  // deliverable the prompt would produce, in parallel to keep latency down.
+  const [evaluation, output] = await Promise.all([
+    evaluatePromptGolfSubmission({ scenario, prompt }),
+    generatePromptGolfOutput({ scenario, prompt }),
+  ]);
   const total = scenario.criteria.length;
   const met = evaluation.criteria.filter((c) => c.met).length;
   const precision = total > 0 ? met / total : 0;
 
-  // Economy — full marks at or under par, linear penalty above it (0 at 2× par).
-  const wordRatio = par > 0 ? words / par : 1;
-  const economy = wordRatio <= 1 ? 1 : Math.max(0, 1 - (wordRatio - 1));
+  // Economy — full marks only near the ace (fewest possible words); par earns
+  // partial credit and over-par decays to 0 at 2× par. See prompt-golf-scoring.
+  const economy = economyFor(words, par);
 
-  const scoreRatio = PRECISION_WEIGHT * precision + ECONOMY_WEIGHT * economy;
+  const scoreRatio = scoreRatioFor(precision, words, par);
   const score = Math.round(scoreRatio * challenge.maxScore);
 
   const xpEarned = Math.round(challenge.xpReward * scoreRatio);
   const bonusXp = bonusForScoreRatio(challenge.xpReward, scoreRatio);
-  const exceptional = precision === 1 && words <= par;
+  const exceptional = isExceptional(precision, words, par);
 
   // Echo per-criterion results joined to their text for the debrief.
   const criteria = scenario.criteria.map((c) => {
@@ -101,7 +111,7 @@ export async function POST(request: Request) {
       score,
       xpEarned,
       bonusXp,
-      response: JSON.stringify({ prompt, roundId, words }),
+      response: JSON.stringify({ prompt, roundId, words, output }),
       evaluation: {
         score,
         feedback: `${met}/${total} criteria covered · ${words} words vs par ${par}.`,
@@ -127,6 +137,7 @@ export async function POST(request: Request) {
     criteriaTotal: total,
     words,
     par,
+    output,
     criteria,
     feedback: evaluation.feedback,
     xpEarned,

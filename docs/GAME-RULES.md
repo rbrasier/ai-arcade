@@ -60,12 +60,22 @@ the round score combines two factors:
 
 - **precision** = `criteriaMet / criteriaTotal` (judged by the AI connector, or
   a keyword heuristic in the mock).
-- **economy** = `1` when the prompt is at or under par, otherwise a linear
-  penalty `max(0, 1 − (words / par − 1))` that reaches `0` at twice par.
+- **economy** is anchored on the **ace** — the fewest words that can still cover
+  every criterion, `ace = max(2, round(par × 0.5))`. It is `1` at or below the
+  ace, decreases linearly to `PAR_ECONOMY = 0.5` at par, and continues linearly
+  to `0` at twice par. So landing on par is a solid clear, **not** a top score.
+
+On submission the prompt is also **executed** so the scorecard shows the prompt
+and the deliverable it produced side by side.
 
 `scoreRatio = 0.7 × precision + 0.3 × economy`, and `score = round(scoreRatio ×
 maxScore)`. Precision is the gate: a brief but off-target prompt can't reach the
-65% clear threshold. The ≥ 70% / ≥ 85% XP bonus tiers above apply to this ratio,
-and a round is `exceptional` when precision is perfect and the prompt is within
-par. Implemented in `src/app/api/games/prompt-golf/score/route.ts` and
-`src/lib/ai/prompt-golf.ts`.
+65% clear threshold. A perfect-precision prompt sitting on par scores **85%** —
+reaching 100% means trimming all the way to the ace, which is meant to feel like
+a hole-in-one. Under-par word counts are also surfaced as **golf grades**
+(birdie → eagle → albatross → hole-in-one), each covering a *range* of words
+since pars are large. The ≥ 70% / ≥ 85% XP bonus tiers above apply to this
+ratio, and a round is `exceptional` only when precision is perfect **and** the
+prompt is trimmed to the ace. Implemented in
+`src/app/api/games/prompt-golf/score/route.ts`, the shared pure helpers in
+`src/lib/prompt-golf-scoring.ts`, and `src/lib/ai/prompt-golf.ts`.
