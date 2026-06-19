@@ -1,7 +1,13 @@
 import { randomUUID } from "node:crypto";
 
 import { db } from "./client";
-import { attempts, challenges, games, players } from "./schema";
+import {
+  attempts,
+  challenges,
+  games,
+  hallucinationRounds,
+  players,
+} from "./schema";
 
 /**
  * Seeds the arcade with the games from the learning arc
@@ -37,7 +43,7 @@ const GAMES: SeedGame[] = [
     title: "Prompt Golf",
     description:
       "Given a real corporate scenario, rewrite a messy prompt as concisely as possible without losing intent. Par is low — every token counts.",
-    estMinutes: 24,
+    estMinutes: 15,
     challenges: [
       {
         title: "Hole 1 — The Summary",
@@ -63,28 +69,36 @@ const GAMES: SeedGame[] = [
     slug: "spot-the-hallucination",
     title: "Spot the Hallucination",
     description:
-      "Review AI-generated passages and flag the fabricated claims. Trust nothing; verify everything.",
-    estMinutes: 24,
+      "Review an AI work assistant's answer and flag the fabricated claims. Five rounds, each one harder. Trust nothing; verify everything.",
+    estMinutes: 15,
+    // Five rounds of escalating difficulty. Each round's scenario is generated
+    // live by the AI connector at play time (see src/lib/ai/hallucination.ts);
+    // these rows just anchor progress/XP and carry the difficulty.
     challenges: [
       {
-        title: "Case 1 — The Confident Biography",
-        prompt:
-          "Identify the fabricated fact in this AI-written biography and explain why it's suspect.",
-        config: {
-          passage:
-            "Ada Lovelace, born in 1815, is often called the first computer programmer for her notes on Babbage's Analytical Engine. In 1842 she founded the Royal Society of Computing in London.",
-          hallucination: "She did not found any 'Royal Society of Computing'.",
-        },
+        title: "Round 1 — Warm-up",
+        prompt: "Tap any claim in the assistant's answer that looks fabricated.",
+        config: { difficulty: 1 },
       },
       {
-        title: "Case 2 — The Science Claim",
-        prompt:
-          "Spot the invented statistic in this paragraph and describe how you'd verify it.",
-        config: {
-          passage:
-            "Photosynthesis converts sunlight into chemical energy. Studies show that exactly 91.4% of a leaf's surface is dedicated to this process.",
-          hallucination: "The oddly precise 91.4% figure is fabricated.",
-        },
+        title: "Round 2 — Names & Sources",
+        prompt: "Tap any claim in the assistant's answer that looks fabricated.",
+        config: { difficulty: 2 },
+      },
+      {
+        title: "Round 3 — Phantom Citation",
+        prompt: "Tap any claim in the assistant's answer that looks fabricated.",
+        config: { difficulty: 3 },
+      },
+      {
+        title: "Round 4 — Buried Clues",
+        prompt: "Tap any claim in the assistant's answer that looks fabricated.",
+        config: { difficulty: 4 },
+      },
+      {
+        title: "Round 5 — Boss Round",
+        prompt: "Tap any claim in the assistant's answer that looks fabricated.",
+        config: { difficulty: 5 },
       },
     ],
   },
@@ -95,7 +109,7 @@ const GAMES: SeedGame[] = [
     title: "Context Calibration",
     description:
       "Compose prompts with variable context and watch output quality shift. Learn where context is too sparse, too noisy, or missing entirely.",
-    estMinutes: 20,
+    estMinutes: 15,
     challenges: [
       {
         title: "Round 1 — Add One Detail",
@@ -122,7 +136,7 @@ const GAMES: SeedGame[] = [
     title: "Checkpoint Placement",
     description:
       "Place human-review checkpoints in an AI-redesigned workflow. Too many kills efficiency; too few creates liability — calibration wins.",
-    estMinutes: 28,
+    estMinutes: 15,
     challenges: [
       {
         title: "Low Risk — Meeting Notes",
@@ -154,7 +168,7 @@ const GAMES: SeedGame[] = [
     title: "Workflow Redesign Challenge",
     description:
       "Redesign a real corporate workflow around AI's strengths — spot the bottlenecks, rebuild with capability blocks, and validate for technical and governance risk.",
-    estMinutes: 35,
+    estMinutes: 15,
     challenges: [
       {
         title: "Scenario — HR Onboarding",
@@ -178,6 +192,7 @@ function seed() {
   // Clear existing rows so the script is idempotent. Attempts and players are
   // cleared too (attempts reference challenges, which are recreated with fresh
   // ids) — no demo data is inserted, so the arcade starts with games only.
+  db.delete(hallucinationRounds).run();
   db.delete(attempts).run();
   db.delete(challenges).run();
   db.delete(games).run();

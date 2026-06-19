@@ -12,7 +12,8 @@ optional in development thanks to a built-in mock evaluator.
 
 - **Next.js (App Router) + TypeScript + Tailwind CSS**
 - **SQLite** via **Drizzle ORM** (`better-sqlite3`)
-- **Anthropic Claude** via `@anthropic-ai/sdk`, behind a swappable provider interface
+- **A single AI connector** built on the **Vercel AI SDK** (`ai` + `@ai-sdk/*`),
+  selectable between **Anthropic**, **OpenAI** and **Amazon Bedrock** via env
 
 ## Quick start
 
@@ -77,10 +78,19 @@ src/
 
 ## Configuration
 
-| Variable            | Required | Description                                              |
-| ------------------- | -------- | -------------------------------------------------------- |
-| `ANTHROPIC_API_KEY` | No\*     | Enables real AI scoring. Omit to use the mock evaluator. |
-| `ARCADE_EVAL_MODEL` | No       | Override the evaluation model.                           |
-| `DATABASE_PATH`     | No       | SQLite file path (default `./data/arcade.db`).           |
+All AI (challenge scoring **and** the dynamic "Spot the Hallucination"
+generator) routes through one connector (`src/lib/ai/connector.ts`). Pick the
+provider with `AI_PROVIDER`; if its credentials are missing the arcade falls
+back to a deterministic mock so everything still runs offline.
 
-\* The app runs fully without it using a deterministic mock evaluator.
+| Variable                | Required | Description                                                             |
+| ----------------------- | -------- | ----------------------------------------------------------------------- |
+| `AI_PROVIDER`           | No       | `anthropic` (default) \| `openai` \| `bedrock`.                         |
+| `AI_MODEL`              | No       | Override the model id (defaults: `claude-sonnet-4-6` / `gpt-4o` / a Bedrock Claude inference profile). |
+| `ANTHROPIC_API_KEY`     | No\*     | Required when `AI_PROVIDER=anthropic`.                                   |
+| `OPENAI_API_KEY`        | No\*     | Required when `AI_PROVIDER=openai`.                                      |
+| `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` | No\* | Used when `AI_PROVIDER=bedrock` (or set `AWS_BEDROCK_API_KEY`). |
+| `DATABASE_PATH`         | No       | SQLite file path (default `./data/arcade.db`).                          |
+
+\* The app runs fully without any provider configured, using a deterministic
+mock evaluator and a built-in bank of hallucination scenarios.

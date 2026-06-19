@@ -93,8 +93,31 @@ export const playerGameProgress = sqliteTable(
   ],
 );
 
+/**
+ * A generated "Spot the Hallucination" round. The full scenario — including
+ * which claims are fabricated — is stored server-side so grading never trusts
+ * the client. Created when a round is generated; read back when scored.
+ */
+export const hallucinationRounds = sqliteTable("hallucination_rounds", {
+  id: text("id").primaryKey(),
+  playerId: text("player_id")
+    .notNull()
+    .references(() => players.id),
+  challengeId: text("challenge_id")
+    .notNull()
+    .references(() => challenges.id),
+  difficulty: integer("difficulty").notNull().default(1),
+  scenario: text("scenario", { mode: "json" })
+    .$type<Record<string, unknown>>()
+    .notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+});
+
 export type Player = typeof players.$inferSelect;
 export type Game = typeof games.$inferSelect;
 export type Challenge = typeof challenges.$inferSelect;
 export type Attempt = typeof attempts.$inferSelect;
 export type PlayerGameProgress = typeof playerGameProgress.$inferSelect;
+export type HallucinationRound = typeof hallucinationRounds.$inferSelect;

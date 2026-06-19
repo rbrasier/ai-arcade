@@ -6,10 +6,7 @@ import { getAiProvider } from "@/lib/ai";
 import { db } from "@/lib/db/client";
 import { attempts, challenges, games, players } from "@/lib/db/schema";
 import { getOrCreatePlayer } from "@/lib/player";
-import { levelForXp } from "@/lib/xp";
-
-/** Bonus XP multiplier applied on top of earned XP for exceptional answers. */
-const BONUS_RATE = 0.5;
+import { bonusForScoreRatio, levelForXp } from "@/lib/xp";
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
@@ -58,9 +55,8 @@ export async function POST(request: Request) {
   const scoreRatio =
     challenge.maxScore > 0 ? evaluation.score / challenge.maxScore : 0;
   const xpEarned = Math.round(challenge.xpReward * scoreRatio);
-  const bonusXp = evaluation.exceptional
-    ? Math.round(challenge.xpReward * BONUS_RATE)
-    : 0;
+  // Common XP-bonus rule (docs/GAME-RULES.md): tiered on the score ratio.
+  const bonusXp = bonusForScoreRatio(challenge.xpReward, scoreRatio);
 
   db.insert(attempts)
     .values({
