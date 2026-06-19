@@ -28,3 +28,16 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Spot the Hallucination — chat/game animations (ported from the design). */
+@keyframes hg-popIn { from { opacity: 0; transform: translateY(10px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes hg-slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes hg-blink { 0%,50% { opacity: 1; } 50.01%,100% { opacity: 0; } }
+@keyframes hg-dotPulse { 0%,80%,100% { opacity: .22; } 40% { opacity: 1; } }
+@keyframes hg-modalIn { from { opacity: 0; transform: translateY(18px) scale(.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes hg-overlayIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes hg-pulseRing {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent, #ec5a3a) 45%, transparent); }
+  70% { box-shadow: 0 0 0 12px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}

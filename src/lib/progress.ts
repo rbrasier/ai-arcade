@@ -9,8 +9,12 @@ import {
   type GameStatus,
 } from "@/lib/db/schema";
 
-/** A challenge counts as "cleared" once an attempt scores at least this share. */
-const CLEAR_THRESHOLD = 0.5;
+/**
+ * A challenge counts as "cleared" once an attempt scores at least this share.
+ * Common game rule (see docs/GAME-RULES.md): clearing at 65% unlocks
+ * progression to the next level/game.
+ */
+const CLEAR_THRESHOLD = 0.65;
 
 /** How many non-completed games are unlocked beyond those already completed. */
 const ALWAYS_AVAILABLE = 2;

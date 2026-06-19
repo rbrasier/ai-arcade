@@ -47,3 +47,23 @@ export function levelInfoForXp(totalXp: number): LevelInfo {
 export function levelForXp(totalXp: number): number {
   return levelInfoForXp(totalXp).level;
 }
+
+/**
+ * Common XP-bonus rule shared by every game (see docs/GAME-RULES.md).
+ *
+ * Bonus XP is layered on top of base XP based on how well the player did:
+ *   - score ratio ≥ 0.85  → big bonus  (0.5× of the challenge's xpReward)
+ *   - score ratio ≥ 0.70  → bonus      (0.25× of the challenge's xpReward)
+ *   - below 0.70          → no bonus
+ */
+export const BONUS_TIER_BIG = 0.85;
+export const BONUS_TIER_SMALL = 0.7;
+
+export function bonusForScoreRatio(
+  xpReward: number,
+  scoreRatio: number,
+): number {
+  if (scoreRatio >= BONUS_TIER_BIG) return Math.round(xpReward * 0.5);
+  if (scoreRatio >= BONUS_TIER_SMALL) return Math.round(xpReward * 0.25);
+  return 0;
+}
