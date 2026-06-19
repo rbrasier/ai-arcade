@@ -29,6 +29,8 @@ interface SafeScenario {
   goal: string;
   criteria: SafeCriterion[];
   par: number;
+  /** When present, this is a "rewrite" round: a bloated draft to trim down. */
+  messyPrompt?: string;
 }
 
 interface ScoreResultCriterion {
@@ -74,7 +76,9 @@ export function PromptGolfGame({ rounds }: { rounds: RoundRef[] }) {
   const [prompt, setPrompt] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<ScoreResult | null>(null);
-  const [history, setHistory] = useState<{ score: number; xp: number }[]>([]);
+  const [history, setHistory] = useState<
+    { score: number; xp: number; precision: number; economy: number }[]
+  >([]);
 
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
@@ -106,6 +110,9 @@ export function PromptGolfGame({ rounds }: { rounds: RoundRef[] }) {
         };
         setScenario(data.scenario);
         setRoundId(data.roundId);
+        // On a rewrite round, seed the editor with the colleague's bloated
+        // draft so the player trims it down rather than starting blank.
+        setPrompt(data.scenario.messyPrompt ?? "");
         setPhase("brief");
       } catch (e) {
         setLoadError(e instanceof Error ? e.message : "Could not load round");
@@ -140,7 +147,12 @@ export function PromptGolfGame({ rounds }: { rounds: RoundRef[] }) {
       setResult(data);
       setHistory((h) => [
         ...h,
-        { score: data.score, xp: data.xpEarned + data.bonusXp },
+        {
+          score: data.score,
+          xp: data.xpEarned + data.bonusXp,
+          precision: data.precision,
+          economy: data.economy,
+        },
       ]);
       setScreen("results");
       router.refresh();
@@ -410,6 +422,28 @@ export function PromptGolfGame({ rounds }: { rounds: RoundRef[] }) {
                     </div>
                   </div>
 
+                  {/* rewrite-round banner */}
+                  {scenario.messyPrompt && (
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: 10,
+                        alignItems: "flex-start",
+                        border: "1.5px solid color-mix(in srgb, var(--accent) 38%, #ece5d4)",
+                        background: "color-mix(in srgb, var(--accent) 7%, #fffdf7)",
+                        borderRadius: 14,
+                        padding: "12px 15px",
+                      }}
+                    >
+                      <span style={{ fontSize: 18, lineHeight: 1 }}>✂️</span>
+                      <div style={{ fontSize: 14.5, lineHeight: 1.45, color: "#3a362e" }}>
+                        <b>Rewrite round.</b> A colleague&apos;s long-winded draft is
+                        loaded below. Cut it down as far as you can — keep every
+                        criterion, lose the filler.
+                      </div>
+                    </div>
+                  )}
+
                   {/* prompt composer */}
                   <div>
                     <textarea
@@ -519,9 +553,10 @@ export function PromptGolfGame({ rounds }: { rounds: RoundRef[] }) {
                   </div>
                   <div style={{ fontFamily: MONO, fontSize: 11.5, color: "#9a9488", marginTop: 14, lineHeight: 1.5 }}>
                     Goal: <b style={{ color: "#3a362e" }}>{scenario.goal}</b> · {scenario.criteria.length} criteria · par {scenario.par} words
+                    {scenario.messyPrompt ? " · ✂️ rewrite round" : ""}
                   </div>
                   <button onClick={beginCompose} style={{ ...primaryBtn, width: "100%", marginTop: 18, justifyContent: "center" }}>
-                    OPEN PROMPT EDITOR →
+                    {scenario.messyPrompt ? "OPEN THE DRAFT →" : "OPEN PROMPT EDITOR →"}
                   </button>
                 </div>
               </div>
@@ -717,6 +752,29 @@ function Debrief({
         <span style={{ ...chipStyle }}>ROUND {roundNo} / {total}</span>
       </div>
 
+      {result.exceptional && (
+        <div
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+            marginTop: 14,
+            fontFamily: MONO,
+            fontSize: 12,
+            fontWeight: 700,
+            letterSpacing: ".04em",
+            color: "#fff",
+            background: ACCENT,
+            border: "none",
+            padding: "8px 14px",
+            borderRadius: 999,
+            boxShadow: `0 10px 22px -12px ${ACCENT}`,
+          }}
+        >
+          ★ EXCEPTIONAL — every criterion met, under par
+        </div>
+      )}
+
       <div style={{ display: "flex", gap: 16, marginTop: 14, flexWrap: "wrap" }}>
         <span style={{ fontFamily: MONO, fontSize: 13, color: GREEN, fontWeight: 700 }}>+{result.xpEarned} XP</span>
         {result.bonusXp > 0 && (
@@ -797,12 +855,68 @@ function Debrief({
   );
 }
 
-function FinalSummary({ history, total, onReplay }: { history: { score: number; xp: number }[]; total: number; onReplay: () => void }) {
+/** Up to 3 short, performance-tailored tips for improving on a replay. */
+function buildImprovementHints(
+  history: { score: number; precision: number; economy: number }[],
+): string[] {
+  if (history.length === 0) return [];
+  const avgPrecision = Math.round(
+    history.reduce((n, h) => n + h.precision, 0) / history.length,
+  );
+  const avgEconomy = Math.round(
+    history.reduce((n, h) => n + h.economy, 0) / history.length,
+  );
+  const overParRounds = history.filter((h) => h.economy < 100).length;
+  const missedRounds = history.filter((h) => h.precision < 100).length;
+
+  const hints: string[] = [];
+  if (avgPrecision < 100) {
+    hints.push(
+      `You dropped criteria in ${missedRounds} round${missedRounds === 1 ? "" : "s"} — name every requirement explicitly before trimming. Precision is 70% of your score.`,
+    );
+  }
+  if (avgEconomy < 100) {
+    hints.push(
+      `You ran over par in ${overParRounds} round${overParRounds === 1 ? "" : "s"} — cut filler ("please can you", "I would like"); a bare imperative is usually enough.`,
+    );
+  }
+  hints.push(
+    "Replay to push your score — once every criterion is covered, shave a word at a time and watch the meter.",
+  );
+  return hints.slice(0, 3);
+}
+
+function FinalSummary({
+  history,
+  total,
+  onReplay,
+}: {
+  history: { score: number; xp: number; precision: number; economy: number }[];
+  total: number;
+  onReplay: () => void;
+}) {
   const avg = history.length ? Math.round(history.reduce((n, h) => n + h.score, 0) / history.length) : 0;
   const totalXp = history.reduce((n, h) => n + h.xp, 0);
   const cleared = history.filter((h) => h.score >= 65).length;
+  const allCleared = total > 0 && cleared === total;
+  const hints = allCleared ? [] : buildImprovementHints(history);
+
   return (
-    <div style={{ border: "1px solid #ece5d4", borderRadius: 22, background: "#fffdf7", boxShadow: "0 22px 50px -28px rgba(40,34,22,.4)", padding: "30px 28px", animation: "hg-slideUp .5s ease", textAlign: "center" }}>
+    <div
+      style={{
+        ["--accent" as string]: ACCENT,
+        position: "fixed",
+        inset: 0,
+        background: "rgba(33,31,26,.5)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 26,
+        zIndex: 50,
+        animation: "hg-overlayIn .25s ease",
+      }}
+    >
+      <div style={{ maxWidth: 540, width: "100%", background: "#fffdf7", border: "1px solid #ece5d4", borderRadius: 20, boxShadow: "0 30px 60px -24px rgba(33,31,26,.6)", padding: "30px 28px", animation: "hg-modalIn .4s cubic-bezier(.2,.9,.3,1)", maxHeight: "88vh", overflowY: "auto", textAlign: "center" }}>
       <div style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, letterSpacing: ".06em", color: "#9a9488", textTransform: "uppercase" }}>
         game complete
       </div>
@@ -817,11 +931,30 @@ function FinalSummary({ history, total, onReplay }: { history: { score: number; 
         {statCard("#cfe6d4", "#eef7ec", GREEN, `${cleared}/${total}`, "rounds cleared (≥65)")}
         {statCard("#efe2c9", "#fdf8ee", "#c9933f", `+${totalXp}`, "XP earned")}
       </div>
-      <div style={{ display: "flex", gap: 12, marginTop: 26, flexWrap: "wrap", justifyContent: "center" }}>
+
+      {hints.length > 0 ? (
+        <div style={{ marginTop: 22, border: "1.5px solid color-mix(in srgb, var(--accent) 32%, #ece5d4)", background: "color-mix(in srgb, var(--accent) 6%, #fffdf7)", borderRadius: 16, padding: "16px 18px", textAlign: "left" }}>
+          <div style={{ fontFamily: MONO, fontSize: 11, fontWeight: 700, letterSpacing: ".06em", color: ACCENT, textTransform: "uppercase", marginBottom: 10 }}>
+            How to improve
+          </div>
+          <ul style={{ margin: 0, paddingLeft: 18, display: "flex", flexDirection: "column", gap: 8 }}>
+            {hints.map((h, i) => (
+              <li key={i} style={{ fontSize: 14.5, lineHeight: 1.45, color: "#3a362e" }}>{h}</li>
+            ))}
+          </ul>
+        </div>
+      ) : (
+        <p style={{ fontSize: 14.5, color: GREEN, fontWeight: 600, marginTop: 18 }}>
+          Clean sweep — every round cleared. Replay to chase a perfect, under-par run.
+        </p>
+      )}
+
+      <div style={{ display: "flex", gap: 12, marginTop: 24, flexWrap: "wrap", justifyContent: "center" }}>
         <button onClick={onReplay} style={primaryBtn}>↻ PLAY AGAIN</button>
         <Link href="/" style={{ textDecoration: "none", fontFamily: MONO, fontSize: 13, fontWeight: 700, letterSpacing: ".04em", color: "#7c766a", background: "#fbf8f0", border: "1px solid #e2dcca", padding: "12px 20px", borderRadius: 12 }}>
           BACK TO ARCADE
         </Link>
+      </div>
       </div>
     </div>
   );

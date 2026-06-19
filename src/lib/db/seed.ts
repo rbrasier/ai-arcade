@@ -57,9 +57,10 @@ const GAMES: SeedGame[] = [
         config: { difficulty: 1 },
       },
       {
-        title: "Round 2 — Add a Constraint",
-        prompt: "Write the shortest prompt that meets every criterion.",
-        config: { difficulty: 2 },
+        title: "Round 2 — Trim the Draft",
+        prompt:
+          "Rewrite the colleague's bloated draft prompt as concisely as possible without dropping a criterion.",
+        config: { difficulty: 2, mode: "rewrite" },
       },
       {
         title: "Round 3 — Tighten the Brief",

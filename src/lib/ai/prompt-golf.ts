@@ -40,6 +40,12 @@ export interface PromptGolfScenario {
   criteria: PromptGolfCriterion[];
   /** Target word count for a tight prompt; economy is scored against this. */
   par: number;
+  /**
+   * "Rewrite" rounds only: a bloated, filler-heavy first-draft prompt
+   * (~2-3× par) that already covers the criteria. The player trims it down
+   * rather than starting from a blank box. Absent on normal compose rounds.
+   */
+  messyPrompt?: string;
 }
 
 /** Per-criterion judgement returned by the evaluator. */
@@ -73,6 +79,7 @@ const scenarioSchema = z.object({
     .min(2)
     .max(5),
   par: z.number().int().min(6).max(60),
+  messyPrompt: z.string().optional(),
 });
 
 const SYSTEM_PROMPT = `You generate rounds for "Prompt Golf", a game that teaches people to write tight, precise prompts with no wasted words.
@@ -108,25 +115,39 @@ export function withCriterionIds(
   };
 }
 
-/** Generate a round at the given difficulty (1-5). Falls back to a mock bank. */
+/**
+ * Generate a round at the given difficulty (1-5). Falls back to a mock bank.
+ * On a "rewrite" round (`opts.rewrite`), the scenario also carries a bloated
+ * `messyPrompt` for the player to trim instead of writing from scratch.
+ */
 export async function generatePromptGolfRound(
   difficulty: number,
+  opts: { rewrite?: boolean } = {},
 ): Promise<PromptGolfScenario> {
   const d = Math.max(1, Math.min(5, Math.round(difficulty)));
 
   if (!isConfigured()) {
-    return mockPromptGolfRound(d);
+    return mockPromptGolfRound(d, opts.rewrite);
   }
 
   try {
+    const rewriteNote = opts.rewrite
+      ? ` This is a REWRITE round: also include "messyPrompt" — a bloated, rambling first-draft prompt of roughly 2-3× par words that technically covers every criterion but is full of filler, hedging and redundancy for the player to cut down.`
+      : "";
     const raw = await generateJson(scenarioSchema, {
       system: SYSTEM_PROMPT,
-      prompt: `Generate one Prompt Golf scenario at difficulty ${d} of 5. Pick a fresh, recognisable workplace situation. Choose how many criteria (2-5) to match the difficulty, write checkable requirements with keywords, and set a realistic par word count.`,
+      prompt: `Generate one Prompt Golf scenario at difficulty ${d} of 5. Pick a fresh, recognisable workplace situation. Choose how many criteria (2-5) to match the difficulty, write checkable requirements with keywords, and set a realistic par word count.${rewriteNote}`,
       maxOutputTokens: 1536,
     });
-    return withCriterionIds(raw);
+    const scenario = withCriterionIds(raw);
+    // If a rewrite round somehow came back without a draft, fall back to the
+    // mock's draft so the round still works as a rewrite.
+    if (opts.rewrite && !scenario.messyPrompt) {
+      scenario.messyPrompt = mockPromptGolfRound(d, true).messyPrompt;
+    }
+    return scenario;
   } catch {
-    return mockPromptGolfRound(d);
+    return mockPromptGolfRound(d, opts.rewrite);
   }
 }
 

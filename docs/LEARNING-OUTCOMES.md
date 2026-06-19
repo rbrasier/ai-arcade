@@ -15,7 +15,7 @@
 
 ### Mini-Games
 
-**Prompt Golf** — Given a real corporate scenario, rewrite a messy prompt as concisely as possible without losing intent. Scored on precision and word economy.
+**Prompt Golf** — Given a real corporate scenario and a checklist of criteria, write the shortest prompt that makes an AI hit every requirement without losing intent. Five rounds of escalating difficulty; one is a "rewrite" round where the player trims a bloated draft prompt down to size. Scored on precision (criteria coverage) and word economy (vs par).
 
 **Spot the Hallucination** — Review AI-generated passages and flag fabricated claims. Scored on accuracy.
 

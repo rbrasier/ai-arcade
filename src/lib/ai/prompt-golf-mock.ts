@@ -58,6 +58,9 @@ const BANK: Record<number, Parameters<typeof withCriterionIds>[0]> = {
       },
     ],
     par: 16,
+    // Rewrite round: a wordy first draft the player trims (covers all 3 criteria).
+    messyPrompt:
+      "Hi there, I was hoping you might be able to help me out by drafting some kind of a reply that we can send back in response to this customer who has written in to us with a complaint, and when you are writing it could you please make sure that the response we send actually includes a proper apology to them for the trouble, and also please try to make the whole thing sound really warm and empathetic in its overall tone. Thanks so much!",
   },
   // D3 — the user's example: 3-bullet project status update, problem + next step.
   3: {
@@ -155,9 +158,15 @@ const BANK: Record<number, Parameters<typeof withCriterionIds>[0]> = {
   },
 };
 
-export function mockPromptGolfRound(difficulty: number): PromptGolfScenario {
+export function mockPromptGolfRound(
+  difficulty: number,
+  rewrite?: boolean,
+): PromptGolfScenario {
   const d = Math.max(1, Math.min(5, Math.round(difficulty)));
-  return withCriterionIds(BANK[d]);
+  const scenario = withCriterionIds(BANK[d]);
+  // Only surface the bloated draft when this round is meant to be a rewrite.
+  if (!rewrite) delete scenario.messyPrompt;
+  return scenario;
 }
 
 /**

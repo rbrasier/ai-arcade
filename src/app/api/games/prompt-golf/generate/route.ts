@@ -34,14 +34,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unknown challenge" }, { status: 404 });
   }
 
-  // Difficulty comes from the challenge config (Round 1..5); allow an override.
-  const configDifficulty = Number(
-    (challenge.config as { difficulty?: number } | null)?.difficulty ?? 1,
-  );
+  // Difficulty + mode come from the challenge config (Round 1..5).
+  const config = challenge.config as
+    | { difficulty?: number; mode?: string }
+    | null;
+  const configDifficulty = Number(config?.difficulty ?? 1);
   const difficulty = Number(body?.difficulty ?? configDifficulty) || 1;
+  const rewrite = config?.mode === "rewrite";
 
   const player = await getOrCreatePlayer();
-  const scenario = await generatePromptGolfRound(difficulty);
+  const scenario = await generatePromptGolfRound(difficulty, { rewrite });
 
   const roundId = randomUUID();
   db.insert(promptGolfRounds)
@@ -55,7 +57,8 @@ export async function POST(request: Request) {
     })
     .run();
 
-  // Strip the mock-only keyword hints before sending to the client.
+  // Strip the mock-only keyword hints before sending to the client (the
+  // messyPrompt draft, if any, is shown to the player so it stays).
   const safeScenario = {
     ...scenario,
     criteria: scenario.criteria.map((c) => ({ id: c.id, text: c.text })),

@@ -99,7 +99,7 @@ export function HallucinationGame({ rounds }: { rounds: RoundRef[] }) {
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<ScoreResult | null>(null);
   const [history, setHistory] = useState<
-    { accuracy: number; xp: number }[]
+    { accuracy: number; xp: number; missed: number; falseAccusations: number }[]
   >([]);
 
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -239,7 +239,12 @@ export function HallucinationGame({ rounds }: { rounds: RoundRef[] }) {
       setResult(data);
       setHistory((h) => [
         ...h,
-        { accuracy: data.accuracy, xp: data.xpEarned + data.bonusXp },
+        {
+          accuracy: data.accuracy,
+          xp: data.xpEarned + data.bonusXp,
+          missed: data.missed,
+          falseAccusations: data.falseAccusations,
+        },
       ]);
       setScreen("results");
       router.refresh();
@@ -1071,12 +1076,54 @@ function LegendSwatch({ bg, border, label, dashed }: { bg: string; border: strin
   );
 }
 
-function FinalSummary({ history, total, onReplay }: { history: { accuracy: number; xp: number }[]; total: number; onReplay: () => void }) {
+/** Up to 3 short, performance-tailored tips for improving on a replay. */
+function buildImprovementHints(
+  history: { accuracy: number; missed: number; falseAccusations: number }[],
+): string[] {
+  if (history.length === 0) return [];
+  const totalMissed = history.reduce((n, h) => n + h.missed, 0);
+  const totalFalse = history.reduce((n, h) => n + h.falseAccusations, 0);
+
+  const hints: string[] = [];
+  if (totalMissed > 0) {
+    hints.push(
+      `You let ${totalMissed} fabrication${totalMissed === 1 ? "" : "s"} through — check every name, statistic and citation against the source files before trusting it.`,
+    );
+  }
+  if (totalFalse > 0) {
+    hints.push(
+      `You flagged ${totalFalse} sound claim${totalFalse === 1 ? "" : "s"} — only flag what you genuinely can't verify; leaving good claims alone scores too.`,
+    );
+  }
+  hints.push(
+    "Open the reasoning panel before you decide — the later rounds bury the clue in the assistant's thinking, not the answer.",
+  );
+  return hints.slice(0, 3);
+}
+
+function FinalSummary({ history, total, onReplay }: { history: { accuracy: number; xp: number; missed: number; falseAccusations: number }[]; total: number; onReplay: () => void }) {
   const avg = history.length ? Math.round(history.reduce((n, h) => n + h.accuracy, 0) / history.length) : 0;
   const totalXp = history.reduce((n, h) => n + h.xp, 0);
   const cleared = history.filter((h) => h.accuracy >= 65).length;
+  const allCleared = total > 0 && cleared === total;
+  const hints = allCleared ? [] : buildImprovementHints(history);
+
   return (
-    <div style={{ border: "1px solid #ece5d4", borderRadius: 22, background: "#fffdf7", boxShadow: "0 22px 50px -28px rgba(40,34,22,.4)", padding: "30px 28px", animation: "hg-slideUp .5s ease", textAlign: "center" }}>
+    <div
+      style={{
+        ["--accent" as string]: ACCENT,
+        position: "fixed",
+        inset: 0,
+        background: "rgba(33,31,26,.5)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 26,
+        zIndex: 50,
+        animation: "hg-overlayIn .25s ease",
+      }}
+    >
+      <div style={{ maxWidth: 540, width: "100%", background: "#fffdf7", border: "1px solid #ece5d4", borderRadius: 20, boxShadow: "0 30px 60px -24px rgba(33,31,26,.6)", padding: "30px 28px", animation: "hg-modalIn .4s cubic-bezier(.2,.9,.3,1)", maxHeight: "88vh", overflowY: "auto", textAlign: "center" }}>
       <div style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, letterSpacing: ".06em", color: "#9a9488", textTransform: "uppercase" }}>
         game complete
       </div>
@@ -1091,11 +1138,30 @@ function FinalSummary({ history, total, onReplay }: { history: { accuracy: numbe
         {statCard("#cfe6d4", "#eef7ec", "#1f8a5b", `${cleared}/${total}`, "rounds cleared (≥65%)")}
         {statCard("#efe2c9", "#fdf8ee", "#c9933f", `+${totalXp}`, "XP earned")}
       </div>
-      <div style={{ display: "flex", gap: 12, marginTop: 26, flexWrap: "wrap", justifyContent: "center" }}>
+
+      {hints.length > 0 ? (
+        <div style={{ marginTop: 22, border: "1.5px solid color-mix(in srgb, var(--accent) 32%, #ece5d4)", background: "color-mix(in srgb, var(--accent) 6%, #fffdf7)", borderRadius: 16, padding: "16px 18px", textAlign: "left" }}>
+          <div style={{ fontFamily: MONO, fontSize: 11, fontWeight: 700, letterSpacing: ".06em", color: ACCENT, textTransform: "uppercase", marginBottom: 10 }}>
+            How to improve
+          </div>
+          <ul style={{ margin: 0, paddingLeft: 18, display: "flex", flexDirection: "column", gap: 8 }}>
+            {hints.map((h, i) => (
+              <li key={i} style={{ fontSize: 14.5, lineHeight: 1.45, color: "#3a362e" }}>{h}</li>
+            ))}
+          </ul>
+        </div>
+      ) : (
+        <p style={{ fontSize: 14.5, color: "#1f8a5b", fontWeight: 600, marginTop: 18 }}>
+          Clean sweep — every round cleared. Replay for a perfect-accuracy run.
+        </p>
+      )}
+
+      <div style={{ display: "flex", gap: 12, marginTop: 24, flexWrap: "wrap", justifyContent: "center" }}>
         <button onClick={onReplay} style={primaryBtn}>↻ PLAY AGAIN</button>
         <Link href="/" style={{ textDecoration: "none", fontFamily: MONO, fontSize: 13, fontWeight: 700, letterSpacing: ".04em", color: "#7c766a", background: "#fbf8f0", border: "1px solid #e2dcca", padding: "12px 20px", borderRadius: 12 }}>
           BACK TO ARCADE
         </Link>
+      </div>
       </div>
     </div>
   );
