@@ -1,8 +1,11 @@
+import { BadgesCard } from "@/components/arcade/BadgesCard";
 import { GameList } from "@/components/arcade/GameList";
 import { Leaderboard } from "@/components/arcade/Leaderboard";
-import { LevelCard } from "@/components/arcade/LevelCard";
+import { PlayerCard } from "@/components/arcade/PlayerCard";
+import { TopNav } from "@/components/arcade/TopNav";
 import { getOrCreatePlayer } from "@/lib/player";
 import { getGamesWithProgress, getLeaderboard } from "@/lib/progress";
+import { levelInfoForXp } from "@/lib/xp";
 
 // Reads the player cookie, so render at request time.
 export const dynamic = "force-dynamic";
@@ -13,29 +16,61 @@ export default async function ArcadePage() {
   const week = getLeaderboard("week");
   const all = getLeaderboard("all");
 
+  const info = levelInfoForXp(player.xp);
+  const challengesCleared = games.reduce(
+    (sum, g) => sum + g.clearedChallenges,
+    0,
+  );
+  const gamesCompleted = games.filter((g) => g.status === "completed").length;
+  const initial = player.displayName.trim().charAt(0).toUpperCase() || "Y";
+
   return (
-    <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">
-      <header className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">AI Arcade</h1>
-        <p className="mt-1 text-black/60 dark:text-white/60">
-          Learn how to work with AI by playing. Pick a game and start earning XP.
-        </p>
-      </header>
+    <main
+      className="font-body flex-1 px-[30px] pt-[22px] pb-[70px] text-[#211f1a]"
+      style={{
+        background:
+          "radial-gradient(120% 80% at 80% -10%, #f6f2e7 0%, #efeadd 55%)",
+      }}
+    >
+      <div className="mx-auto max-w-[1240px]">
+        <TopNav level={info.level} initial={initial} />
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_320px]">
-        {/* Primary: game list */}
-        <section>
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-black/60 dark:text-white/60">
-            Mini-games
-          </h2>
-          <GameList games={games} />
-        </section>
+        <div className="mt-[30px] grid grid-cols-1 items-start gap-[34px] lg:grid-cols-[1fr_272px]">
+          {/* ---------- MAIN ---------- */}
+          <div>
+            <div className="mb-6">
+              <h1 className="font-display m-0 text-[40px] font-bold leading-[1.02] tracking-[-0.02em]">
+                Train your AI instincts.
+              </h1>
+              <p className="mt-2 max-w-[560px] text-[16px] leading-[1.45] text-[#7c766a]">
+                Short games that build the judgment to work with AI well. Each is
+                tuned to a level range — clear your range to climb, and new games
+                unlock as you level up.
+              </p>
+            </div>
 
-        {/* Secondary: level + leaderboard */}
-        <aside className="flex flex-col gap-4">
-          <LevelCard player={player} />
-          <Leaderboard week={week} all={all} currentPlayerId={player.id} />
-        </aside>
+            <GameList games={games} playerLevel={info.level} />
+          </div>
+
+          {/* ---------- SIDEBAR ---------- */}
+          <aside className="flex flex-col gap-3.5">
+            <PlayerCard
+              displayName={player.displayName}
+              info={info}
+              totalXp={player.xp}
+              challengesCleared={challengesCleared}
+              gamesCompleted={gamesCompleted}
+            />
+            <BadgesCard
+              challengesCleared={challengesCleared}
+              gamesCompleted={gamesCompleted}
+              totalGames={games.length}
+              level={info.level}
+              totalXp={player.xp}
+            />
+            <Leaderboard week={week} all={all} currentPlayerId={player.id} />
+          </aside>
+        </div>
       </div>
     </main>
   );

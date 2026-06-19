@@ -66,7 +66,7 @@ src/
     games/prompt-golf/page.tsx
     games/spot-the-hallucination/page.tsx
     api/{player,games,leaderboard,attempts}/route.ts
-  components/arcade/                      # GameList, GameCard, LevelCard, XpProgress, Leaderboard
+  components/arcade/                      # TopNav, GameList, GameCard, GameIcon, PlayerCard, BadgesCard, Leaderboard
   components/game/ChallengeRunner.tsx     # shared challenge UI + submit flow
   lib/
     db/{schema,client,seed}.ts
