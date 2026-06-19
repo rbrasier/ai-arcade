@@ -86,12 +86,12 @@ const GAMES: SeedGame[] = [
         config: { difficulty: 2 },
       },
       {
-        title: "Round 3 — Buried Clues",
+        title: "Round 3 — Phantom Citation",
         prompt: "Tap any claim in the assistant's answer that looks fabricated.",
         config: { difficulty: 3 },
       },
       {
-        title: "Round 4 — Plausible Lies",
+        title: "Round 4 — Buried Clues",
         prompt: "Tap any claim in the assistant's answer that looks fabricated.",
         config: { difficulty: 4 },
       },

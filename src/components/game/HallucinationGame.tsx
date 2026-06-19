@@ -688,7 +688,7 @@ export function HallucinationGame({ rounds }: { rounds: RoundRef[] }) {
                       >
                         CLEAR
                       </button>
-                      <div style={{ fontFamily: MONO, fontSize: 12, color: "#9a9488" }}>no penalty for guessing</div>
+                      <div style={{ fontFamily: MONO, fontSize: 12, color: "#9a9488" }}>flag anything suspicious — false alarms cost accuracy</div>
                     </div>
                   </div>
                 )}
