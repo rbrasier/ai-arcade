@@ -1,10 +1,9 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import {
-  ChallengeRunner,
-  type RunnerChallenge,
-} from "@/components/game/ChallengeRunner";
+  PromptGolfGame,
+  type RoundRef,
+} from "@/components/game/PromptGolfGame";
 import { getGameBySlug } from "@/lib/games";
 
 export const dynamic = "force-dynamic";
@@ -13,30 +12,13 @@ export default function PromptGolfPage() {
   const data = getGameBySlug("prompt-golf");
   if (!data) notFound();
 
-  const challenges: RunnerChallenge[] = data.challenges.map((c) => ({
+  // Each seeded challenge is one round; difficulty drives live generation.
+  const rounds: RoundRef[] = data.challenges.map((c) => ({
     id: c.id,
-    title: c.title,
-    prompt: c.prompt,
-    maxScore: c.maxScore,
-    config: c.config,
+    difficulty: Number(
+      (c.config as { difficulty?: number } | null)?.difficulty ?? 1,
+    ),
   }));
 
-  return (
-    <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 sm:px-6">
-      <Link
-        href="/"
-        className="text-sm text-black/50 hover:text-indigo-500 dark:text-white/50"
-      >
-        ← Back to arcade
-      </Link>
-      <header className="mt-3 mb-6">
-        <h1 className="text-3xl font-bold tracking-tight">{data.game.title}</h1>
-        <p className="mt-1 text-black/60 dark:text-white/60">
-          {data.game.description}
-        </p>
-      </header>
-
-      <ChallengeRunner challenges={challenges} variant="prompt-golf" />
-    </main>
-  );
+  return <PromptGolfGame rounds={rounds} />;
 }

@@ -7,6 +7,7 @@ import {
   games,
   hallucinationRounds,
   players,
+  promptGolfRounds,
 } from "./schema";
 
 /**
@@ -42,26 +43,39 @@ const GAMES: SeedGame[] = [
     slug: "prompt-golf",
     title: "Prompt Golf",
     description:
-      "Given a real corporate scenario, rewrite a messy prompt as concisely as possible without losing intent. Par is low — every token counts.",
+      "Given a real corporate scenario, write the shortest prompt that hits every criterion without losing intent. Five rounds, each one tighter. Every word counts.",
     estMinutes: 15,
+    // Five rounds of escalating difficulty. Each round's scenario — the brief,
+    // the criteria the prompt must satisfy, and the par word count — is
+    // generated live by the AI connector at play time (see
+    // src/lib/ai/prompt-golf.ts); these rows just anchor progress/XP and carry
+    // the difficulty.
     challenges: [
       {
-        title: "Hole 1 — The Summary",
-        prompt:
-          "Write the shortest prompt that makes an AI summarise any article into exactly three bullet points.",
-        config: { par: 20, metric: "words" },
+        title: "Round 1 — Warm-up",
+        prompt: "Write the shortest prompt that meets every criterion.",
+        config: { difficulty: 1 },
       },
       {
-        title: "Hole 2 — The Translator",
+        title: "Round 2 — Trim the Draft",
         prompt:
-          "Write a minimal prompt that reliably translates English to formal Japanese, preserving tone.",
-        config: { par: 18, metric: "words" },
+          "Rewrite the colleague's bloated draft prompt as concisely as possible without dropping a criterion.",
+        config: { difficulty: 2, mode: "rewrite" },
       },
       {
-        title: "Hole 3 — The JSON Extractor",
-        prompt:
-          "Craft the leanest prompt that extracts name, email, and phone from messy text as strict JSON.",
-        config: { par: 25, metric: "words" },
+        title: "Round 3 — Tighten the Brief",
+        prompt: "Write the shortest prompt that meets every criterion.",
+        config: { difficulty: 3 },
+      },
+      {
+        title: "Round 4 — Plain & Precise",
+        prompt: "Write the shortest prompt that meets every criterion.",
+        config: { difficulty: 4 },
+      },
+      {
+        title: "Round 5 — Boss Round",
+        prompt: "Write the shortest prompt that meets every criterion.",
+        config: { difficulty: 5 },
       },
     ],
   },
@@ -193,6 +207,7 @@ function seed() {
   // cleared too (attempts reference challenges, which are recreated with fresh
   // ids) — no demo data is inserted, so the arcade starts with games only.
   db.delete(hallucinationRounds).run();
+  db.delete(promptGolfRounds).run();
   db.delete(attempts).run();
   db.delete(challenges).run();
   db.delete(games).run();

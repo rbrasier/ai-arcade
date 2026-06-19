@@ -122,9 +122,33 @@ export const hallucinationRounds = sqliteTable("hallucination_rounds", {
     .default(sql`(unixepoch())`),
 });
 
+/**
+ * A generated "Prompt Golf" round. The full scenario — the brief, the criteria
+ * the prompt must satisfy, and the par word count — is stored server-side so
+ * scoring grades the submission against the exact criteria and the client can't
+ * tamper. Created when a round is generated; read back when scored.
+ */
+export const promptGolfRounds = sqliteTable("prompt_golf_rounds", {
+  id: text("id").primaryKey(),
+  playerId: text("player_id")
+    .notNull()
+    .references(() => players.id),
+  challengeId: text("challenge_id")
+    .notNull()
+    .references(() => challenges.id),
+  difficulty: integer("difficulty").notNull().default(1),
+  scenario: text("scenario", { mode: "json" })
+    .$type<Record<string, unknown>>()
+    .notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+});
+
 export type Player = typeof players.$inferSelect;
 export type Game = typeof games.$inferSelect;
 export type Challenge = typeof challenges.$inferSelect;
 export type Attempt = typeof attempts.$inferSelect;
 export type PlayerGameProgress = typeof playerGameProgress.$inferSelect;
 export type HallucinationRound = typeof hallucinationRounds.$inferSelect;
+export type PromptGolfRound = typeof promptGolfRounds.$inferSelect;
