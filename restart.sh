@@ -49,7 +49,11 @@ if command -v lsof >/dev/null 2>&1; then
 fi
 
 echo "==> Applying database schema (drizzle push)..."
-npm run db:push
+# --force lets drizzle apply schema changes without an interactive TTY prompt,
+# so an existing database is migrated automatically (e.g. new columns are added
+# in place). Schema changes are designed to be non-destructive (nullable /
+# defaulted columns), so existing player data is preserved across restarts.
+npm run db:push -- --force
 
 if [[ "$DO_SEED" -eq 1 ]]; then
   echo "==> Seeding database..."
