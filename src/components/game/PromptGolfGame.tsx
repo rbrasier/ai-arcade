@@ -898,8 +898,8 @@ function FinalSummary({
   const avg = history.length ? Math.round(history.reduce((n, h) => n + h.score, 0) / history.length) : 0;
   const totalXp = history.reduce((n, h) => n + h.xp, 0);
   const cleared = history.filter((h) => h.score >= 65).length;
-  const allCleared = total > 0 && cleared === total;
-  const hints = allCleared ? [] : buildImprovementHints(history);
+  // Offer improvement feedback on any run that wasn't near-perfect (< 90%).
+  const hints = avg < 90 ? buildImprovementHints(history) : [];
 
   return (
     <div
@@ -945,7 +945,7 @@ function FinalSummary({
         </div>
       ) : (
         <p style={{ fontSize: 14.5, color: GREEN, fontWeight: 600, marginTop: 18 }}>
-          Clean sweep — every round cleared. Replay to chase a perfect, under-par run.
+          Sharp work — 90%+ average. Replay to chase a perfect, under-par run.
         </p>
       )}
 

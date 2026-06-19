@@ -1105,8 +1105,8 @@ function FinalSummary({ history, total, onReplay }: { history: { accuracy: numbe
   const avg = history.length ? Math.round(history.reduce((n, h) => n + h.accuracy, 0) / history.length) : 0;
   const totalXp = history.reduce((n, h) => n + h.xp, 0);
   const cleared = history.filter((h) => h.accuracy >= 65).length;
-  const allCleared = total > 0 && cleared === total;
-  const hints = allCleared ? [] : buildImprovementHints(history);
+  // Offer improvement feedback on any run that wasn't near-perfect (< 90%).
+  const hints = avg < 90 ? buildImprovementHints(history) : [];
 
   return (
     <div
@@ -1152,7 +1152,7 @@ function FinalSummary({ history, total, onReplay }: { history: { accuracy: numbe
         </div>
       ) : (
         <p style={{ fontSize: 14.5, color: "#1f8a5b", fontWeight: 600, marginTop: 18 }}>
-          Clean sweep — every round cleared. Replay for a perfect-accuracy run.
+          Sharp eye — 90%+ accuracy. Replay for a perfect run.
         </p>
       )}
 
