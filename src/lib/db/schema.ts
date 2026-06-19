@@ -13,6 +13,12 @@ import {
 export const players = sqliteTable("players", {
   id: text("id").primaryKey(),
   displayName: text("display_name").notNull(),
+  // False until the player chooses their own username (a placeholder name is
+  // assigned on first visit so the UI/leaderboard always have something to
+  // show). Drives the "pick a username" modal in front of the first game.
+  usernameSet: integer("username_set", { mode: "boolean" })
+    .notNull()
+    .default(false),
   xp: integer("xp").notNull().default(0),
   level: integer("level").notNull().default(1),
   createdAt: integer("created_at", { mode: "timestamp" })

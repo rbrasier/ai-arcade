@@ -42,6 +42,7 @@ export async function getOrCreatePlayer(): Promise<Player> {
   const created: Player = {
     id: playerId,
     displayName: randomDisplayName(),
+    usernameSet: false,
     xp: 0,
     level: 1,
     createdAt: new Date(),
