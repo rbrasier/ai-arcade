@@ -196,3 +196,40 @@ export function mockEvaluatePromptGolf(
       : `Covers ${metCount} of ${criteria.length} requirements; some intent is missing.`;
   return { criteria, feedback };
 }
+
+/**
+ * Offline deliverable: a deterministic stand-in for what the player's prompt
+ * would produce, so the scorecard can show prompt + output with no AI provider
+ * configured. It reflects which criteria the prompt actually instructed for, so
+ * a thin prompt visibly yields a thinner deliverable.
+ */
+export function mockPromptGolfOutput(
+  scenario: PromptGolfScenario,
+  prompt: string,
+): string {
+  const hay = prompt.toLowerCase();
+  const covered = scenario.criteria.filter((c) =>
+    c.keywords.some((k) => hay.includes(k.toLowerCase())),
+  );
+
+  const lines = [
+    `[Sample ${scenario.goal.toLowerCase()} — generated from your prompt]`,
+    "",
+  ];
+  if (covered.length === 0) {
+    lines.push(
+      "Your prompt didn't clearly instruct for any of the requirements, so this output is generic — add the specifics the brief asked for.",
+    );
+  } else {
+    for (const c of covered) {
+      lines.push(`• ${c.text}.`);
+    }
+    if (covered.length < scenario.criteria.length) {
+      lines.push(
+        "",
+        "(Other requirements on the card weren't requested, so they're missing here.)",
+      );
+    }
+  }
+  return lines.join("\n");
+}

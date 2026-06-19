@@ -4,11 +4,31 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+import { golfResult, type GolfTone } from "@/lib/prompt-golf-scoring";
+
 const ACCENT = "#ec5a3a";
 const DISPLAY = "var(--font-bricolage), sans-serif";
 const BODY = "var(--font-hanken), system-ui, sans-serif";
 const MONO = "var(--font-space-mono), monospace";
 const GREEN = "#1f8a5b";
+const AMBER = "#c9933f";
+const RED = "#c0563a";
+
+/** Scorecard colours for each golf tone. */
+const GOLF_TONES: Record<GolfTone, { fg: string; border: string; bg: string }> = {
+  ace: { fg: "#b8860b", border: "#e7cf9a", bg: "#fdf6e3" },
+  great: { fg: GREEN, border: "#cfe6d4", bg: "#eef7ec" },
+  good: { fg: GREEN, border: "#cfe6d4", bg: "#eef7ec" },
+  par: { fg: "#3a362e", border: "#ece5d4", bg: "#fbf8f0" },
+  over: { fg: RED, border: "#efd2c9", bg: "#fdf1ee" },
+};
+
+/** Precision tone: green ≥ 50, amber 25–49, red below. */
+function precisionTone(precision: number): { fg: string; border: string; bg: string } {
+  if (precision >= 50) return { fg: GREEN, border: "#cfe6d4", bg: "#eef7ec" };
+  if (precision >= 25) return { fg: AMBER, border: "#efe2c9", bg: "#fdf8ee" };
+  return { fg: RED, border: "#efd2c9", bg: "#fdf1ee" };
+}
 
 export interface RoundRef {
   id: string;
@@ -48,6 +68,7 @@ interface ScoreResult {
   criteriaTotal: number;
   words: number;
   par: number;
+  output: string;
   criteria: ScoreResultCriterion[];
   feedback: string;
   xpEarned: number;
@@ -77,10 +98,71 @@ export function PromptGolfGame({ rounds }: { rounds: RoundRef[] }) {
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<ScoreResult | null>(null);
   const [history, setHistory] = useState<
-    { score: number; xp: number; precision: number; economy: number }[]
+    {
+      score: number;
+      xp: number;
+      precision: number;
+      economy: number;
+      overPar: boolean;
+    }[]
   >([]);
 
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+  // ---- round prefetch ----
+  // Every round is generated in the background (sequentially, one after the
+  // other) while the player reads the rules, so starting and advancing has
+  // little or no wait. A round's generate request is started at most once and
+  // memoised here as a promise; loadRound just awaits the matching entry.
+  type LoadedRound = { roundId: string; scenario: SafeScenario };
+  const prefetchRef = useRef<Map<number, Promise<LoadedRound>>>(new Map());
+  // Bumped on replay to invalidate the cache and prefetch fresh rounds.
+  const [playToken, setPlayToken] = useState(0);
+
+  const prefetchRound = useCallback(
+    (index: number): Promise<LoadedRound> => {
+      const cached = prefetchRef.current.get(index);
+      if (cached) return cached;
+      const round = rounds[index];
+      if (!round) return Promise.reject(new Error("No such round"));
+      const p = (async () => {
+        const res = await fetch("/api/games/prompt-golf/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            challengeId: round.id,
+            difficulty: round.difficulty,
+          }),
+        });
+        if (!res.ok) throw new Error(`Request failed (${res.status})`);
+        const data = (await res.json()) as LoadedRound;
+        return data;
+      })();
+      // Drop failed prefetches so a later attempt (retry) can refetch.
+      p.catch(() => prefetchRef.current.delete(index));
+      prefetchRef.current.set(index, p);
+      return p;
+    },
+    [rounds],
+  );
+
+  // Warm every round in the background, one after the other, once per play.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      for (let i = 0; i < total; i++) {
+        if (cancelled) return;
+        try {
+          await prefetchRound(i);
+        } catch {
+          // A failed warm-up is harmless; loadRound surfaces errors on demand.
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [total, playToken, prefetchRound]);
 
   // ---- round loading ----
   const loadRound = useCallback(
@@ -95,19 +177,8 @@ export function PromptGolfGame({ rounds }: { rounds: RoundRef[] }) {
       setPrompt("");
       setLoadError(null);
       try {
-        const res = await fetch("/api/games/prompt-golf/generate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            challengeId: round.id,
-            difficulty: round.difficulty,
-          }),
-        });
-        if (!res.ok) throw new Error(`Request failed (${res.status})`);
-        const data = (await res.json()) as {
-          roundId: string;
-          scenario: SafeScenario;
-        };
+        // Resolves instantly if the background warm-up already finished it.
+        const data = await prefetchRound(index);
         setScenario(data.scenario);
         setRoundId(data.roundId);
         // On a rewrite round, seed the editor with the colleague's bloated
@@ -118,7 +189,7 @@ export function PromptGolfGame({ rounds }: { rounds: RoundRef[] }) {
         setLoadError(e instanceof Error ? e.message : "Could not load round");
       }
     },
-    [rounds],
+    [rounds, prefetchRound],
   );
 
   const beginCompose = useCallback(() => {
@@ -152,6 +223,7 @@ export function PromptGolfGame({ rounds }: { rounds: RoundRef[] }) {
           xp: data.xpEarned + data.bonusXp,
           precision: data.precision,
           economy: data.economy,
+          overPar: data.words > data.par,
         },
       ]);
       setScreen("results");
@@ -174,6 +246,9 @@ export function PromptGolfGame({ rounds }: { rounds: RoundRef[] }) {
   }, [roundIndex, total, loadRound]);
 
   const restart = useCallback(() => {
+    // Drop the warmed rounds and re-warm a fresh set for the new play-through.
+    prefetchRef.current = new Map();
+    setPlayToken((t) => t + 1);
     setHistory([]);
     setRoundIndex(0);
     setScreen("play");
@@ -188,7 +263,8 @@ export function PromptGolfGame({ rounds }: { rounds: RoundRef[] }) {
   const words = countWords(prompt);
   const par = scenario?.par ?? 0;
   const overPar = par > 0 && words > par;
-  const underBudget = par > 0 ? Math.max(0, par - words) : 0;
+  // Live golf grade for the word meter (only once the player has typed).
+  const liveGolf = par > 0 && words > 0 ? golfResult(words, par) : null;
 
   // ===================== RENDER =====================
   const pageStyle: React.CSSProperties = {
@@ -478,13 +554,13 @@ export function PromptGolfGame({ rounds }: { rounds: RoundRef[] }) {
                         flexWrap: "wrap",
                       }}
                     >
-                      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
                         <span
                           style={{
                             fontFamily: MONO,
                             fontSize: 13,
                             fontWeight: 700,
-                            color: overPar ? "#c0563a" : GREEN,
+                            color: overPar ? RED : GREEN,
                           }}
                         >
                           {words} {words === 1 ? "WORD" : "WORDS"}
@@ -492,13 +568,34 @@ export function PromptGolfGame({ rounds }: { rounds: RoundRef[] }) {
                         <span style={{ fontFamily: MONO, fontSize: 12, color: "#9a9488" }}>
                           PAR {par}
                         </span>
-                        <span style={{ fontFamily: MONO, fontSize: 12, color: overPar ? "#c0563a" : "#9a9488" }}>
-                          {overPar
-                            ? `+${words - par} over`
-                            : words === 0
-                              ? ""
-                              : `${underBudget} to spare`}
-                        </span>
+                        {liveGolf && (
+                          <span
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 6,
+                              fontFamily: MONO,
+                              fontSize: 12,
+                              fontWeight: 700,
+                              letterSpacing: ".03em",
+                              color: GOLF_TONES[liveGolf.tone].fg,
+                              background: GOLF_TONES[liveGolf.tone].bg,
+                              border: `1px solid ${GOLF_TONES[liveGolf.tone].border}`,
+                              padding: "4px 9px",
+                              borderRadius: 999,
+                            }}
+                          >
+                            <span style={{ fontSize: 13 }}>{liveGolf.icon}</span>
+                            {liveGolf.term.toUpperCase()}
+                            <span style={{ opacity: 0.75 }}>
+                              {liveGolf.toPar === 0
+                                ? "E"
+                                : liveGolf.toPar > 0
+                                  ? `+${liveGolf.toPar}`
+                                  : liveGolf.toPar}
+                            </span>
+                          </span>
+                        )}
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
                         <button
@@ -676,9 +773,10 @@ function IntroModal({ onStart }: { onStart: () => void }) {
           A colleague forwards a real situation. Write the <b>shortest prompt</b> that
           would make an AI produce exactly what they need — hitting <b>every
           criterion</b> on the card without wasting a word. You&apos;re scored on
-          <b> precision</b> (did you cover the brief) and <b>word economy</b> (how
-          close to or under <b>par</b> you land). You play <b>5 rounds</b>, each one
-          tighter than the last.
+          <b> precision</b> (did you cover the brief) and <b>word economy</b>. Landing
+          on <b>par</b> is a solid clear; the top score is reserved for trimming all
+          the way to the fewest possible words — a <b>hole&#8209;in&#8209;one</b>. You
+          play <b>5 rounds</b>, each one tighter than the last.
         </p>
 
         <div style={{ marginTop: 16, border: "1px solid #ece5d4", borderRadius: 12, background: "#faf6ec", overflow: "hidden" }}>
@@ -741,8 +839,16 @@ function Debrief({
   promptText: string;
   onNext: () => void;
 }) {
-  const overPar = result.words > result.par;
   const cleared = result.score >= Math.round(result.maxScore * 0.65);
+  const pTone = precisionTone(result.precision);
+  const golf = golfResult(result.words, result.par);
+  const gTone = GOLF_TONES[golf.tone];
+  const toParLabel =
+    golf.toPar === 0
+      ? "level par"
+      : golf.toPar > 0
+        ? `${golf.toPar} over par`
+        : `${Math.abs(golf.toPar)} under par`;
   return (
     <div style={{ border: "1px solid #ece5d4", borderRadius: 22, background: "#fffdf7", boxShadow: "0 22px 50px -28px rgba(40,34,22,.4)", padding: "26px 28px", animation: "hg-slideUp .5s ease" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
@@ -771,7 +877,7 @@ function Debrief({
             boxShadow: `0 10px 22px -12px ${ACCENT}`,
           }}
         >
-          ★ EXCEPTIONAL — every criterion met, under par
+          🏆 HOLE IN ONE — every criterion met, trimmed to the bone
         </div>
       )}
 
@@ -784,18 +890,53 @@ function Debrief({
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14, marginTop: 18 }}>
-        {statCard("#cfe6d4", "#eef7ec", GREEN, `${result.precision}%`, `precision · ${result.criteriaMet}/${result.criteriaTotal} criteria`)}
-        {statCard(overPar ? "#efd2c9" : "#cfe6d4", overPar ? "#fdf1ee" : "#eef7ec", overPar ? "#c0563a" : GREEN, `${result.words}/${result.par}`, overPar ? "words · over par" : "words · within par")}
+        {statCard(pTone.border, pTone.bg, pTone.fg, `${result.precision}%`, `precision · ${result.criteriaMet}/${result.criteriaTotal} criteria`)}
+        {/* golf grade — the word economy result */}
+        <div style={{ border: `1px solid ${gTone.border}`, borderRadius: 14, padding: "13px 16px", background: gTone.bg }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 24, lineHeight: 1 }}>{golf.icon}</span>
+            <span style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: 21, letterSpacing: "-0.01em", color: gTone.fg }}>
+              {golf.term}
+            </span>
+          </div>
+          <div style={{ fontSize: 13, color: "#6a655b", marginTop: 6 }}>
+            {result.words}/{result.par} words · {toParLabel}
+          </div>
+        </div>
         {statCard("#ece5d4", "#fbf8f0", "#211f1a", `${result.score}`, "round score / 100")}
       </div>
 
-      {/* your prompt */}
+      {/* your prompt and the deliverable it produced, together */}
       <div style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, letterSpacing: ".06em", color: "#9a9488", textTransform: "uppercase", marginTop: 24 }}>
         Your prompt
       </div>
       <div style={{ fontSize: 16, lineHeight: 1.55, marginTop: 10, border: "1px solid #ece5d4", borderRadius: 14, padding: "14px 16px", background: "#faf6ec", color: "#211f1a" }}>
         “{promptText}”
       </div>
+
+      {result.output && (
+        <>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: MONO, fontSize: 12, fontWeight: 700, letterSpacing: ".06em", color: "#9a9488", textTransform: "uppercase", marginTop: 16 }}>
+            <span style={{ width: 7, height: 7, borderRadius: "50%", background: ACCENT, display: "inline-block" }} />
+            What it produced
+          </div>
+          <div
+            style={{
+              fontSize: 14.5,
+              lineHeight: 1.55,
+              marginTop: 10,
+              border: "1px solid #e7e0ea",
+              borderRadius: 14,
+              padding: "14px 16px",
+              background: "#faf8fc",
+              color: "#2b2733",
+              whiteSpace: "pre-wrap",
+            }}
+          >
+            {result.output}
+          </div>
+        </>
+      )}
 
       {/* criteria breakdown */}
       <div style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, letterSpacing: ".06em", color: "#9a9488", textTransform: "uppercase", marginTop: 24 }}>
@@ -857,7 +998,12 @@ function Debrief({
 
 /** Up to 3 short, performance-tailored tips for improving on a replay. */
 function buildImprovementHints(
-  history: { score: number; precision: number; economy: number }[],
+  history: {
+    score: number;
+    precision: number;
+    economy: number;
+    overPar: boolean;
+  }[],
 ): string[] {
   if (history.length === 0) return [];
   const avgPrecision = Math.round(
@@ -866,7 +1012,7 @@ function buildImprovementHints(
   const avgEconomy = Math.round(
     history.reduce((n, h) => n + h.economy, 0) / history.length,
   );
-  const overParRounds = history.filter((h) => h.economy < 100).length;
+  const overParRounds = history.filter((h) => h.overPar).length;
   const missedRounds = history.filter((h) => h.precision < 100).length;
 
   const hints: string[] = [];
@@ -875,9 +1021,13 @@ function buildImprovementHints(
       `You dropped criteria in ${missedRounds} round${missedRounds === 1 ? "" : "s"} — name every requirement explicitly before trimming. Precision is 70% of your score.`,
     );
   }
-  if (avgEconomy < 100) {
+  if (overParRounds > 0) {
     hints.push(
       `You ran over par in ${overParRounds} round${overParRounds === 1 ? "" : "s"} — cut filler ("please can you", "I would like"); a bare imperative is usually enough.`,
+    );
+  } else if (avgEconomy < 100) {
+    hints.push(
+      "You came in under par but left words on the table — landing on par only scores 85%. Keep shaving toward the fewest possible words (the ace) to chase a hole-in-one.",
     );
   }
   hints.push(
@@ -891,7 +1041,13 @@ function FinalSummary({
   total,
   onReplay,
 }: {
-  history: { score: number; xp: number; precision: number; economy: number }[];
+  history: {
+    score: number;
+    xp: number;
+    precision: number;
+    economy: number;
+    overPar: boolean;
+  }[];
   total: number;
   onReplay: () => void;
 }) {
