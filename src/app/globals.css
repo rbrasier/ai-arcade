@@ -10,6 +10,10 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  /* Arcade Hub families */
+  --font-display: var(--font-bricolage);
+  --font-body: var(--font-hanken);
+  --font-arcade-mono: var(--font-space-mono);
 }
 
 @media (prefers-color-scheme: dark) {
