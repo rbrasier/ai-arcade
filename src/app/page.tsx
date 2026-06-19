@@ -49,7 +49,11 @@ export default async function ArcadePage() {
               </p>
             </div>
 
-            <GameList games={games} playerLevel={info.level} />
+            <GameList
+              games={games}
+              playerLevel={info.level}
+              needsUsername={!player.usernameSet}
+            />
           </div>
 
           {/* ---------- SIDEBAR ---------- */}

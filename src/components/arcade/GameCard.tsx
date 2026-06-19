@@ -1,7 +1,10 @@
+"use client";
+
 import Link from "next/link";
 
 import type { GameWithProgress } from "@/lib/progress";
 import { GameIcon } from "./GameIcon";
+import { useUsernameGate } from "./UsernameGate";
 
 const ACCENT = "#ec5a3a";
 
@@ -15,6 +18,14 @@ export interface GameRowData {
 
 export function GameCard({ row }: { row: GameRowData }) {
   const { game, levelLo, levelHi, iconIndex } = row;
+  const { requirePlay } = useUsernameGate();
+
+  // When the player still needs a username, intercept the click: the gate opens
+  // the username modal and resumes navigation to this game once it's saved.
+  const handlePlay = (e: React.MouseEvent) => {
+    if (!requirePlay(game.slug)) e.preventDefault();
+  };
+
   const clearedPct =
     game.totalChallenges > 0
       ? Math.round((game.clearedChallenges / game.totalChallenges) * 100)
@@ -52,6 +63,7 @@ export function GameCard({ row }: { row: GameRowData }) {
     return (
       <Link
         href={`/games/${game.slug}`}
+        onClick={handlePlay}
         className="gcard flex items-center gap-4 rounded-[14px] border border-[#e7e0cf] bg-[#f6f1e6] px-[18px] py-[14px] opacity-[.82]"
       >
         <IconTile tone="muted" index={iconIndex} />
@@ -79,6 +91,7 @@ export function GameCard({ row }: { row: GameRowData }) {
   return (
     <Link
       href={`/games/${game.slug}`}
+      onClick={handlePlay}
       className="gcard flex items-center gap-4 rounded-[14px] border border-[#ece5d4] bg-[#fffdf7] px-[18px] py-[14px] shadow-[0_6px_18px_-14px_rgba(40,34,22,.3)]"
     >
       <IconTile tone="accent" index={iconIndex} />

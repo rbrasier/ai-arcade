@@ -36,8 +36,11 @@ Or do it all in one step:
 ## How it works
 
 - **Players** are anonymous: a player id cookie is issued by `src/proxy.ts` and the
-  matching row is created on first visit (`src/lib/player.ts`). Players can rename
-  themselves via `PATCH /api/player`.
+  matching row is created on first visit (`src/lib/player.ts`) with a placeholder
+  name. The first time a player picks a game they're prompted (via a modal) to
+  choose a **unique username**; on save they're routed straight into the game.
+  Names are validated and de-duplicated by `PATCH /api/player`, which also flags
+  the player's `usernameSet`.
 - **Games → Challenges → Attempts**: each game has challenges; submitting an answer
   (`POST /api/attempts`) is scored by the AI engine, awarding XP — with bonus XP for
   exceptional answers (`src/lib/ai/`).
