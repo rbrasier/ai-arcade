@@ -88,7 +88,9 @@ const BANK: Record<number, Parameters<typeof withClaimIds>[0]> = {
       "The 23% lift and the filter/load-time feedback both trace to the provided attachments.",
     ],
   },
-  // D4 — the clue is buried in the reasoning: the answer contradicts it.
+  // D4 — multi-hallucination: a buried-in-reasoning sign flip AND a misspelled
+  // name, mixed with sound (incl. correctly-cited) claims. Catch both; don't
+  // over-flag the rest.
   4: {
     task: {
       senderName: "Tom Becker",
@@ -101,16 +103,20 @@ const BANK: Record<number, Parameters<typeof withClaimIds>[0]> = {
     reasoningSteps: [
       "Reading q2_financials.xlsx — gross margin is 61% in Q2, down from 64% in Q1.",
       "So margin declined 3 points quarter over quarter.",
+      "CFO Priya Venkataraman signed off the figures.",
       "Drafting the board note line.",
     ],
     claims: [
       { text: "Q2 gross margin came in at 61%.", hallucination: false },
       { text: "That represents a 3-point improvement over Q1,", hallucination: true },
-      { text: "and we recommend holding pricing steady into Q3.", hallucination: false },
+      { text: "as confirmed in the Q2 financials [q2_financials.xlsx],", hallucination: false },
+      { text: "and signed off by CFO Priya Venkataramen.", hallucination: true },
+      { text: "We recommend holding pricing steady into Q3.", hallucination: false },
     ],
     explanations: [
-      "The reasoning explicitly says margin fell from 64% to 61% — a 3-point decline — yet the answer claims a 3-point improvement. The clue was buried in the reasoning steps.",
-      "The 61% figure and the pricing recommendation are themselves fine.",
+      "Two fabrications this round. First, the reasoning says margin fell from 64% to 61% — a 3-point decline — yet the answer claims a 3-point improvement. That clue was buried in the reasoning steps.",
+      "Second, the CFO's surname is misspelled: the reasoning gives \"Venkataraman\" but the answer writes \"Venkataramen\".",
+      "The 61% figure, the citation to q2_financials.xlsx, and the pricing recommendation are all sound — flagging the cited claim would be a false accusation.",
     ],
   },
   // D5 — subtle: zero hallucinations (don't over-flag).
