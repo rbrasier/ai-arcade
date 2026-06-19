@@ -90,7 +90,10 @@ export function HallucinationGame({ rounds }: { rounds: RoundRef[] }) {
   const [typed, setTyped] = useState("");
   const [reasonCount, setReasonCount] = useState(0);
   const [revealedWords, setRevealedWords] = useState(0);
-  const [reasonOpen, setReasonOpen] = useState(true);
+  // Collapsed by default so reading the assistant's reasoning is a deliberate
+  // choice (the buried-clue rounds shouldn't hand it over for free). A subtle
+  // teaser hints that there's reasoning to examine.
+  const [reasonOpen, setReasonOpen] = useState(false);
 
   const [flagged, setFlagged] = useState<Record<string, boolean>>({});
   const [submitting, setSubmitting] = useState(false);
@@ -182,7 +185,7 @@ export function HallucinationGame({ rounds }: { rounds: RoundRef[] }) {
       setRoundId(null);
       setResult(null);
       setFlagged({});
-      setReasonOpen(true);
+      setReasonOpen(false);
       setLoadError(null);
       try {
         const res = await fetch("/api/games/hallucination/generate", {
@@ -587,6 +590,25 @@ export function HallucinationGame({ rounds }: { rounds: RoundRef[] }) {
                           </span>
                           {thinking && <Dots inline />}
                         </div>
+                        {!reasonOpen && reasonList.length > 0 && (
+                          <div
+                            onClick={() => setReasonOpen(true)}
+                            style={{
+                              marginTop: 8,
+                              fontSize: 12.5,
+                              fontStyle: "italic",
+                              color: "#b3ae9f",
+                              cursor: "pointer",
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                            }}
+                          >
+                            {reasonList[0].length > 72
+                              ? `${reasonList[0].slice(0, 72).trimEnd()}…`
+                              : `${reasonList[0]} …`}
+                          </div>
+                        )}
                         {reasonOpen && (
                           <div style={{ marginTop: 11, display: "flex", flexDirection: "column", gap: 9 }}>
                             {reasonList.map((r, i) => (
