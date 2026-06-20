@@ -883,22 +883,23 @@ export function HallucinationGame({ rounds }: { rounds: RoundRef[] }) {
                 </div>
               )}
 
-              {/* TASK MODAL */}
+              {/* TASK MODAL — fixed so a tall brief escapes the card's clip. */}
               {phase === "modal" && scenario && (
                 <div
                   style={{
-                    position: "absolute",
+                    position: "fixed",
                     inset: 0,
                     background: "rgba(33,31,26,.5)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     padding: 26,
-                    zIndex: 20,
+                    zIndex: 50,
+                    overflowY: "auto",
                     animation: "hg-overlayIn .25s ease",
                   }}
                 >
-                  <div style={{ maxWidth: 440, width: "100%", background: "#fffdf7", border: "1px solid #ece5d4", borderRadius: 20, boxShadow: "0 30px 60px -24px rgba(33,31,26,.6)", padding: "24px 26px", animation: "hg-modalIn .4s cubic-bezier(.2,.9,.3,1)" }}>
+                  <div style={{ maxWidth: 440, width: "100%", background: "#fffdf7", border: "1px solid #ece5d4", borderRadius: 20, boxShadow: "0 30px 60px -24px rgba(33,31,26,.6)", padding: "24px 26px", maxHeight: "86vh", overflowY: "auto", animation: "hg-modalIn .4s cubic-bezier(.2,.9,.3,1)" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: MONO, fontSize: 11, fontWeight: 700, color: "#9a9488", textTransform: "uppercase", letterSpacing: ".06em" }}>
                       <span style={{ width: 7, height: 7, borderRadius: "50%", background: ACCENT, display: "inline-block" }} /> new task · direct message
                     </div>

@@ -51,12 +51,13 @@ which unlocks Spot the Hallucination.
 
 ### Learning Outcomes
 
-- Understand how context shapes output quality
-- Recognise where context is too sparse, too noisy, or missing entirely
+- Choose the context that actually improves an answer
+- Recognise that excess or irrelevant context can *misdirect* the model — not just that sparse context starves it
+- Calibrate: enough signal to ground the answer, no noise to derail it
 
 ### Mini-Game
 
-**Context Calibration** — Compose prompts with variable context windows. See how output quality shifts. Mini-challenges include "fix this hallucination by adding one contextual detail" and "remove two noisy sentences and improve the output."
+**Context Calibration** — Each round, a colleague forwards a realistic desk task and a **tray of candidate context snippets**. The player curates which snippets to attach to the prompt, then sees the deliverable the AI produces from that selection. The tray mixes snippets the answer genuinely needs (*essential*), harmless clutter (*noise*) and — crucially — plausible-but-misleading **distractors** that steer the answer wrong if attached. The lesson is calibration over volume: too little context starves the answer, too much misdirects it. Five rounds of escalating difficulty — early rounds have obvious noise and no traps, later rounds plant several tempting distractors so the player must resist piling everything in. Scored on **completeness** (did you attach the essentials — the gate) and **focus** (did you leave out the noise and distractors — with misleading snippets penalised hardest).
 
 ---
 

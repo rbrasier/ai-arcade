@@ -758,14 +758,15 @@ export function ChainOfThoughtGame({ rounds }: { rounds: RoundRef[] }) {
             {phase === "modal" && scenario && (
               <div
                 style={{
-                  position: "absolute",
+                  position: "fixed",
                   inset: 0,
                   background: "rgba(40,34,70,.5)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   padding: 26,
-                  zIndex: 20,
+                  zIndex: 50,
+                  overflowY: "auto",
                   animation: "hg-overlayIn .25s ease",
                 }}
               >
@@ -778,6 +779,8 @@ export function ChainOfThoughtGame({ rounds }: { rounds: RoundRef[] }) {
                     borderRadius: 20,
                     boxShadow: "0 30px 60px -24px rgba(40,34,70,.6)",
                     padding: "24px 26px",
+                    maxHeight: "86vh",
+                    overflowY: "auto",
                     animation: "hg-modalIn .4s cubic-bezier(.2,.9,.3,1)",
                   }}
                 >
