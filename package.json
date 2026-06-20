@@ -2,6 +2,9 @@
   "name": "ai-arcade",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=20.9.0"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -19,11 +22,13 @@
     "@ai-sdk/openai": "^3.0.73",
     "ai": "^6.0.208",
     "better-sqlite3": "^12.11.1",
+    "drizzle-kit": "^0.31.10",
     "drizzle-orm": "^0.45.2",
     "geist": "^1.7.2",
     "next": "16.2.9",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "tsx": "^4.22.4",
     "zod": "^4.4.3"
   },
   "devDependencies": {
@@ -32,9 +37,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "drizzle-kit": "^0.31.10",
     "tailwindcss": "^4",
-    "tsx": "^4.22.4",
     "typescript": "^5"
   }
 }
