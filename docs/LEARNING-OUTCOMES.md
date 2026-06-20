@@ -71,7 +71,7 @@ which unlocks Spot the Hallucination.
 
 ### Mini-Game
 
-**Checkpoint Placement** — Given a pre-built redesigned workflow, players place human review checkpoints at the right moments. Scenarios escalate in risk:
+**In the Loop** (Checkpoint Placement) — Given a pre-built redesigned workflow that an AI runs on its own, players place human-review checkpoints at the right moments. Five rounds of escalating risk; each step carries a plain-English impact line, and the workflow is simulated once so players see what their oversight produced. Scenarios escalate in risk:
 
 | Risk Level | Scenario |
 |------------|----------|

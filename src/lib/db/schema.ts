@@ -191,6 +191,29 @@ export const contextCalibrationRounds = sqliteTable("context_calibration_rounds"
     .default(sql`(unixepoch())`),
 });
 
+/**
+ * A generated "In the Loop" (Checkpoint Placement) round. The full scenario —
+ * including each workflow step's `kind` (critical / optional / safe / trap) — is
+ * stored server-side so grading never trusts the client. Created when a round is
+ * generated; read back when scored.
+ */
+export const checkpointPlacementRounds = sqliteTable("checkpoint_placement_rounds", {
+  id: text("id").primaryKey(),
+  playerId: text("player_id")
+    .notNull()
+    .references(() => players.id),
+  challengeId: text("challenge_id")
+    .notNull()
+    .references(() => challenges.id),
+  difficulty: integer("difficulty").notNull().default(1),
+  scenario: text("scenario", { mode: "json" })
+    .$type<Record<string, unknown>>()
+    .notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+});
+
 export type Player = typeof players.$inferSelect;
 export type Game = typeof games.$inferSelect;
 export type Challenge = typeof challenges.$inferSelect;
@@ -200,3 +223,4 @@ export type HallucinationRound = typeof hallucinationRounds.$inferSelect;
 export type PromptGolfRound = typeof promptGolfRounds.$inferSelect;
 export type ChainOfThoughtRound = typeof chainOfThoughtRounds.$inferSelect;
 export type ContextCalibrationRound = typeof contextCalibrationRounds.$inferSelect;
+export type CheckpointPlacementRound = typeof checkpointPlacementRounds.$inferSelect;
