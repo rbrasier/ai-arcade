@@ -6,6 +6,24 @@
 
 ---
 
+## Act Zero: Orientation
+
+### Learning Outcomes
+
+- Build a correct mental model of what an LLM is doing (next-token prediction)
+- Recognise tokens, hallucinations, the role of context, iteration, model tiers,
+  and where the human stays accountable
+
+### Course
+
+**AI Foundations** — A short, self-paced interactive course that runs before the
+first game. Eight hands-on slides cover how AI predicts text, tokens,
+hallucinations, context, the prompt pattern, iteration, models/frontier models,
+and human ownership. It is not graded: reaching the end completes it at 100%,
+which unlocks Spot the Hallucination.
+
+---
+
 ## Act One: Prompt Mastery & Safety Foundations
 
 ### Learning Outcomes

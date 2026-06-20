@@ -46,6 +46,17 @@ Players earn XP for every attempt, plus a bonus for strong performance:
 
 ### Per-game notes
 
+**AI Foundations** is the introductory course that runs **before the first
+game**. It is **not** AI-scored: it has a single challenge and simply reaching
+the end of its eight interactive slides completes it at **100%**, awarded
+deterministically by `src/app/api/games/foundations/complete/route.ts` (which
+still applies the common XP-bonus rule — a perfect ratio earns the top tier).
+Because 100% clears the challenge (≥ 65%), completing the course marks the game
+`completed` and, via the standard unlock rule above, unlocks **Spot the
+Hallucination**. The completion call is idempotent, so replaying the course
+never re-awards XP. Whenever any game transitions out of `locked`, the arcade
+home page surfaces a prominent bottom toast for ~5s (`UnlockToast`).
+
 **Spot the Hallucination** runs **5 rounds** of escalating difficulty. Each
 round's scenario is generated live by the AI connector. Round score is the
 player's **accuracy** — the share of claims correctly judged (fabricated claims
