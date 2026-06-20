@@ -43,6 +43,19 @@ export function GameList({
             <GameCard key={r.game.id} row={r} />
           ))}
         </div>
+
+        {/* Subtle QA escape hatch: unlocks every game forever for this player.
+            Deliberately low-contrast and unobtrusive — easy to miss unless you
+            know it's here. */}
+        <div className="mt-4 text-right">
+          <a
+            href="/?testMode"
+            className="font-arcade-mono text-[10px] tracking-[.06em] text-[#efeadd] transition-colors hover:text-[#c8c2b4]"
+            title="Unlock all games (test mode)"
+          >
+            ·
+          </a>
+        </div>
       </section>
     </UsernameGate>
   );

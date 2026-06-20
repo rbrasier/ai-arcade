@@ -20,6 +20,11 @@ export const players = sqliteTable("players", {
   // rows — `drizzle-kit push` only needs a plain ADD COLUMN for a nullable
   // column, whereas a NOT NULL add would force a destructive table rewrite.
   usernameSet: integer("username_set", { mode: "boolean" }).default(false),
+  // Test/QA escape hatch: when set, every game is unlocked for this player
+  // forever (see `?testMode` in the home page + the subtle link in GameList).
+  // Nullable for the same non-destructive `drizzle-kit push` reason as
+  // `usernameSet` above — a plain ADD COLUMN rather than a table rewrite.
+  testMode: integer("test_mode", { mode: "boolean" }).default(false),
   xp: integer("xp").notNull().default(0),
   level: integer("level").notNull().default(1),
   createdAt: integer("created_at", { mode: "timestamp" })

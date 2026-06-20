@@ -1,18 +1,33 @@
+import { redirect } from "next/navigation";
+
 import { BadgesCard } from "@/components/arcade/BadgesCard";
 import { GameList } from "@/components/arcade/GameList";
 import { Leaderboard } from "@/components/arcade/Leaderboard";
 import { PlayerCard } from "@/components/arcade/PlayerCard";
 import { TopNav } from "@/components/arcade/TopNav";
 import { UnlockToast } from "@/components/arcade/UnlockToast";
-import { getOrCreatePlayer } from "@/lib/player";
+import { enableTestMode, getOrCreatePlayer } from "@/lib/player";
 import { getGamesWithProgress, getLeaderboard } from "@/lib/progress";
 import { levelInfoForXp } from "@/lib/xp";
 
 // Reads the player cookie, so render at request time.
 export const dynamic = "force-dynamic";
 
-export default async function ArcadePage() {
+export default async function ArcadePage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const player = await getOrCreatePlayer();
+
+  // `?testMode` permanently unlocks every game for this player (QA/testing
+  // escape hatch). Flip the flag, then redirect to a clean URL so the param
+  // doesn't linger in the address bar or get re-applied on refresh.
+  if ("testMode" in (await searchParams)) {
+    enableTestMode(player.id);
+    redirect("/");
+  }
+
   const games = getGamesWithProgress(player.id);
   const week = getLeaderboard("week");
   const all = getLeaderboard("all");
