@@ -94,9 +94,26 @@ back to a deterministic mock so everything still runs offline.
 | `OPENAI_API_KEY`        | No\*     | Required when `AI_PROVIDER=openai`.                                      |
 | `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` | No\* | Used when `AI_PROVIDER=bedrock` (or set `AWS_BEDROCK_API_KEY`). |
 | `DATABASE_PATH`         | No       | SQLite file path (default `./data/arcade.db`). On Railway, point this at a mounted Volume (e.g. `/data/arcade.db`) so the DB survives deploys. |
+| `SITE_PASSWORD`         | No       | Gate the whole arcade behind a shared password (keeps the AI token from being spammed). Unset/blank ⇒ open site. See below. |
 
 \* The app runs fully without any provider configured, using a deterministic
 mock evaluator and a built-in bank of hallucination scenarios.
+
+### Access password
+
+Set `SITE_PASSWORD` to require a password before anyone can play. When it's
+set, visitors are prompted once by a lock screen; unlocking persists in an
+http-only cookie for a year. The gate is enforced in `proxy.ts`, so the
+AI-backed API routes return `401` until a visitor unlocks — a direct `curl`
+can't burn through your token either. You can also share a link that unlocks
+automatically and skips the prompt:
+
+```
+https://your-arcade.example.com/?key=YOUR_PASSWORD
+```
+
+The `?key=` param is consumed and stripped from the URL on arrival. Leave
+`SITE_PASSWORD` unset (or blank) and the arcade is fully open with no prompt.
 
 ## Deploying
 
