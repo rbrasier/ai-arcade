@@ -8,15 +8,24 @@ SQLite file) is **wiped on each deploy**. To keep player progress across
 deploys you must put the database on a **Railway Volume** — a persistent disk
 that survives rebuilds.
 
+## 0. Node version
+
+The app requires **Node ≥ 20.9** (Next 16) and `better-sqlite3@12` only ships
+prebuilt binaries for Node 20/22/24+. On older Node (e.g. Railway's default
+Node 18) there is no prebuilt binary, so npm tries to compile it from source
+with node-gyp and fails (`gyp ERR! find Python`). The repo pins **Node 22** via
+`.nvmrc` (and an `engines.node` field), which Nixpacks reads automatically — so
+the native module installs from a prebuilt binary with no compiler needed.
+
 ## 1. Attach a persistent Volume
 
 Volumes can't be declared in `railway.json`; create one against the service:
 
 - **Dashboard:** open the service → **Settings → Volumes → New Volume**, and set
-  the **mount path** to `/data`.
-- **CLI:** `railway volume add --mount-path /data`
+  the **mount path** to `/db`.
+- **CLI:** `railway volume add --mount-path /db`
 
-This gives the container a persistent directory at `/data` that is preserved
+This gives the container a persistent directory at `/db` that is preserved
 across deploys, restarts, and redeploys.
 
 ## 2. Point the database at the Volume
@@ -25,13 +34,13 @@ Set an environment variable on the service so the app writes the SQLite file
 into the mounted volume instead of the ephemeral project directory:
 
 ```
-DATABASE_PATH=/data/arcade.db
+DATABASE_PATH=/db/arcade.db
 ```
 
 Both `src/lib/db/client.ts` (runtime) and `drizzle.config.ts` (migrations) read
 `DATABASE_PATH`, so this single variable redirects everything — including the
 WAL sidecar files (`arcade.db-wal`, `arcade.db-shm`), which live alongside it in
-`/data`.
+`/db`.
 
 ## 3. How the database is migrated & seeded on deploy
 
@@ -53,6 +62,10 @@ release = drizzle-kit push --force   # apply the schema to the volume's DB
   populated volume never wipes accumulated player progress. The full seed only
   runs on the very first deploy (empty volume).
 
+> `drizzle-kit` and `tsx` (used by the `release` step) are listed under
+> `dependencies`, not `devDependencies`, so they remain available even when the
+> deploy installs with `NODE_ENV=production` / `--omit=dev`.
+
 ## 4. Build safety
 
 `src/lib/db/client.ts` opens the SQLite connection **lazily** (on first query),
@@ -68,7 +81,7 @@ Railway you'll typically set:
 
 | Variable          | Value                | Why                                            |
 | ----------------- | -------------------- | ---------------------------------------------- |
-| `DATABASE_PATH`   | `/data/arcade.db`    | Persist the SQLite file on the mounted Volume. |
+| `DATABASE_PATH`   | `/db/arcade.db`    | Persist the SQLite file on the mounted Volume. |
 | `ANTHROPIC_API_KEY` (optional) | your key | Real AI scoring; omit to use the built-in mock. |
 
 `PORT` is provided by Railway automatically and is honoured by the start
@@ -76,7 +89,7 @@ command.
 
 ## Quick checklist
 
-1. Add a Volume mounted at `/data`.
-2. Set `DATABASE_PATH=/data/arcade.db`.
+1. Add a Volume mounted at `/db`.
+2. Set `DATABASE_PATH=/db/arcade.db`.
 3. Deploy. The first deploy seeds the games; every later deploy keeps the
    existing data and only applies schema changes.
