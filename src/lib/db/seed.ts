@@ -192,24 +192,33 @@ const GAMES: SeedGame[] = [
     slug: "context-calibration",
     title: "Context Calibration",
     description:
-      "Compose prompts with variable context and watch output quality shift. Learn where context is too sparse, too noisy, or missing entirely.",
+      "Each round, a colleague sends a task and a tray of candidate context snippets. Attach only what the answer needs — too little starves it, too much misdirects it — then see what the AI produces. Five rounds, each one harder.",
     estMinutes: 15,
     challenges: [
       {
-        title: "Round 1 — Add One Detail",
-        prompt:
-          "This answer went wrong because the model lacked context. Add exactly one contextual detail to the prompt that fixes the hallucination.",
-        config: {
-          mode: "add-context",
-          weak:
-            "Draft a reply approving the request. (The model invents a budget figure it was never given.)",
-        },
+        title: "Round 1 — Cut Through the Noise",
+        prompt: "Attach only the context the answer needs, then run it.",
+        config: { difficulty: 1 },
       },
       {
-        title: "Round 2 — Cut the Noise",
-        prompt:
-          "Remove two noisy, irrelevant sentences from this over-stuffed context so the output sharpens.",
-        config: { mode: "remove-noise", removeTarget: 2 },
+        title: "Round 2 — Mind the Stale Detail",
+        prompt: "Attach only the context the answer needs, then run it.",
+        config: { difficulty: 2 },
+      },
+      {
+        title: "Round 3 — Spot the Distractor",
+        prompt: "Attach only the context the answer needs, then run it.",
+        config: { difficulty: 3 },
+      },
+      {
+        title: "Round 4 — Resist the Pile-On",
+        prompt: "Attach only the context the answer needs, then run it.",
+        config: { difficulty: 4 },
+      },
+      {
+        title: "Round 5 — Boss Round",
+        prompt: "Attach only the context the answer needs, then run it.",
+        config: { difficulty: 5 },
       },
     ],
   },

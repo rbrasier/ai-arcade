@@ -45,22 +45,24 @@ Players earn XP for every attempt, plus a bonus for strong performance:
 ## Round generation patterns
 
 These two patterns are **shared by every multi-round, AI-generated game** (Prompt
-Golf, Spot the Hallucination and Think It Through) and must be kept in sync as
-games are added:
+Golf, Spot the Hallucination, Think It Through and Context Calibration) and must
+be kept in sync as games are added:
 
 - **Preload all rounds behind the explainer.** When the intro / "how to play"
   modal is shown, every round is generated in the background, **sequentially**
   (one after the next), so starting and advancing has little or no wait. A
   round's generate request is memoised as a promise; `loadRound` just awaits the
   matching entry. Replay drops the cache and warms a fresh set. Implemented in
-  `PromptGolfGame`, `HallucinationGame` and `ChainOfThoughtGame`.
+  `PromptGolfGame`, `HallucinationGame`, `ChainOfThoughtGame` and
+  `ContextCalibrationGame`.
 - **No repeated theme within a play-through.** Each generated scenario carries a
   short `topic` label. Because the background warm-up is sequential, each round
   is told the topics already used (`avoidTopics`) so it picks a clearly
   different subject — no two "survey results" rounds back to back. The client
   accumulates topics in a ref; the generate routes forward them to the AI
-  prompt. Applies to all three games above (`generatePromptGolfRound`,
-  `generateHallucinationRound`, `generateChainOfThoughtRound`).
+  prompt. Applies to all four games above (`generatePromptGolfRound`,
+  `generateHallucinationRound`, `generateChainOfThoughtRound`,
+  `generateContextCalibrationRound`).
 
 ---
 
@@ -180,3 +182,39 @@ correct. Grading is fully deterministic against stored ground truth (no AI judge
 at score time). Implemented in
 `src/app/api/games/chain-of-thought/score/route.ts`, the shared pure helpers in
 `src/lib/chain-of-thought-scoring.ts`, and `src/lib/ai/chain-of-thought.ts`.
+
+**Context Calibration** runs **5 rounds** of escalating difficulty and opens Act
+Two. It teaches the practical skill of choosing **what context to give an AI** —
+and the harder lesson that piling on too much or irrelevant context can
+**misdirect** the model, not just that sparse context starves it. Each round's
+scenario — a desk task, a precise goal, and a **tray of candidate context
+snippets** — is generated live by the AI connector (with a deterministic mock
+fallback). Every snippet carries a hidden `kind`: **essential** (the answer needs
+it), **helpful** (relevant but optional, scored neutral), **noise** (irrelevant
+clutter) or **distractor** (plausible but misleading — attaching it steers the
+answer wrong). Difficulty scales the misdirection pressure: easy rounds (1–2) have
+obvious noise and no/one weak distractor, while hard rounds (4–5) plant 2–3
+tempting distractors so the player must **resist attaching everything** (echoing
+Spot the Hallucination's "resist over-flagging"). The player curates which
+snippets to attach; the selection is then **executed** so the scorecard shows the
+deliverable it produced (the same "what it produced" idea as Prompt Golf).
+
+Grading is fully deterministic against the stored `kind`s, on two axes:
+
+- **completeness** = `essentialsIncluded / essentialsTotal` — the **gate**, like
+  precision in Prompt Golf.
+- **focus** = `1 − weightedBadIncluded / weightedBadTotal`, where bad = noise ∪
+  distractor and a **distractor weighs 2× noise** (`DISTRACTOR_WEIGHT = 2`,
+  `NOISE_WEIGHT = 1`) so misdirection bites hardest. This is the **mastery** axis,
+  like economy.
+
+`scoreRatio = 0.5 × completeness + 0.5 × focus`, **capped at `GATE_CAP = 0.5`** if
+any essential is missing, and `score = round(scoreRatio × maxScore)`. So leaving
+out an essential caps the round below the 65% clear, **and** attaching every bad
+snippet drives focus to 0 → `0.5` → also a fail: over-inclusion is a real failure
+mode, not just a missed bonus. Keeping the essentials with one distractor still
+attached lands around **83%**. The ≥ 70% / ≥ 85% XP bonus tiers apply to this
+ratio, and a round is `exceptional` only when **every** essential is attached and
+**no** noise or distractor is. Implemented in
+`src/app/api/games/context-calibration/score/route.ts`, the shared pure helpers in
+`src/lib/context-calibration-scoring.ts`, and `src/lib/ai/context-calibration.ts`.

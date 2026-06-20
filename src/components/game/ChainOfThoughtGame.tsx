@@ -779,9 +779,9 @@ export function ChainOfThoughtGame({ rounds }: { rounds: RoundRef[] }) {
                     borderRadius: 20,
                     boxShadow: "0 30px 60px -24px rgba(40,34,70,.6)",
                     padding: "24px 26px",
-                    animation: "hg-modalIn .4s cubic-bezier(.2,.9,.3,1)",
                     maxHeight: "86vh",
                     overflowY: "auto",
+                    animation: "hg-modalIn .4s cubic-bezier(.2,.9,.3,1)",
                   }}
                 >
                   <div
