@@ -1,5 +1,7 @@
 import { randomUUID } from "node:crypto";
 
+import { sql } from "drizzle-orm";
+
 import { db } from "./client";
 import {
   attempts,
@@ -16,7 +18,10 @@ import {
  * seeded — no demo players. Player rows are created lazily per visitor in
  * `getOrCreatePlayer`, so the leaderboard fills in as real people play.
  *
- * Run with: `npm run db:seed`
+ * Run with: `npm run db:seed` (destructive reset, for local dev) or
+ * `npm run db:seed -- --if-empty` (only seeds when the arcade is empty, so it
+ * is safe to run on every production/Railway deploy without wiping player
+ * progress on the persistent volume).
  */
 
 interface SeedChallenge {
@@ -201,6 +206,24 @@ const GAMES: SeedGame[] = [
 ];
 
 function seed() {
+  // `--if-empty` makes the seed non-destructive: if the arcade already has
+  // games (e.g. a persistent Railway volume carried over from a previous
+  // deploy), leave the database — and all accumulated player progress —
+  // untouched. The destructive reset below only runs on an explicit full seed.
+  const ifEmpty = process.argv.includes("--if-empty");
+  if (ifEmpty) {
+    const { count } = db
+      .select({ count: sql<number>`count(*)` })
+      .from(games)
+      .get() ?? { count: 0 };
+    if (count > 0) {
+      console.log(
+        `Arcade already seeded (${count} games present); skipping seed.`,
+      );
+      return;
+    }
+  }
+
   console.log("Seeding arcade database...");
 
   // Clear existing rows so the script is idempotent. Attempts and players are

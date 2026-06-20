@@ -8,7 +8,10 @@
     "start": "next start",
     "db:push": "drizzle-kit push",
     "db:seed": "tsx src/lib/db/seed.ts",
-    "db:studio": "drizzle-kit studio"
+    "db:seed:if-empty": "tsx src/lib/db/seed.ts --if-empty",
+    "db:studio": "drizzle-kit studio",
+    "release": "drizzle-kit push --force && npm run db:seed:if-empty",
+    "start:railway": "npm run release && next start -p ${PORT:-3000}"
   },
   "dependencies": {
     "@ai-sdk/amazon-bedrock": "^4.0.119",
