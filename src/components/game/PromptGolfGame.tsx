@@ -40,6 +40,7 @@ interface SafeCriterion {
   text: string;
 }
 interface SafeScenario {
+  topic: string;
   brief: {
     senderName: string;
     senderRole: string;
@@ -116,6 +117,9 @@ export function PromptGolfGame({ rounds }: { rounds: RoundRef[] }) {
   // memoised here as a promise; loadRound just awaits the matching entry.
   type LoadedRound = { roundId: string; scenario: SafeScenario };
   const prefetchRef = useRef<Map<number, Promise<LoadedRound>>>(new Map());
+  // Topics used so far, so each round picks a distinct theme (sequential
+  // warm-up below feeds this into the next round's avoid-list).
+  const usedTopicsRef = useRef<string[]>([]);
   // Bumped on replay to invalidate the cache and prefetch fresh rounds.
   const [playToken, setPlayToken] = useState(0);
 
@@ -132,11 +136,16 @@ export function PromptGolfGame({ rounds }: { rounds: RoundRef[] }) {
           body: JSON.stringify({
             challengeId: round.id,
             difficulty: round.difficulty,
+            avoidTopics: [...usedTopicsRef.current],
           }),
         });
         if (!res.ok) throw new Error(`Request failed (${res.status})`);
-        const data = (await res.json()) as LoadedRound;
-        return data;
+        const data = (await res.json()) as LoadedRound & { topic?: string };
+        const topic = data.topic ?? data.scenario.topic;
+        if (topic && !usedTopicsRef.current.includes(topic)) {
+          usedTopicsRef.current.push(topic);
+        }
+        return { roundId: data.roundId, scenario: data.scenario };
       })();
       // Drop failed prefetches so a later attempt (retry) can refetch.
       p.catch(() => prefetchRef.current.delete(index));
@@ -246,8 +255,9 @@ export function PromptGolfGame({ rounds }: { rounds: RoundRef[] }) {
   }, [roundIndex, total, loadRound]);
 
   const restart = useCallback(() => {
-    // Drop the warmed rounds and re-warm a fresh set for the new play-through.
+    // Drop the warmed rounds and topics and re-warm a fresh, re-themed set.
     prefetchRef.current = new Map();
+    usedTopicsRef.current = [];
     setPlayToken((t) => t + 1);
     setHistory([]);
     setRoundIndex(0);

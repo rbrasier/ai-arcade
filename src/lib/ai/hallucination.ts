@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { tierInfoForDifficulty } from "@/lib/hallucination-tiers";
 import { generateJson, isConfigured } from "./connector";
 import { mockHallucinationRound } from "./hallucination-mock";
 
@@ -19,6 +20,11 @@ export interface HallucinationClaim {
 }
 
 export interface HallucinationScenario {
+  /**
+   * Short topic label for this scenario (e.g. "customer churn", "warehouse
+   * safety"). Used to keep the five rounds of a play-through on distinct themes.
+   */
+  topic: string;
   /** The "boss" direct message that kicks off the task. */
   task: {
     senderName: string;
@@ -39,6 +45,7 @@ export interface HallucinationScenario {
 }
 
 const scenarioSchema = z.object({
+  topic: z.string(),
   task: z.object({
     senderName: z.string(),
     senderRole: z.string(),
@@ -62,36 +69,50 @@ const scenarioSchema = z.object({
 
 const SYSTEM_PROMPT = `You generate training scenarios for "Spot the Hallucination", a game that teaches people to catch fabricated claims in AI output.
 
-You produce a realistic workplace scenario: a colleague forwards a task, the user asks a work assistant for help with attached files, and the assistant produces a short, confident, cited answer. The answer is split into 4-6 discrete claims. SOME claims are fabricated ("hallucinated"), some are sound.
+You produce a realistic workplace scenario: a colleague forwards a task, the user asks a work assistant for help with attached files, and the assistant produces a short, confident, cited answer. The answer is split into 4-6 discrete claims. Some claims may be fabricated ("hallucinated"), some are sound.
 
-Plant 0-3 hallucinations per scenario (vary the count; occasionally zero). Use a MIX of these hallucination types across rounds:
+The game frames each round as the answer from a different MODEL TIER, from a small/quick model up to a frontier model. The teaching point is accurate, not cynical: fabrication risk falls as the model gets more capable. So follow the per-round tier guidance for HOW MANY fabrications to plant and HOW OBVIOUS they are — a frontier round is often perfectly sound, and the player is meant to learn not to over-flag a strong model.
+
+When you do plant a fabrication, use one of these types (vary them across rounds):
 - A misspelled proper noun — a person's or organisation's name spelled wrong.
 - A fabricated or oddly over-precise statistic (e.g. "exactly 91.4%").
 - A citation to a source/report that was never provided.
 - A claim that contradicts something stated in the reasoning steps — i.e. the clue is BURIED IN THE REASONING, not the answer.
 
-Difficulty 1 = blatant and obvious. Difficulty 5 = subtle, plausible-sounding, and more likely to hide the clue in the reasoning. Scale subtlety with the difficulty given.
+IMPORTANT — leave a clue. Every fabrication must be catchable from what's on screen: it should clash with an attachment, the reasoning steps, or basic real-world knowledge. Never plant a fabrication that a careful reader has no way to detect.
 
 Rules:
+- "topic": a 1-4 word label for the scenario's subject (e.g. "customer churn", "warehouse safety").
 - "hallucination: true" marks a fabricated claim; mark sound claims false.
 - Make claims read as one flowing answer when concatenated in order.
-- "explanations" must justify each fabricated claim (and note any tricky-but-true claim a player might wrongly flag).
+- "explanations" must justify each fabricated claim (and note any tricky-but-true claim a player might wrongly flag). If there are zero fabrications, say so and explain why every claim is sound.
 - Keep it grounded, professional, and varied across rounds (different industries/topics).`;
 
-/** Generate a round at the given difficulty (1-5). Falls back to a mock bank. */
+/**
+ * Generate a round at the given difficulty (1-5). Falls back to a mock bank.
+ * `opts.avoidTopics` lists topics already used earlier in the play-through so
+ * the five rounds stay on distinct themes.
+ */
 export async function generateHallucinationRound(
   difficulty: number,
+  opts: { avoidTopics?: string[] } = {},
 ): Promise<HallucinationScenario> {
   const d = Math.max(1, Math.min(5, Math.round(difficulty)));
+  const tier = tierInfoForDifficulty(d);
 
   if (!isConfigured()) {
     return mockHallucinationRound(d);
   }
 
+  const avoid = (opts.avoidTopics ?? []).filter(Boolean);
+  const avoidNote = avoid.length
+    ? ` Do NOT reuse any of these already-used topics (pick a clearly different industry/subject): ${avoid.join("; ")}.`
+    : "";
+
   try {
     const raw = await generateJson(scenarioSchema, {
       system: SYSTEM_PROMPT,
-      prompt: `Generate one scenario at difficulty ${d} of 5. Pick a fresh, recognisable workplace topic. Decide how many claims (4-6) and how many are fabricated (0-3, your choice). Remember to vary the hallucination type and, at higher difficulty, sometimes bury the clue in the reasoning steps.`,
+      prompt: `Generate one scenario for round ${d} of 5, presented as the "${tier.label}" model tier (${tier.modelName}). ${tier.fabricationGuidance} Pick a fresh, recognisable workplace topic and set "topic" to a short label for it.${avoidNote} Decide how many claims (4-6). Make every fabrication you plant catchable from the attachments, the reasoning, or common knowledge.`,
       maxOutputTokens: 2048,
     });
     return withClaimIds(raw);

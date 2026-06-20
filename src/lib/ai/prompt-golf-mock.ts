@@ -13,6 +13,7 @@ import {
 const BANK: Record<number, Parameters<typeof withCriterionIds>[0]> = {
   // D1 — two simple, independent criteria; generous par.
   1: {
+    topic: "article summary",
     brief: {
       senderName: "Dana Okafor",
       senderRole: "Team Lead",
@@ -35,6 +36,7 @@ const BANK: Record<number, Parameters<typeof withCriterionIds>[0]> = {
   },
   // D2 — three criteria incl. a tone constraint.
   2: {
+    topic: "customer complaints",
     brief: {
       senderName: "Marcus Lindqvist",
       senderRole: "Head of Comms",
@@ -64,6 +66,7 @@ const BANK: Record<number, Parameters<typeof withCriterionIds>[0]> = {
   },
   // D3 — the user's example: 3-bullet project status update, problem + next step.
   3: {
+    topic: "project status update",
     brief: {
       senderName: "Priya Nair",
       senderRole: "Programme Manager",
@@ -94,6 +97,7 @@ const BANK: Record<number, Parameters<typeof withCriterionIds>[0]> = {
   },
   // D4 — four criteria incl. an exclusion (no jargon) and an audience.
   4: {
+    topic: "board finance note",
     brief: {
       senderName: "Tom Becker",
       senderRole: "Finance Manager",
@@ -124,6 +128,7 @@ const BANK: Record<number, Parameters<typeof withCriterionIds>[0]> = {
   },
   // D5 — five interacting constraints; tight par.
   5: {
+    topic: "support ticket triage",
     brief: {
       senderName: "Aisha Rahman",
       senderRole: "Director of Operations",
