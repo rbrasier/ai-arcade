@@ -15,7 +15,8 @@ import { bonusForScoreRatio, levelForXp } from "@/lib/xp";
 
 /** Per-claim credit for the three-state mechanic (see docs/GAME-RULES.md). */
 const CREDIT_CORRECT = 1;
-const CREDIT_UNMARKED = 0.5;
+const CREDIT_UNMARKED = 0.5; // a sound claim left unmarked — neutral, no penalty
+const CREDIT_MISSED = 0.25; // a fabrication left unmarked — you let it slip
 const CREDIT_WRONG = 0;
 
 /**
@@ -25,11 +26,13 @@ const CREDIT_WRONG = 0;
  *
  * Each claim earns credit toward accuracy:
  * - correct verdict (flag a fabrication / verify a sound claim) → 1
- * - left unmarked (no commitment, no penalty)                   → 0.5
+ * - a sound claim left unmarked (no commitment, no penalty)     → 0.5
+ * - a fabrication left unmarked (you let it slip)               → 0.25
  * - wrong verdict (flag a sound claim / vouch for a fabrication) → 0
  *
- * So leaving everything unmarked scores 50% (below the 65% clear), and a false
- * flag costs you versus leaving the claim alone.
+ * So leaving everything unmarked scores at most 50% (and less when there are
+ * fabrications you failed to catch) — always below the 65% clear — a false flag
+ * costs you versus leaving the claim alone, and missing a fabrication bites.
  *
  * Body: { roundId: string, flaggedClaimIds: string[], verifiedClaimIds: string[] }
  */
@@ -110,7 +113,7 @@ export async function POST(request: Request) {
       } else {
         missed += 1;
         status = "missed";
-        credit = CREDIT_UNMARKED;
+        credit = CREDIT_MISSED;
       }
     } else {
       if (isVerified) {

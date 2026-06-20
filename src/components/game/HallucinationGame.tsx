@@ -845,7 +845,7 @@ export function HallucinationGame({ rounds }: { rounds: RoundRef[] }) {
                       >
                         CLEAR
                       </button>
-                      <div style={{ fontFamily: MONO, fontSize: 12, color: "#9a9488" }}>verifying sound claims scores too — false flags cost you</div>
+                      <div style={{ fontFamily: MONO, fontSize: 12, color: "#9a9488" }}>missing a fabrication costs you — so do false flags</div>
                     </div>
                   </div>
                 )}
@@ -1170,8 +1170,8 @@ function IntroModal({ onStart }: { onStart: () => void }) {
           <div style={{ fontSize: 14, lineHeight: 1.45, color: "#3a362e" }}>
             <b>How to answer.</b> Click a claim once to <b style={{ color: ACCENT }}>🚩 flag</b> it
             as fabricated, again to <b style={{ color: GREEN }}>✓ verify</b> it as sound, a
-            third time to clear it. Leaving a claim unmarked is neutral — but{" "}
-            <b>verifying sound claims scores too</b>, and a false flag costs you.
+            third time to clear it. Leaving a sound claim unmarked is safe — but{" "}
+            <b>letting a fabrication slip by costs you</b>, and so does a false flag.
           </div>
         </div>
 

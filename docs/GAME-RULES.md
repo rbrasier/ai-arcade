@@ -95,17 +95,22 @@ with the reasoning).
 
 Each claim gets a **three-state verdict**: the player clicks a claim to cycle it
 **flag** (fabricated) → **verify** (sound) → unmarked. Scoring credits each
-claim toward **accuracy**:
+claim toward **accuracy** on a gradient:
 
 - a **correct** verdict (flag a fabrication / verify a sound claim) → **1**
-- left **unmarked** (no commitment, no penalty) → **0.5**
+- a **sound** claim left **unmarked** (no commitment, no penalty) → **0.5**
+- a **fabrication** left **unmarked** (you let it slip) → **0.25**
 - a **wrong** verdict (flag a sound claim, or *vouch for* a fabrication) → **0**
 
 `accuracy = creditSum / claims`, `score = round(accuracy × maxScore)`. So leaving
-everything unmarked scores **50%** (below the 65% clear), and a false flag costs
-you versus leaving the claim alone — a real disincentive to over-flag. ≥ 65%
-accuracy clears, ≥ 70% / ≥ 85% earn the XP bonus tiers above, and a round is
-`exceptional` only when **every** claim is correctly classified. Implemented in
+everything unmarked scores **at most 50%** — and less when there are fabrications
+you failed to catch — always below the 65% clear. The gradient is monotonic:
+catching beats not bothering, not bothering on a sound claim beats letting a
+fabrication slip, and both beat an actively wrong call. A false flag costs you
+versus leaving the claim alone (a disincentive to over-flag), and **missing a
+fabrication bites** versus leaving a sound claim alone. ≥ 65% accuracy clears,
+≥ 70% / ≥ 85% earn the XP bonus tiers above, and a round is `exceptional` only
+when **every** claim is correctly classified. Implemented in
 `src/app/api/games/hallucination/score/route.ts` and
 `src/lib/ai/hallucination.ts`.
 
