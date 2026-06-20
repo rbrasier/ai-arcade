@@ -9,7 +9,7 @@ import {
 } from "next/font/google";
 import "./globals.css";
 
-import { RewardToast, type RewardBadge } from "@/components/arcade/RewardToast";
+import { AchievementToast } from "@/components/arcade/AchievementToast";
 import { SiteLock } from "@/components/arcade/SiteLock";
 import { computeBadges } from "@/lib/badges";
 import { getOrCreatePlayer } from "@/lib/player";
@@ -54,24 +54,27 @@ export default async function RootLayout({
     ? !cookieUnlocks((await cookies()).get(SITE_AUTH_COOKIE)?.value)
     : false;
 
-  // Recompute level + earned badges on every server render (including the
-  // router.refresh() the games fire after scoring) so the reward toast can
-  // celebrate a level-up or new badge on any page. Fail soft: if there's no
-  // player cookie yet (e.g. an edge render before the proxy sets it), skip it.
-  let rewardLevel = 0;
-  let rewardBadges: RewardBadge[] = [];
+  // Current level + earned badges for the global celebration toast. Recomputed
+  // on every server render (incl. router.refresh() after a scored attempt), so
+  // a level-up or new badge can pop wherever the player is. Best-effort: if the
+  // player cookie isn't ready yet, we simply skip the toast for this render.
+  let achievement: {
+    level: number;
+    earnedBadges: { id: string; label: string }[];
+  } | null = null;
   if (!locked) {
     try {
       const player = await getOrCreatePlayer();
       const games = getGamesWithProgress(player.id);
+      const { level } = levelInfoForXp(player.xp);
       const challengesCleared = games.reduce(
         (sum, g) => sum + g.clearedChallenges,
         0,
       );
-      const gamesCompleted = games.filter((g) => g.status === "completed").length;
-      const level = levelInfoForXp(player.xp).level;
-      rewardLevel = level;
-      rewardBadges = computeBadges({
+      const gamesCompleted = games.filter(
+        (g) => g.status === "completed",
+      ).length;
+      const earnedBadges = computeBadges({
         challengesCleared,
         gamesCompleted,
         totalGames: games.length,
@@ -80,8 +83,9 @@ export default async function RootLayout({
       })
         .filter((b) => b.earned)
         .map((b) => ({ id: b.id, label: b.label }));
+      achievement = { level, earnedBadges };
     } catch {
-      // No resolvable player — leave the toast unmounted.
+      achievement = null;
     }
   }
 
@@ -92,8 +96,11 @@ export default async function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         {children}
-        {!locked && rewardLevel > 0 && (
-          <RewardToast level={rewardLevel} badges={rewardBadges} />
+        {achievement && (
+          <AchievementToast
+            level={achievement.level}
+            earnedBadges={achievement.earnedBadges}
+          />
         )}
         {locked && <SiteLock />}
       </body>

@@ -50,13 +50,17 @@ export function FoundationsCourse() {
       ) {
         return;
       }
-      if ((e.data as { type?: string }).type === "ai-foundations:complete") {
+      const type = (e.data as { type?: string }).type;
+      if (type === "ai-foundations:complete") {
         void complete();
+      } else if (type === "ai-foundations:exit") {
+        // The "Finish" button on the last slide returns to the arcade.
+        router.push("/");
       }
     }
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [complete]);
+  }, [complete, router]);
 
   return (
     <div

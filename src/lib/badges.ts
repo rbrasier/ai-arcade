@@ -1,11 +1,9 @@
 /**
- * Achievement milestones derived entirely from real progress — no separate badge
- * table. Each is computed from the player's cleared challenges, completed games,
- * level and XP, so the "earned / total" count is always truthful.
- *
- * Shared so both the sidebar `BadgesCard` and the root-layout reward toast read
- * the exact same definitions (a new badge can't be celebrated and then missing
- * from the card, or vice versa).
+ * Achievement badges derived entirely from real progress — no separate badge
+ * table. Each milestone is computed from the player's cleared challenges,
+ * completed games, level and XP, so the "earned / total" count is always
+ * truthful. Shared by the sidebar BadgesCard and the global AchievementToast so
+ * both agree on what counts as earned.
  */
 
 export interface Badge {
@@ -14,7 +12,7 @@ export interface Badge {
   earned: boolean;
 }
 
-export interface BadgeInput {
+export interface BadgeStats {
   challengesCleared: number;
   gamesCompleted: number;
   totalGames: number;
@@ -28,7 +26,7 @@ export function computeBadges({
   totalGames,
   level,
   totalXp,
-}: BadgeInput): Badge[] {
+}: BadgeStats): Badge[] {
   return [
     { id: "first-clear", label: "First Clear", earned: challengesCleared >= 1 },
     { id: "on-a-roll", label: "On a Roll", earned: challengesCleared >= 5 },

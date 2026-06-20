@@ -1,7 +1,7 @@
 /**
- * Achievements derived entirely from real progress — no separate badge table.
- * The milestone definitions live in `src/lib/badges.ts` so the root-layout
- * reward toast celebrates exactly the badges this card shows.
+ * The sidebar badges panel. Badge state is computed from real progress by the
+ * shared `computeBadges` helper (see src/lib/badges.ts), so the "earned / total"
+ * count here always matches the global achievement toast.
  */
 
 import { computeBadges } from "@/lib/badges";
