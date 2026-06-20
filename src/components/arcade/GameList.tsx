@@ -24,66 +24,26 @@ export function GameList({
 }) {
   const rows = toRows(games);
 
-  const playable = rows.filter(
-    (r) => r.game.status === "available" || r.game.status === "in_progress",
-  );
-  const completed = rows.filter((r) => r.game.status === "completed");
-  const locked = rows.filter((r) => r.game.status === "locked");
-
+  // Render the whole ladder in its natural order (sort order). Cleared games
+  // stay in their original position — still filled out as completed — rather
+  // than being pulled into a separate section below the games you can play now.
   return (
     <UsernameGate needsUsername={needsUsername}>
-      <div className="flex flex-col gap-6">
-        {playable.length > 0 && (
-          <section>
-            <div className="mb-3 flex items-baseline gap-2.5">
-              <span className="font-arcade-mono text-[12px] font-bold tracking-[.07em] text-[#211f1a]">
-                PLAY NOW
-              </span>
-              <span className="font-arcade-mono text-[12px] text-[#9a9488]">
-                tuned for level {playerLevel}
-              </span>
-            </div>
-            <div className="flex flex-col gap-2.5">
-              {playable.map((r) => (
-                <GameCard key={r.game.id} row={r} />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {completed.length > 0 && (
-          <section>
-            <div className="mb-3 flex items-baseline gap-2.5">
-              <span className="font-arcade-mono text-[12px] font-bold tracking-[.07em] text-[#1f8a5b]">
-                ✓ COMPLETED · {completed.length}
-              </span>
-            </div>
-            <div className="flex flex-col gap-2.5">
-              {completed.map((r) => (
-                <GameCard key={r.game.id} row={r} />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {locked.length > 0 && (
-          <section>
-            <div className="mb-3 flex items-baseline gap-2.5">
-              <span className="font-arcade-mono text-[12px] font-bold tracking-[.07em] text-[#9a9488]">
-                LOCKED
-              </span>
-              <span className="font-arcade-mono text-[12px] text-[#b3ac9a]">
-                keep leveling to unlock
-              </span>
-            </div>
-            <div className="flex flex-col gap-2.5">
-              {locked.map((r) => (
-                <GameCard key={r.game.id} row={r} />
-              ))}
-            </div>
-          </section>
-        )}
-      </div>
+      <section>
+        <div className="mb-3 flex items-baseline gap-2.5">
+          <span className="font-arcade-mono text-[12px] font-bold tracking-[.07em] text-[#211f1a]">
+            YOUR LADDER
+          </span>
+          <span className="font-arcade-mono text-[12px] text-[#9a9488]">
+            tuned for level {playerLevel}
+          </span>
+        </div>
+        <div className="flex flex-col gap-2.5">
+          {rows.map((r) => (
+            <GameCard key={r.game.id} row={r} />
+          ))}
+        </div>
+      </section>
     </UsernameGate>
   );
 }

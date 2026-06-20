@@ -9,12 +9,17 @@ import {
 } from "next/font/google";
 import "./globals.css";
 
+import { AchievementToast } from "@/components/arcade/AchievementToast";
 import { SiteLock } from "@/components/arcade/SiteLock";
+import { computeBadges } from "@/lib/badges";
+import { getOrCreatePlayer } from "@/lib/player";
+import { getGamesWithProgress } from "@/lib/progress";
 import {
   SITE_AUTH_COOKIE,
   cookieUnlocks,
   getSitePassword,
 } from "@/lib/site-auth";
+import { levelInfoForXp } from "@/lib/xp";
 
 // Arcade Hub display + body + label fonts. Exposed as CSS variables and wired
 // into Tailwind tokens (see globals.css) so the home page can opt in without
@@ -49,6 +54,41 @@ export default async function RootLayout({
     ? !cookieUnlocks((await cookies()).get(SITE_AUTH_COOKIE)?.value)
     : false;
 
+  // Current level + earned badges for the global celebration toast. Recomputed
+  // on every server render (incl. router.refresh() after a scored attempt), so
+  // a level-up or new badge can pop wherever the player is. Best-effort: if the
+  // player cookie isn't ready yet, we simply skip the toast for this render.
+  let achievement: {
+    level: number;
+    earnedBadges: { id: string; label: string }[];
+  } | null = null;
+  if (!locked) {
+    try {
+      const player = await getOrCreatePlayer();
+      const games = getGamesWithProgress(player.id);
+      const { level } = levelInfoForXp(player.xp);
+      const challengesCleared = games.reduce(
+        (sum, g) => sum + g.clearedChallenges,
+        0,
+      );
+      const gamesCompleted = games.filter(
+        (g) => g.status === "completed",
+      ).length;
+      const earnedBadges = computeBadges({
+        challengesCleared,
+        gamesCompleted,
+        totalGames: games.length,
+        level,
+        totalXp: player.xp,
+      })
+        .filter((b) => b.earned)
+        .map((b) => ({ id: b.id, label: b.label }));
+      achievement = { level, earnedBadges };
+    } catch {
+      achievement = null;
+    }
+  }
+
   return (
     <html
       lang="en"
@@ -56,6 +96,12 @@ export default async function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         {children}
+        {achievement && (
+          <AchievementToast
+            level={achievement.level}
+            earnedBadges={achievement.earnedBadges}
+          />
+        )}
         {locked && <SiteLock />}
       </body>
     </html>

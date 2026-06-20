@@ -91,6 +91,9 @@
   .prompt-pane .pane-body{font-family:'Spline Sans Mono',monospace;font-size:12.5px;background:#221d17;color:#e9e1d4}
   .prompt-pane .pane-hd{background:#2e2820;color:#b9ac99}
   .prompt-pane .hl{color:#ffb27a;background:rgba(255,178,122,.1);border-radius:3px;padding:0 2px}
+  /* the most recently added bit of the prompt — a distinct colour so it's clear what just changed */
+  .prompt-pane .hl.hl-new{color:#8fe3b0;background:rgba(143,227,176,.16);box-shadow:0 0 0 1px rgba(143,227,176,.35);animation:hlpop .4s ease both}
+  @keyframes hlpop{from{background:rgba(143,227,176,.42)}to{background:rgba(143,227,176,.16)}}
   .out-pane .pane-body{background:var(--paper)}
   .out-pane .pane-hd .dot{background:var(--good)}
 
@@ -172,7 +175,10 @@
   .memory-note{margin-top:18px;border-left:3px solid var(--teal);background:rgba(15,118,110,.06);padding:12px 16px;border-radius:0 10px 10px 0;font-size:14px}
   .memory-note b{color:var(--teal)}
 
-  /* slide 7 models */
+  /* slide 7 models — model picker on the left, streamed answer on the right */
+  .s7-split{display:grid;grid-template-columns:minmax(0,300px) 1fr;gap:16px;align-items:start}
+  .s7-split .stream-pane{margin-top:0}
+  @media(max-width:700px){.s7-split{grid-template-columns:1fr}}
   .model-stack{display:flex;flex-direction:column;gap:10px;margin-bottom:4px}
   .model-card{border:1px solid var(--line);border-radius:14px;padding:14px 16px;cursor:pointer;background:var(--paper);transition:.2s;position:relative;overflow:hidden}
   .model-card:hover{border-color:var(--ink-soft)}
@@ -392,6 +398,7 @@
 
     <div class="demo">
       <div class="demo-hd">Tap a model — same question, different answer</div>
+      <div class="s7-split">
       <div class="model-stack" id="modelStack">
         <div class="model-card" data-m="tiny">
           <div class="mname"><span class="tier tiny">Small</span> The quick assistant</div>
@@ -419,12 +426,13 @@
         </div>
       </div>
 
-      <div class="stream-pane" id="streamPane">
+      <div class="stream-pane show" id="streamPane">
         <div class="stream-hd">
           <div class="stream-q">Q: &ldquo;Should we launch the product in June or wait until September?&rdquo;</div>
           <div class="stream-meta"><span>Model: <b id="smModel">—</b></span><span>Time: <b id="smTime">—</b></span></div>
         </div>
-        <div class="stream-body" id="streamBody"></div>
+        <div class="stream-body" id="streamBody"><span style="opacity:.5">Tap a model on the left to send the question through it…</span></div>
+      </div>
       </div>
     </div>
 
@@ -488,14 +496,21 @@ function go(i){
   // arcade course wrapper) so it can record the 100% completion and unlock the
   // next game. Harmless when opened standalone (no parent listener).
   if(last){try{window.parent&&window.parent!==window&&window.parent.postMessage({type:'ai-foundations:complete'},'*');}catch(e){}}
-  nextBtn.textContent=last?'Finish ↺':'Next →';
-  nextTitle.textContent=last?'Start over':titles[idx+1];
+  nextBtn.textContent=last?'Finish →':'Next →';
+  nextTitle.textContent=last?'Back to the arcade':titles[idx+1];
   window.scrollTo({top:0,behavior:'smooth'});
   if(slides[idx].dataset.init==='1')return;
   slides[idx].dataset.init='1';(initFns[idx]||(()=>{}))();
 }
 prevBtn.onclick=()=>go(idx-1);
-nextBtn.onclick=()=>{idx===slides.length-1?go(0):go(idx+1);};
+nextBtn.onclick=()=>{
+  if(idx===slides.length-1){
+    // Finish → hand back to the host page, which returns to the arcade. When
+    // opened standalone (no parent), fall back to restarting the course.
+    try{if(window.parent&&window.parent!==window){window.parent.postMessage({type:'ai-foundations:exit'},'*');return;}}catch(e){}
+    go(0);
+  }else{go(idx+1);}
+};
 document.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(e.key==='ArrowRight')go(idx+1);if(e.key==='ArrowLeft')go(idx-1);});
 
 /* ===== SLIDE 1 — token predictor ===== */
@@ -583,25 +598,32 @@ function initS4(){
   const promptEl=document.getElementById('ctxPrompt'),out=document.getElementById('ctxOut'),bar=document.getElementById('ctxBar'),grade=document.getElementById('ctxGrade');
   const chk=[...document.querySelectorAll('#ctxControls .ctxchk')];
   const frag={
-    goal:'<span class="hl">declining their meeting request without losing the relationship</span>',
-    aud:'<span class="hl">to a vendor I&rsquo;ve worked with before</span>',
-    fmt:'<span class="hl">Keep it warm and under 100 words.</span>',
-    bg:'<span class="hl">We may want to work with them again next quarter.</span>'
+    goal:'declining their meeting request without losing the relationship',
+    aud:'to a vendor I&rsquo;ve worked with before',
+    fmt:'Keep it warm and under 100 words.',
+    bg:'We may want to work with them again next quarter.'
   };
+  // The most recently toggled-on piece is tinted differently (.hl-new) so it's
+  // obvious what context just got added to the prompt.
+  let prevOn=[];
+  function span(key,newKey){return '<span class="hl'+(key===newKey?' hl-new':'')+'">'+frag[key]+'</span>';}
   function update(){
     const on=chk.filter(c=>c.checked).map(c=>c.dataset.ctx);
+    const added=on.filter(x=>!prevOn.includes(x));
+    const newKey=added.length?added[added.length-1]:null;
     // prompt pane
     if(on.length===0){
       promptEl.innerHTML='Write an email declining a meeting.';
     }else{
       let p='Write a short email ';
-      p+= on.includes('goal')?frag.goal:'declining a meeting';
-      if(on.includes('aud'))p+=' '+frag.aud;
+      p+= on.includes('goal')?span('goal',newKey):'declining a meeting';
+      if(on.includes('aud'))p+=' '+span('aud',newKey);
       p+='. ';
-      if(on.includes('fmt'))p+=frag.fmt+' ';
-      if(on.includes('bg'))p+=frag.bg;
+      if(on.includes('fmt'))p+=span('fmt',newKey)+' ';
+      if(on.includes('bg'))p+=span('bg',newKey);
       promptEl.innerHTML=p;
     }
+    prevOn=on;
     // output pane
     const outputs={
       0:`<span style="color:var(--bad)">Generic guess:</span><br>&ldquo;Dear Sir/Madam, I am unable to attend the meeting. Regards.&rdquo;<br><br><span style="font-size:12px;color:var(--ink-soft)">Cold, formal, could be to anyone — the AI had to invent the tone and the relationship.</span>`,
@@ -624,15 +646,21 @@ function initS5(){
   const promptEl=document.getElementById('pbPrompt'),out=document.getElementById('pbOut'),bar=document.getElementById('pbBar'),grade=document.getElementById('pbGrade');
   const order=['role','outcome','context','format'];
   const txt={
-    role:'<span class="hl">Act as a friendly recruiter.</span> ',
-    outcome:'<span class="hl">Review my CV summary.</span> ',
-    context:'<span class="hl">I&rsquo;m applying for junior marketing roles.</span> ',
-    format:'<span class="hl">Give me 3 bullet points in plain English.</span>'
+    role:'Act as a friendly recruiter.',
+    outcome:'Review my CV summary.',
+    context:'I&rsquo;m applying for junior marketing roles.',
+    format:'Give me 3 bullet points in plain English.'
   };
+  // The part you just tapped on is tinted differently (.hl-new) so it's clear
+  // what was added to the prompt this step.
+  let prevOn=[];
   function update(){
     const on=chips.filter(c=>c.classList.contains('on')).map(c=>c.dataset.part);
+    const added=on.filter(x=>!prevOn.includes(x));
+    const newKey=added.length?added[added.length-1]:null;
     const ordered=order.filter(p=>on.includes(p));
-    promptEl.innerHTML = ordered.length? ordered.map(p=>txt[p]).join('') : '<span style="opacity:.5">Tap a part to begin…</span>';
+    promptEl.innerHTML = ordered.length? ordered.map(p=>'<span class="hl'+(p===newKey?' hl-new':'')+'">'+txt[p]+'</span> ').join('') : '<span style="opacity:.5">Tap a part to begin…</span>';
+    prevOn=on;
     // outputs keyed by which parts are present
     let o;
     if(on.length===0){o='<span style="opacity:.5">The answer will appear here…</span>';}

@@ -1,14 +1,10 @@
 /**
- * Achievements derived entirely from real progress — no separate badge table.
- * Each milestone is computed from the player's cleared challenges, completed
- * games, level and XP, so the "earned / total" count is always truthful.
+ * The sidebar badges panel. Badge state is computed from real progress by the
+ * shared `computeBadges` helper (see src/lib/badges.ts), so the "earned / total"
+ * count here always matches the global achievement toast.
  */
 
-interface Badge {
-  id: string;
-  label: string;
-  earned: boolean;
-}
+import { computeBadges } from "@/lib/badges";
 
 export function BadgesCard({
   challengesCleared,
@@ -23,22 +19,13 @@ export function BadgesCard({
   level: number;
   totalXp: number;
 }) {
-  const badges: Badge[] = [
-    { id: "first-clear", label: "First Clear", earned: challengesCleared >= 1 },
-    { id: "on-a-roll", label: "On a Roll", earned: challengesCleared >= 5 },
-    { id: "clearer", label: "Game Clearer", earned: gamesCompleted >= 1 },
-    {
-      id: "halfway",
-      label: "Halfway",
-      earned: totalGames > 0 && gamesCompleted >= Math.ceil(totalGames / 2),
-    },
-    { id: "veteran", label: "Veteran", earned: level >= 5 || totalXp >= 1000 },
-    {
-      id: "completionist",
-      label: "Completionist",
-      earned: totalGames > 0 && gamesCompleted >= totalGames,
-    },
-  ];
+  const badges = computeBadges({
+    challengesCleared,
+    gamesCompleted,
+    totalGames,
+    level,
+    totalXp,
+  });
   const earnedCount = badges.filter((b) => b.earned).length;
 
   return (
