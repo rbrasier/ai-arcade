@@ -93,7 +93,15 @@ back to a deterministic mock so everything still runs offline.
 | `ANTHROPIC_API_KEY`     | No\*     | Required when `AI_PROVIDER=anthropic`.                                   |
 | `OPENAI_API_KEY`        | No\*     | Required when `AI_PROVIDER=openai`.                                      |
 | `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` | No\* | Used when `AI_PROVIDER=bedrock` (or set `AWS_BEDROCK_API_KEY`). |
-| `DATABASE_PATH`         | No       | SQLite file path (default `./data/arcade.db`).                          |
+| `DATABASE_PATH`         | No       | SQLite file path (default `./data/arcade.db`). On Railway, point this at a mounted Volume (e.g. `/data/arcade.db`) so the DB survives deploys. |
 
 \* The app runs fully without any provider configured, using a deterministic
 mock evaluator and a built-in bank of hallucination scenarios.
+
+## Deploying
+
+Any Node host works (`npm run build` then `npm run start`). The database is a
+single SQLite file, so the only thing to get right in production is **persisting
+that file across deploys**. For Railway — including how to attach a persistent
+Volume so player progress isn't wiped on each deploy — see
+[`docs/RAILWAY-DEPLOY.md`](docs/RAILWAY-DEPLOY.md).
