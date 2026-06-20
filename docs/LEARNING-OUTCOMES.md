@@ -37,6 +37,14 @@ which unlocks Spot the Hallucination.
 
 **Spot the Hallucination** — Review AI-generated passages and flag fabricated claims. Scored on accuracy.
 
+**Think It Through** — A bridge into the next act. A quick (non-reasoning) model blurts a confident answer to a realistic multi-step desk task — the kind of job people used to grind out by hand. The player decides whether to trust that snap answer or make the AI **reason it out step by step**, watches the chain of thought unfold, then commits the final answer. The lesson is the mindset shift: AI can now reason through multi-step work, so the human's job moves from *doing the steps* to *directing and verifying the reasoning*. Five rounds of escalating difficulty; easy rounds have a sound snap answer (don't over-demand working), harder rounds bait the snap answer with a trap only the reasoning avoids. Scored on the final answer (the gate) plus the trust call.
+
+### Learning Outcomes
+
+- Recognise that AI can reason through multi-step work that used to be manual
+- Calibrate when a quick answer is enough vs when to demand the working
+- Read a chain of thought and stay accountable for the final decision
+
 ---
 
 ## Act Two: Context Mastery

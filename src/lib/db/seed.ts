@@ -5,6 +5,7 @@ import { sql } from "drizzle-orm";
 import { db } from "./client";
 import {
   attempts,
+  chainOfThoughtRounds,
   challenges,
   games,
   hallucinationRounds,
@@ -144,6 +145,48 @@ const GAMES: SeedGame[] = [
     ],
   },
 
+  // A bridge between Act One and Act Two: now that players can prompt and spot
+  // fabrications, "Think It Through" teaches the mindset shift that AI can
+  // *reason through* the multi-step work they used to do by hand — and that
+  // their job moves to directing and verifying that reasoning. Five rounds of
+  // escalating difficulty, generated live by the AI connector (see
+  // src/lib/ai/chain-of-thought.ts); these rows anchor progress/XP and carry
+  // the difficulty.
+  {
+    slug: "chain-of-thought",
+    title: "Think It Through",
+    description:
+      "A quick AI blurts a confident answer to a multi-step task. Decide whether to trust it or make it reason the work out step by step — then commit the final call. Five rounds, each one harder.",
+    estMinutes: 15,
+    challenges: [
+      {
+        title: "Round 1 — Warm-up",
+        prompt: "Trust the quick answer or make it think — then commit the final answer.",
+        config: { difficulty: 1 },
+      },
+      {
+        title: "Round 2 — Two Steps",
+        prompt: "Trust the quick answer or make it think — then commit the final answer.",
+        config: { difficulty: 2 },
+      },
+      {
+        title: "Round 3 — Mind the Trap",
+        prompt: "Trust the quick answer or make it think — then commit the final answer.",
+        config: { difficulty: 3 },
+      },
+      {
+        title: "Round 4 — Layered Rules",
+        prompt: "Trust the quick answer or make it think — then commit the final answer.",
+        config: { difficulty: 4 },
+      },
+      {
+        title: "Round 5 — Boss Round",
+        prompt: "Trust the quick answer or make it think — then commit the final answer.",
+        config: { difficulty: 5 },
+      },
+    ],
+  },
+
   // ===== Act Two: Context Mastery =====
   {
     slug: "context-calibration",
@@ -253,6 +296,7 @@ function seed() {
   // ids) — no demo data is inserted, so the arcade starts with games only.
   db.delete(hallucinationRounds).run();
   db.delete(promptGolfRounds).run();
+  db.delete(chainOfThoughtRounds).run();
   db.delete(attempts).run();
   db.delete(challenges).run();
   db.delete(games).run();
