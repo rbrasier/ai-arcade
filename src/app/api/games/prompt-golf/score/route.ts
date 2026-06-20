@@ -85,7 +85,9 @@ export async function POST(request: Request) {
   // partial credit and over-par decays to 0 at 2× par. See prompt-golf-scoring.
   const economy = economyFor(words, par);
 
-  const scoreRatio = scoreRatioFor(precision, words, par);
+  // A heavily over-par prompt can push the raw ratio negative (economy floors
+  // at MIN_ECONOMY); clamp to [0, 1] so score and XP never go below zero.
+  const scoreRatio = Math.max(0, Math.min(1, scoreRatioFor(precision, words, par)));
   const score = Math.round(scoreRatio * challenge.maxScore);
 
   const xpEarned = Math.round(challenge.xpReward * scoreRatio);

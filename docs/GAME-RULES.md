@@ -75,6 +75,13 @@ the round score combines two factors:
   every criterion, `ace = max(2, round(par × 0.5))`. It is `1` at or below the
   ace, decreases linearly to `PAR_ECONOMY = 0.5` at par, and continues linearly
   to `0` at twice par. So landing on par is a solid clear, **not** a top score.
+  Beyond twice par economy keeps falling — at **double the slope**, into the
+  negatives — floored at `MIN_ECONOMY = -1.5`. This is deliberately harsh on
+  blown-up word counts ("over double bogey"): because economy can go negative it
+  drags the score *below* the precision-only ceiling, so pasting a long-winded
+  draft unchanged fails rather than coasting on precision. A perfect-precision
+  prompt at ~3× par drops under **35**, flooring near **25**. Word counts over
+  twice par are surfaced as a **Blow-up** golf grade.
 
 On submission the prompt is also **executed** so the scorecard shows the prompt
 and the deliverable it produced side by side.
@@ -83,9 +90,9 @@ and the deliverable it produced side by side.
 maxScore)`. Precision is the gate: a brief but off-target prompt can't reach the
 65% clear threshold. A perfect-precision prompt sitting on par scores **85%** —
 reaching 100% means trimming all the way to the ace, which is meant to feel like
-a hole-in-one. Under-par word counts are also surfaced as **golf grades**
-(birdie → eagle → albatross → hole-in-one), each covering a *range* of words
-since pars are large. The ≥ 70% / ≥ 85% XP bonus tiers above apply to this
+a hole-in-one. Word counts are also surfaced as **golf grades** — under par
+(birdie → eagle → albatross → hole-in-one) and over par (bogey → double bogey →
+blow-up) — each covering a *range* of words since pars are large. The ≥ 70% / ≥ 85% XP bonus tiers above apply to this
 ratio, and a round is `exceptional` only when precision is perfect **and** the
 prompt is trimmed to the ace. Implemented in
 `src/app/api/games/prompt-golf/score/route.ts`, the shared pure helpers in
