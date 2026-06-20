@@ -45,21 +45,22 @@ Players earn XP for every attempt, plus a bonus for strong performance:
 ## Round generation patterns
 
 These two patterns are **shared by every multi-round, AI-generated game** (Prompt
-Golf and Spot the Hallucination) and must be kept in sync as games are added:
+Golf, Spot the Hallucination and Think It Through) and must be kept in sync as
+games are added:
 
 - **Preload all rounds behind the explainer.** When the intro / "how to play"
   modal is shown, every round is generated in the background, **sequentially**
   (one after the next), so starting and advancing has little or no wait. A
   round's generate request is memoised as a promise; `loadRound` just awaits the
   matching entry. Replay drops the cache and warms a fresh set. Implemented in
-  `PromptGolfGame` and `HallucinationGame`.
+  `PromptGolfGame`, `HallucinationGame` and `ChainOfThoughtGame`.
 - **No repeated theme within a play-through.** Each generated scenario carries a
   short `topic` label. Because the background warm-up is sequential, each round
   is told the topics already used (`avoidTopics`) so it picks a clearly
   different subject — no two "survey results" rounds back to back. The client
   accumulates topics in a ref; the generate routes forward them to the AI
-  prompt. Applies to both games above (`generatePromptGolfRound`,
-  `generateHallucinationRound`).
+  prompt. Applies to all three games above (`generatePromptGolfRound`,
+  `generateHallucinationRound`, `generateChainOfThoughtRound`).
 
 ---
 
@@ -148,3 +149,34 @@ ratio, and a round is `exceptional` only when precision is perfect **and** the
 prompt is trimmed to the ace. Implemented in
 `src/app/api/games/prompt-golf/score/route.ts`, the shared pure helpers in
 `src/lib/prompt-golf-scoring.ts`, and `src/lib/ai/prompt-golf.ts`.
+
+**Think It Through** runs **5 rounds** of escalating difficulty and sits between
+Act One and Act Two. It teaches the mindset shift that AI can now **reason
+through** multi-step work people used to do by hand — so the human's job moves to
+**directing and verifying** the reasoning. Each round's scenario — a multi-step
+desk task, a confident **snap answer** from a quick (non-reasoning) model, a
+step-by-step **chain of thought**, and the answer options — is generated live by
+the AI connector (with a deterministic mock fallback). Difficulty scales the snap
+answer's correctness: on **easy rounds (1–2)** the snap answer is **right** (a
+simple task doesn't need deep working), while on **harder rounds (3–5)** it is
+**wrong** — it skips a step and falls for a plausible trap, and only the chain of
+thought reaches the correct option.
+
+The player makes **two calls** per round, scored on two binary axes:
+
+- **accuracy** ∈ {0, 1} — did they commit the **correct final option**. This is
+  the **gate**, like precision in Prompt Golf.
+- **judgment** ∈ {0, 1} — was the **trust call** right: `trusted === snapCorrect`
+  (trust the snap only when it was actually right; demand the working only when it
+  wasn't). This is the **mastery** axis, like economy.
+
+`scoreRatio = 0.65 × accuracy + 0.35 × judgment`, `score = round(scoreRatio ×
+maxScore)`. So a correct final answer alone scores **65%** (a clear, no bonus); a
+correct trust call on top lifts it into the XP-bonus tiers, and **both** correct
+is a perfect **100%**. A wrong final answer caps the round at **35%** — below the
+65% clear — so the answer gates the round just as precision does in Prompt Golf.
+A round is `exceptional` only when **both** the answer and the trust call are
+correct. Grading is fully deterministic against stored ground truth (no AI judge
+at score time). Implemented in
+`src/app/api/games/chain-of-thought/score/route.ts`, the shared pure helpers in
+`src/lib/chain-of-thought-scoring.ts`, and `src/lib/ai/chain-of-thought.ts`.

@@ -4,10 +4,10 @@
 
 All games share a common set of scoring, XP-bonus, clear/unlock and duration
 rules. These are documented in @docs/GAME-RULES.md and are wired into the code
-(`src/lib/xp.ts`, `src/lib/progress.ts`, `src/app/api/attempts/route.ts`, and
-the Spot the Hallucination scorer). When changing any scoring/XP/unlock
-behaviour, update `docs/GAME-RULES.md` and the referenced code together so they
-stay in sync.
+(`src/lib/xp.ts`, `src/lib/progress.ts`, `src/app/api/attempts/route.ts`, and the
+per-game scorers — Prompt Golf, Spot the Hallucination and Think It Through).
+When changing any scoring/XP/unlock behaviour, update `docs/GAME-RULES.md` and the
+referenced code together so they stay in sync.
 
 # AI connector
 
