@@ -7,6 +7,8 @@ import {
   attempts,
   chainOfThoughtRounds,
   challenges,
+  checkpointPlacementRounds,
+  contextCalibrationRounds,
   games,
   hallucinationRounds,
   players,
@@ -226,31 +228,44 @@ const GAMES: SeedGame[] = [
   // ===== Act Three: Safe Delegation & Human-in-the-Loop Design =====
   {
     slug: "checkpoint-placement",
-    title: "Checkpoint Placement",
+    title: "In the Loop",
     description:
-      "Place human-review checkpoints in an AI-redesigned workflow. Too many kills efficiency; too few creates liability — calibration wins.",
+      "An AI workflow runs on its own — you decide where a human must step in. Too few checkpoints is liability; too many kills the speed. Five rounds of rising risk.",
     estMinutes: 15,
+    // Five rounds of escalating risk (Low → Medium → High). Each round's
+    // workflow — its steps and which ones truly need a human — is generated live
+    // by the AI connector at play time (see src/lib/ai/checkpoint-placement.ts);
+    // these rows just anchor progress/XP and carry the difficulty + risk tier.
     challenges: [
       {
-        title: "Low Risk — Meeting Notes",
+        title: "Round 1 — Low Risk",
         prompt:
-          "An AI auto-summarises meeting notes. Place human-review checkpoints only where they genuinely add value.",
-        config: { risk: "low", scenario: "Auto-summarise meeting notes" },
+          "An internal, reversible AI workflow. Place a human checkpoint only where one genuinely earns its cost.",
+        config: { difficulty: 1, risk: "low" },
       },
       {
-        title: "Medium Risk — Policy Violations",
+        title: "Round 2 — Medium Risk",
         prompt:
-          "An AI flags policy violations in submissions. Decide where a human must confirm before action is taken.",
-        config: { risk: "medium", scenario: "Flag policy violations in submissions" },
+          "Some steps now reach other people. Decide where a human must review before the AI acts.",
+        config: { difficulty: 2, risk: "medium" },
       },
       {
-        title: "High Risk — Staffing Decisions",
+        title: "Round 3 — Medium Risk",
         prompt:
-          "An AI recommends staffing decisions from performance data. Position checkpoints so humans stay accountable for the call.",
-        config: {
-          risk: "high",
-          scenario: "Recommend staffing decisions from performance data",
-        },
+          "Money and people are in play. Guard the steps that act, leave the internal ones to run.",
+        config: { difficulty: 3, risk: "medium" },
+      },
+      {
+        title: "Round 4 — High Risk",
+        prompt:
+          "Irreversible, high-stakes actions. Keep a human on every call that can't be undone — without choking the pipeline.",
+        config: { difficulty: 4, risk: "high" },
+      },
+      {
+        title: "Round 5 — Boss Round",
+        prompt:
+          "Life-changing decisions about real people. Put humans exactly where they must stay accountable, and nowhere they'd just rubber-stamp.",
+        config: { difficulty: 5, risk: "high" },
       },
     ],
   },
@@ -306,6 +321,8 @@ function seed() {
   db.delete(hallucinationRounds).run();
   db.delete(promptGolfRounds).run();
   db.delete(chainOfThoughtRounds).run();
+  db.delete(contextCalibrationRounds).run();
+  db.delete(checkpointPlacementRounds).run();
   db.delete(attempts).run();
   db.delete(challenges).run();
   db.delete(games).run();

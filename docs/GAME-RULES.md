@@ -45,8 +45,8 @@ Players earn XP for every attempt, plus a bonus for strong performance:
 ## Round generation patterns
 
 These two patterns are **shared by every multi-round, AI-generated game** (Prompt
-Golf, Spot the Hallucination, Think It Through and Context Calibration) and must
-be kept in sync as games are added:
+Golf, Spot the Hallucination, Think It Through, Context Calibration and In the
+Loop) and must be kept in sync as games are added:
 
 - **Preload all rounds behind the explainer.** When the intro / "how to play"
   modal is shown, every round is generated in the background, **sequentially**
@@ -60,9 +60,9 @@ be kept in sync as games are added:
   is told the topics already used (`avoidTopics`) so it picks a clearly
   different subject — no two "survey results" rounds back to back. The client
   accumulates topics in a ref; the generate routes forward them to the AI
-  prompt. Applies to all four games above (`generatePromptGolfRound`,
+  prompt. Applies to all five games above (`generatePromptGolfRound`,
   `generateHallucinationRound`, `generateChainOfThoughtRound`,
-  `generateContextCalibrationRound`).
+  `generateContextCalibrationRound`, `generateCheckpointPlacementRound`).
 
 ---
 
@@ -218,3 +218,44 @@ ratio, and a round is `exceptional` only when **every** essential is attached an
 **no** noise or distractor is. Implemented in
 `src/app/api/games/context-calibration/score/route.ts`, the shared pure helpers in
 `src/lib/context-calibration-scoring.ts`, and `src/lib/ai/context-calibration.ts`.
+
+**In the Loop** (slug `checkpoint-placement`) runs **5 rounds** of escalating
+risk and opens Act Three (Safe Delegation & Human-in-the-Loop Design). It teaches
+**where a human must stay in the loop** of an AI-redesigned workflow — and that
+this cuts both ways: too few checkpoints lets an irreversible bad call slip
+through (**liability**), while too many throw away the speed the redesign was for
+(**killing efficiency**). Each round's scenario — a colleague's hand-off and an
+ordered **pipeline of workflow steps** the AI runs on its own — is generated live
+by the AI connector (with a deterministic mock fallback). Every step carries a
+plain-English **impact** line (is it reversible? who does it reach?) so a
+non-technical player can judge risk from what they read, and a hidden `kind`:
+**critical** (a human must review — irreversible or affects a person), **optional**
+(a reasonable judgment call, scored neutral), **safe** (plainly fine to automate)
+or **trap** (sounds high-stakes but its impact line reveals it's reversible/
+internal — checkpointing it just adds drag). The rounds are **framed by risk
+tier** — round 1 **Low**, rounds 2–3 **Medium**, rounds 4–5 **High** — which
+scales how many critical steps and tempting traps appear (the tier→shape mapping
+and copy live in `src/lib/checkpoint-tiers.ts`). The player ticks the steps that
+need a human, then the workflow is **simulated once** so the scorecard shows what
+their oversight produced (the same "what it produced" idea as Prompt Golf).
+
+Grading is fully deterministic against the stored step `kind`s, on two **symmetric**
+axes (the two failure modes are equally real, so this mirrors Context
+Calibration's split rather than a gate-heavy one):
+
+- **coverage** = `criticalCheckpointed / criticalTotal` — the **gate**, like
+  completeness in Context Calibration.
+- **efficiency** = `1 − weightedOverCheckpointed / weightedSafeTotal`, where a
+  **trap weighs 2× a plainly-safe step** (`TRAP_WEIGHT = 2`, `SAFE_WEIGHT = 1`) so
+  over-cautious checkpointing bites hardest. This is the **mastery** axis.
+
+`scoreRatio = 0.5 × coverage + 0.5 × efficiency`, **capped at `GATE_CAP = 0.5`** if
+any critical step is left unguarded, and `score = round(scoreRatio × maxScore)`. So
+leaving a critical step unguarded caps the round below the 65% clear (liability),
+**and** checkpointing every safe step drives efficiency to 0 → `0.5` → also a fail
+(over-checkpointing is a real failure mode). Guarding the criticals with one
+needless checkpoint still clears comfortably. The ≥ 70% / ≥ 85% XP bonus tiers
+apply to this ratio, and a round is `exceptional` only when **every** critical step
+is guarded and **no** safe or trap step is. Implemented in
+`src/app/api/games/checkpoint-placement/score/route.ts`, the shared pure helpers in
+`src/lib/checkpoint-placement-scoring.ts`, and `src/lib/ai/checkpoint-placement.ts`.
