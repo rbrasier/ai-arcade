@@ -30,6 +30,11 @@ export interface PromptGolfCriterion {
 }
 
 export interface PromptGolfScenario {
+  /**
+   * Short topic label (e.g. "customer complaints", "board finance note"). Used
+   * to keep the five rounds of a play-through on distinct themes.
+   */
+  topic: string;
   /** The colleague who forwards the task (styled like a direct message). */
   brief: {
     senderName: string;
@@ -66,6 +71,7 @@ export interface PromptGolfEvaluation {
 }
 
 const scenarioSchema = z.object({
+  topic: z.string(),
   brief: z.object({
     senderName: z.string(),
     senderRole: z.string(),
@@ -91,6 +97,7 @@ const SYSTEM_PROMPT = `You generate rounds for "Prompt Golf", a game that teache
 Each round is a realistic workplace scenario: a colleague forwards a situation, and the player must write the SHORTEST possible prompt that would make an AI produce a deliverable meeting every requirement — without losing intent.
 
 You produce:
+- "topic": a 1-4 word label for the scenario's subject (e.g. "customer complaints", "board finance note").
 - "brief": the forwarding colleague (name, role, two-letter initials) and a short, natural message describing the situation and what they need.
 - "goal": a 2-5 word label for the deliverable (e.g. "Project status update").
 - "criteria": 2-5 EXPLICIT, individually-checkable requirements the player's prompt must make the AI satisfy (e.g. "exactly 3 bullet points", "identifies the core problem", "proposes a concrete next step", "professional tone", "no preamble"). Each criterion also has 1-6 lowercase "keywords" — the words/synonyms a good prompt would contain for that requirement (used only for offline grading).
@@ -126,7 +133,7 @@ export function withCriterionIds(
  */
 export async function generatePromptGolfRound(
   difficulty: number,
-  opts: { rewrite?: boolean } = {},
+  opts: { rewrite?: boolean; avoidTopics?: string[] } = {},
 ): Promise<PromptGolfScenario> {
   const d = Math.max(1, Math.min(5, Math.round(difficulty)));
 
@@ -134,13 +141,18 @@ export async function generatePromptGolfRound(
     return mockPromptGolfRound(d, opts.rewrite);
   }
 
+  const avoid = (opts.avoidTopics ?? []).filter(Boolean);
+  const avoidNote = avoid.length
+    ? ` Do NOT reuse any of these already-used topics (pick a clearly different industry/subject): ${avoid.join("; ")}.`
+    : "";
+
   try {
     const rewriteNote = opts.rewrite
       ? ` This is a REWRITE round: also include "messyPrompt" — a bloated, rambling first-draft prompt of roughly 2-3× par words that technically covers every criterion but is full of filler, hedging and redundancy for the player to cut down.`
       : "";
     const raw = await generateJson(scenarioSchema, {
       system: SYSTEM_PROMPT,
-      prompt: `Generate one Prompt Golf scenario at difficulty ${d} of 5. Pick a fresh, recognisable workplace situation. Choose how many criteria (2-5) to match the difficulty, write checkable requirements with keywords, and set a realistic par word count.${rewriteNote}`,
+      prompt: `Generate one Prompt Golf scenario at difficulty ${d} of 5. Pick a fresh, recognisable workplace situation and set "topic" to a short label for it.${avoidNote} Choose how many criteria (2-5) to match the difficulty, write checkable requirements with keywords, and set a realistic par word count.${rewriteNote}`,
       maxOutputTokens: 1536,
     });
     const scenario = withCriterionIds(raw);

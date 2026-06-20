@@ -42,6 +42,25 @@ Players earn XP for every attempt, plus a bonus for strong performance:
   (`xpToAdvanceFromLevel` in `src/lib/xp.ts`): level _n_ → _n+1_ costs
   `100 + (n − 1) × 50` XP.
 
+## Round generation patterns
+
+These two patterns are **shared by every multi-round, AI-generated game** (Prompt
+Golf and Spot the Hallucination) and must be kept in sync as games are added:
+
+- **Preload all rounds behind the explainer.** When the intro / "how to play"
+  modal is shown, every round is generated in the background, **sequentially**
+  (one after the next), so starting and advancing has little or no wait. A
+  round's generate request is memoised as a promise; `loadRound` just awaits the
+  matching entry. Replay drops the cache and warms a fresh set. Implemented in
+  `PromptGolfGame` and `HallucinationGame`.
+- **No repeated theme within a play-through.** Each generated scenario carries a
+  short `topic` label. Because the background warm-up is sequential, each round
+  is told the topics already used (`avoidTopics`) so it picks a clearly
+  different subject — no two "survey results" rounds back to back. The client
+  accumulates topics in a ref; the generate routes forward them to the AI
+  prompt. Applies to both games above (`generatePromptGolfRound`,
+  `generateHallucinationRound`).
+
 ---
 
 ### Per-game notes
@@ -54,14 +73,46 @@ still applies the common XP-bonus rule — a perfect ratio earns the top tier).
 Because 100% clears the challenge (≥ 65%), completing the course marks the game
 `completed` and, via the standard unlock rule above, unlocks **Spot the
 Hallucination**. The completion call is idempotent, so replaying the course
-never re-awards XP. Whenever any game transitions out of `locked`, the arcade
-home page surfaces a prominent bottom toast for ~5s (`UnlockToast`).
+never re-awards XP. The course itself shows **no** completion toast — reaching
+the last slide simply marks it complete; whenever any game transitions out of
+`locked`, the arcade home page is what surfaces a prominent bottom toast for ~5s
+(`UnlockToast`, no button).
 
 **Spot the Hallucination** runs **5 rounds** of escalating difficulty. Each
-round's scenario is generated live by the AI connector. Round score is the
-player's **accuracy** — the share of claims correctly judged (fabricated claims
-flagged, sound claims left alone) — mapped onto `maxScore`. So ≥ 65% accuracy
-clears the round, ≥ 70% / ≥ 85% earn the XP bonus tiers above.
+round's scenario is generated live by the AI connector.
+
+The rounds are **framed by model tier** to teach an accurate mental model rather
+than "AI lies all the time": round 1 is a small/**Quick** model, rounds 2–3 a
+**Mid** model, and rounds 4–5 a **Frontier** model — mirroring the AI Foundations
+course (Slide 7). Fabrication frequency falls as the tier rises: the quick model
+plants 2–3 blatant fabrications, the mid models 1–2 subtler ones, and the
+frontier model 0–1 very subtle ones (**often zero** — a sound answer is a valid
+round, and the player must resist over-flagging). The tier→difficulty mapping and
+copy live in `src/lib/hallucination-tiers.ts`; the generator scales fabrication
+count/obviousness with the tier, and every fabrication must leave a catchable
+clue (a wrong name, an invented number, an uncited source, or a line clashing
+with the reasoning).
+
+Each claim gets a **three-state verdict**: the player clicks a claim to cycle it
+**flag** (fabricated) → **verify** (sound) → unmarked. Scoring credits each
+claim toward **accuracy** on a gradient:
+
+- a **correct** verdict (flag a fabrication / verify a sound claim) → **1**
+- a **sound** claim left **unmarked** (no commitment, no penalty) → **0.5**
+- a **fabrication** left **unmarked** (you let it slip) → **0.25**
+- a **wrong** verdict (flag a sound claim, or *vouch for* a fabrication) → **0**
+
+`accuracy = creditSum / claims`, `score = round(accuracy × maxScore)`. So leaving
+everything unmarked scores **at most 50%** — and less when there are fabrications
+you failed to catch — always below the 65% clear. The gradient is monotonic:
+catching beats not bothering, not bothering on a sound claim beats letting a
+fabrication slip, and both beat an actively wrong call. A false flag costs you
+versus leaving the claim alone (a disincentive to over-flag), and **missing a
+fabrication bites** versus leaving a sound claim alone. ≥ 65% accuracy clears,
+≥ 70% / ≥ 85% earn the XP bonus tiers above, and a round is `exceptional` only
+when **every** claim is correctly classified. Implemented in
+`src/app/api/games/hallucination/score/route.ts` and
+`src/lib/ai/hallucination.ts`.
 
 **Prompt Golf** runs **5 rounds** of escalating difficulty. Each round's
 scenario — a corporate brief, the criteria the prompt must satisfy, and a **par**
@@ -75,6 +126,13 @@ the round score combines two factors:
   every criterion, `ace = max(2, round(par × 0.5))`. It is `1` at or below the
   ace, decreases linearly to `PAR_ECONOMY = 0.5` at par, and continues linearly
   to `0` at twice par. So landing on par is a solid clear, **not** a top score.
+  Beyond twice par economy keeps falling — at **double the slope**, into the
+  negatives — floored at `MIN_ECONOMY = -1.5`. This is deliberately harsh on
+  blown-up word counts ("over double bogey"): because economy can go negative it
+  drags the score *below* the precision-only ceiling, so pasting a long-winded
+  draft unchanged fails rather than coasting on precision. A perfect-precision
+  prompt at ~3× par drops under **35**, flooring near **25**. Word counts over
+  twice par are surfaced as a **Blow-up** golf grade.
 
 On submission the prompt is also **executed** so the scorecard shows the prompt
 and the deliverable it produced side by side.
@@ -83,9 +141,9 @@ and the deliverable it produced side by side.
 maxScore)`. Precision is the gate: a brief but off-target prompt can't reach the
 65% clear threshold. A perfect-precision prompt sitting on par scores **85%** —
 reaching 100% means trimming all the way to the ace, which is meant to feel like
-a hole-in-one. Under-par word counts are also surfaced as **golf grades**
-(birdie → eagle → albatross → hole-in-one), each covering a *range* of words
-since pars are large. The ≥ 70% / ≥ 85% XP bonus tiers above apply to this
+a hole-in-one. Word counts are also surfaced as **golf grades** — under par
+(birdie → eagle → albatross → hole-in-one) and over par (bogey → double bogey →
+blow-up) — each covering a *range* of words since pars are large. The ≥ 70% / ≥ 85% XP bonus tiers above apply to this
 ratio, and a round is `exceptional` only when precision is perfect **and** the
 prompt is trimmed to the ace. Implemented in
 `src/app/api/games/prompt-golf/score/route.ts`, the shared pure helpers in

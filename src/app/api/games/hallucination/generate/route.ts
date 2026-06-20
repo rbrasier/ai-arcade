@@ -40,8 +40,14 @@ export async function POST(request: Request) {
   );
   const difficulty = Number(body?.difficulty ?? configDifficulty) || 1;
 
+  // Topics already used earlier in this play-through, so the round picks a
+  // different theme (no two "survey results" rounds back to back).
+  const avoidTopics: string[] = Array.isArray(body?.avoidTopics)
+    ? body.avoidTopics.filter((t: unknown): t is string => typeof t === "string")
+    : [];
+
   const player = await getOrCreatePlayer();
-  const scenario = await generateHallucinationRound(difficulty);
+  const scenario = await generateHallucinationRound(difficulty, { avoidTopics });
 
   const roundId = randomUUID();
   db.insert(hallucinationRounds)
@@ -61,5 +67,10 @@ export async function POST(request: Request) {
     claims: scenario.claims.map((c) => ({ id: c.id, text: c.text })),
   };
 
-  return NextResponse.json({ roundId, difficulty, scenario: safeScenario });
+  return NextResponse.json({
+    roundId,
+    difficulty,
+    topic: scenario.topic,
+    scenario: safeScenario,
+  });
 }

@@ -118,70 +118,18 @@ export function FoundationsCourse() {
       </div>
 
       {/* ===== COURSE ===== */}
+      {/*
+       * Reaching the final slide marks the course complete (the header chip
+       * flips to "✓ COMPLETE"). We deliberately do NOT pop a completion toast
+       * here — the celebratory "new game unlocked" toast belongs on the arcade
+       * home page (UnlockToast), which fires when the player returns and sees
+       * Spot the Hallucination has unlocked.
+       */}
       <iframe
         src="/ai-foundations-course.html"
         title="AI Foundations — Interactive Course"
         style={{ flex: 1, width: "100%", border: "none", display: "block" }}
       />
-
-      {/* ===== COMPLETION BANNER ===== */}
-      {done && (
-        <div
-          role="status"
-          style={{
-            position: "fixed",
-            left: "50%",
-            bottom: 24,
-            transform: "translateX(-50%)",
-            zIndex: 60,
-            display: "flex",
-            alignItems: "center",
-            gap: 16,
-            maxWidth: "calc(100vw - 32px)",
-            background: "#211f1a",
-            color: "#f6f3ec",
-            border: "1px solid #3a362e",
-            borderRadius: 14,
-            padding: "14px 18px",
-            boxShadow: "0 22px 50px -22px rgba(0,0,0,.6)",
-            animation: "hg-slideUp .45s ease",
-          }}
-        >
-          <div style={{ minWidth: 0 }}>
-            <div
-              style={{
-                fontFamily: DISPLAY,
-                fontWeight: 700,
-                fontSize: 16,
-                lineHeight: 1.2,
-              }}
-            >
-              🎉 Course complete — 100%
-            </div>
-            <div style={{ fontSize: 13.5, color: "#c9c2b3", marginTop: 2 }}>
-              You&apos;ve unlocked <b style={{ color: "#fff" }}>Spot the Hallucination</b>.
-            </div>
-          </div>
-          <Link
-            href="/"
-            style={{
-              flex: "none",
-              textDecoration: "none",
-              fontFamily: MONO,
-              fontSize: 12,
-              fontWeight: 700,
-              letterSpacing: ".04em",
-              color: "#fff",
-              background: ACCENT,
-              padding: "10px 16px",
-              borderRadius: 10,
-              whiteSpace: "nowrap",
-            }}
-          >
-            BACK TO ARCADE →
-          </Link>
-        </div>
-      )}
     </div>
   );
 }

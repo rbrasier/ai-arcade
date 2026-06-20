@@ -4,10 +4,24 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+import {
+  TIER_INFO,
+  tierForDifficulty,
+  type ModelTier,
+} from "@/lib/hallucination-tiers";
+
 const ACCENT = "#ec5a3a";
 const DISPLAY = "var(--font-bricolage), sans-serif";
 const BODY = "var(--font-hanken), system-ui, sans-serif";
 const MONO = "var(--font-space-mono), monospace";
+const GREEN = "#1f8a5b";
+
+/** Badge colours per model tier, matching the AI Foundations course palette. */
+const TIER_COLORS: Record<ModelTier, { fg: string; bg: string; border: string }> = {
+  quick: { fg: "#0f7a6e", bg: "#e6f5f1", border: "#bfe3da" },
+  mid: { fg: "#9a6b14", bg: "#fdf3dd", border: "#ecd9a6" },
+  frontier: { fg: ACCENT, bg: "#fdeee9", border: "#f4c9b9" },
+};
 
 export interface RoundRef {
   id: string;
@@ -19,6 +33,7 @@ interface SafeClaim {
   text: string;
 }
 interface SafeScenario {
+  topic: string;
   task: {
     senderName: string;
     senderRole: string;
@@ -31,12 +46,22 @@ interface SafeScenario {
   claims: SafeClaim[];
 }
 
+/** A player's verdict on a single claim. Absent = left unmarked. */
+type Verdict = "flag" | "verify";
+
 interface ScoreResultClaim {
   id: string;
   text: string;
   hallucination: boolean;
   flagged: boolean;
-  status: "caught" | "missed" | "false-accusation" | "correct-pass";
+  verified: boolean;
+  status:
+    | "caught"
+    | "missed"
+    | "vouched"
+    | "verified-correct"
+    | "false-accusation"
+    | "unmarked";
 }
 interface ScoreResult {
   score: number;
@@ -45,6 +70,8 @@ interface ScoreResult {
   caught: number;
   totalHallucinations: number;
   missed: number;
+  vouched: number;
+  verifiedCorrect: number;
   falseAccusations: number;
   xpEarned: number;
   bonusXp: number;
@@ -95,12 +122,74 @@ export function HallucinationGame({ rounds }: { rounds: RoundRef[] }) {
   // teaser hints that there's reasoning to examine.
   const [reasonOpen, setReasonOpen] = useState(false);
 
-  const [flagged, setFlagged] = useState<Record<string, boolean>>({});
+  // Per-claim verdicts: "flag" (fabricated) / "verify" (sound) / absent (unmarked).
+  const [verdicts, setVerdicts] = useState<Record<string, Verdict>>({});
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<ScoreResult | null>(null);
   const [history, setHistory] = useState<
     { accuracy: number; xp: number; missed: number; falseAccusations: number }[]
   >([]);
+
+  // ---- round prefetch ----
+  // All five rounds are generated in the background — one after another, so each
+  // can be told the topics already used and pick a fresh theme — while the
+  // player reads the intro modal. Starting and advancing then has little wait.
+  type LoadedRound = { roundId: string; scenario: SafeScenario };
+  const prefetchRef = useRef<Map<number, Promise<LoadedRound>>>(new Map());
+  const usedTopicsRef = useRef<string[]>([]);
+  // Bumped on replay to invalidate the cache and warm a fresh, re-themed set.
+  const [playToken, setPlayToken] = useState(0);
+
+  const prefetchRound = useCallback(
+    (index: number): Promise<LoadedRound> => {
+      const cached = prefetchRef.current.get(index);
+      if (cached) return cached;
+      const round = rounds[index];
+      if (!round) return Promise.reject(new Error("No such round"));
+      const p = (async () => {
+        const res = await fetch("/api/games/hallucination/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            challengeId: round.id,
+            difficulty: round.difficulty,
+            avoidTopics: [...usedTopicsRef.current],
+          }),
+        });
+        if (!res.ok) throw new Error(`Request failed (${res.status})`);
+        const data = (await res.json()) as LoadedRound & { topic?: string };
+        const topic = data.topic ?? data.scenario.topic;
+        if (topic && !usedTopicsRef.current.includes(topic)) {
+          usedTopicsRef.current.push(topic);
+        }
+        return { roundId: data.roundId, scenario: data.scenario };
+      })();
+      // Drop failed prefetches so a later attempt (retry) can refetch.
+      p.catch(() => prefetchRef.current.delete(index));
+      prefetchRef.current.set(index, p);
+      return p;
+    },
+    [rounds],
+  );
+
+  // Warm every round in the background, sequentially, once per play. Awaiting
+  // each before the next lets topic accumulation feed the avoid-list.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      for (let i = 0; i < total; i++) {
+        if (cancelled) return;
+        try {
+          await prefetchRound(i);
+        } catch {
+          // A failed warm-up is harmless; loadRound surfaces errors on demand.
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [total, playToken, prefetchRound]);
 
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const clearTimers = useCallback(() => {
@@ -184,23 +273,12 @@ export function HallucinationGame({ rounds }: { rounds: RoundRef[] }) {
       setScenario(null);
       setRoundId(null);
       setResult(null);
-      setFlagged({});
+      setVerdicts({});
       setReasonOpen(false);
       setLoadError(null);
       try {
-        const res = await fetch("/api/games/hallucination/generate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            challengeId: round.id,
-            difficulty: round.difficulty,
-          }),
-        });
-        if (!res.ok) throw new Error(`Request failed (${res.status})`);
-        const data = (await res.json()) as {
-          roundId: string;
-          scenario: SafeScenario;
-        };
+        // Resolves instantly if the background warm-up already finished it.
+        const data = await prefetchRound(index);
         setScenario(data.scenario);
         setRoundId(data.roundId);
         setPhase("modal");
@@ -208,7 +286,7 @@ export function HallucinationGame({ rounds }: { rounds: RoundRef[] }) {
         setLoadError(e instanceof Error ? e.message : "Could not load round");
       }
     },
-    [rounds, clearTimers],
+    [rounds, clearTimers, prefetchRound],
   );
 
   const skipToDone = useCallback(() => {
@@ -221,18 +299,30 @@ export function HallucinationGame({ rounds }: { rounds: RoundRef[] }) {
     setPhase("done");
   }, [scenario, clearTimers, totalWords]);
 
-  const toggleFlag = (id: string) =>
-    setFlagged((f) => ({ ...f, [id]: !f[id] }));
+  // One click flags (fabricated), a second verifies (sound), a third clears it.
+  const cycleVerdict = (id: string) =>
+    setVerdicts((v) => {
+      const next = { ...v };
+      if (v[id] === undefined) next[id] = "flag";
+      else if (v[id] === "flag") next[id] = "verify";
+      else delete next[id];
+      return next;
+    });
 
   const submit = useCallback(async () => {
     if (!roundId) return;
     setSubmitting(true);
     try {
-      const flaggedClaimIds = Object.keys(flagged).filter((k) => flagged[k]);
+      const flaggedClaimIds = Object.keys(verdicts).filter(
+        (k) => verdicts[k] === "flag",
+      );
+      const verifiedClaimIds = Object.keys(verdicts).filter(
+        (k) => verdicts[k] === "verify",
+      );
       const res = await fetch("/api/games/hallucination/score", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ roundId, flaggedClaimIds }),
+        body: JSON.stringify({ roundId, flaggedClaimIds, verifiedClaimIds }),
       });
       if (!res.ok) throw new Error(`Request failed (${res.status})`);
       const data = (await res.json()) as ScoreResult;
@@ -253,7 +343,7 @@ export function HallucinationGame({ rounds }: { rounds: RoundRef[] }) {
     } finally {
       setSubmitting(false);
     }
-  }, [roundId, flagged, router]);
+  }, [roundId, verdicts, router]);
 
   const nextRound = useCallback(() => {
     if (roundIndex + 1 >= total) {
@@ -267,6 +357,10 @@ export function HallucinationGame({ rounds }: { rounds: RoundRef[] }) {
 
   const restart = useCallback(() => {
     clearTimers();
+    // Drop the warmed rounds and topics so replay generates a fresh, re-themed set.
+    prefetchRef.current = new Map();
+    usedTopicsRef.current = [];
+    setPlayToken((t) => t + 1);
     setHistory([]);
     setRoundIndex(0);
     setScreen("play");
@@ -274,7 +368,7 @@ export function HallucinationGame({ rounds }: { rounds: RoundRef[] }) {
     setScenario(null);
     setRoundId(null);
     setResult(null);
-    setFlagged({});
+    setVerdicts({});
   }, [clearTimers]);
 
   // ---- derived ----
@@ -285,6 +379,10 @@ export function HallucinationGame({ rounds }: { rounds: RoundRef[] }) {
   const isDone = phase === "done";
   const thinking = phase === "reasoning";
   const streamingCaret = phase === "streaming";
+
+  // The model tier this round is framed as (quick → mid → frontier).
+  const tier = TIER_INFO[tierForDifficulty(rounds[roundIndex]?.difficulty ?? 1)];
+  const tierColor = TIER_COLORS[tier.tier];
 
   const reasonShown =
     phase === "reasoning"
@@ -307,18 +405,28 @@ export function HallucinationGame({ rounds }: { rounds: RoundRef[] }) {
         ? ""
         : "Message Work Assistant…";
 
-  const flaggedCount = Object.values(flagged).filter(Boolean).length;
-  const flaggedLabel =
-    flaggedCount === 0
-      ? "NOTHING"
-      : `${flaggedCount} ${flaggedCount === 1 ? "FLAG" : "FLAGS"}`;
+  const verdictValues = Object.values(verdicts);
+  const flaggedCount = verdictValues.filter((v) => v === "flag").length;
+  const verifiedCount = verdictValues.filter((v) => v === "verify").length;
+  const markedCount = flaggedCount + verifiedCount;
+  const submitLabel =
+    markedCount === 0
+      ? "NOTHING MARKED"
+      : [
+          flaggedCount > 0
+            ? `${flaggedCount} ${flaggedCount === 1 ? "FLAG" : "FLAGS"}`
+            : null,
+          verifiedCount > 0 ? `${verifiedCount} VERIFIED` : null,
+        ]
+          .filter(Boolean)
+          .join(" · ");
 
   // streamed selectable claim spans
   const revealed = !scenario ? 0 : isDone ? totalWords(scenario) : revealedWords;
   const claimSpans: {
     id: string;
     display: string;
-    flagged: boolean;
+    verdict: Verdict | undefined;
   }[] = [];
   if (scenario) {
     let off = 0;
@@ -332,7 +440,7 @@ export function HallucinationGame({ rounds }: { rounds: RoundRef[] }) {
         claimSpans.push({
           id: c.id,
           display: words.slice(0, shown).join(" "),
-          flagged: !!flagged[c.id],
+          verdict: verdicts[c.id],
         });
       }
     }
@@ -470,11 +578,14 @@ export function HallucinationGame({ rounds }: { rounds: RoundRef[] }) {
                   </svg>
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: 16, lineHeight: 1.1 }}>
-                    Work Assistant
+                  <div style={{ display: "flex", alignItems: "center", gap: 9, flexWrap: "wrap" }}>
+                    <span style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: 16, lineHeight: 1.1 }}>
+                      Work Assistant
+                    </span>
+                    <TierBadge tier={tier.tier} />
                   </div>
                   <div style={{ fontFamily: MONO, fontSize: 11, color: "#9a9488", letterSpacing: ".02em" }}>
-                    connected to your workspace files
+                    {tier.modelName} · connected to your workspace files
                   </div>
                 </div>
                 {showSkip && (
@@ -636,27 +747,43 @@ export function HallucinationGame({ rounds }: { rounds: RoundRef[] }) {
                       {/* streamed answer */}
                       {showResponse && (
                         <div style={{ fontSize: 20, lineHeight: 2.0, color: "#211f1a" }}>
-                          {claimSpans.map((c) => (
-                            <span
-                              key={c.id}
-                              onClick={isDone ? () => toggleFlag(c.id) : undefined}
-                              style={
-                                isDone
-                                  ? {
-                                      cursor: "pointer",
-                                      borderRadius: 5,
-                                      padding: "2px 3px",
-                                      transition: "background .14s, box-shadow .14s",
-                                      background: c.flagged ? ACCENT : "transparent",
-                                      color: c.flagged ? "#fff" : "#211f1a",
-                                      boxShadow: c.flagged ? `0 2px 0 ${ACCENT}` : "none",
-                                    }
-                                  : { padding: "2px 1px" }
-                              }
-                            >
-                              {c.display}{" "}
-                            </span>
-                          ))}
+                          {claimSpans.map((c) => {
+                            const bg =
+                              c.verdict === "flag"
+                                ? ACCENT
+                                : c.verdict === "verify"
+                                  ? GREEN
+                                  : "transparent";
+                            const marked = c.verdict !== undefined;
+                            return (
+                              <span
+                                key={c.id}
+                                onClick={isDone ? () => cycleVerdict(c.id) : undefined}
+                                title={
+                                  isDone
+                                    ? "Click: flag as fabricated → verify as sound → clear"
+                                    : undefined
+                                }
+                                style={
+                                  isDone
+                                    ? {
+                                        cursor: "pointer",
+                                        borderRadius: 5,
+                                        padding: "2px 3px",
+                                        transition: "background .14s, box-shadow .14s",
+                                        background: bg,
+                                        color: marked ? "#fff" : "#211f1a",
+                                        boxShadow: marked ? `0 2px 0 ${bg}` : "none",
+                                      }
+                                    : { padding: "2px 1px" }
+                                }
+                              >
+                                {c.verdict === "flag" && "🚩 "}
+                                {c.verdict === "verify" && "✓ "}
+                                {c.display}{" "}
+                              </span>
+                            );
+                          })}
                           {streamingCaret && (
                             <span style={{ display: "inline-block", width: 9, height: 21, background: "#211f1a", verticalAlign: -4, animation: "hg-blink 1s steps(1) infinite" }} />
                           )}
@@ -698,24 +825,27 @@ export function HallucinationGame({ rounds }: { rounds: RoundRef[] }) {
                       </div>
                       <div>
                         <div style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: 21, lineHeight: 1.05, letterSpacing: "-0.01em" }}>
-                          Your turn — what don&apos;t you trust?
+                          Your turn — judge each claim.
                         </div>
-                        <div style={{ fontSize: 14.5, color: "#7c766a", lineHeight: 1.35, marginTop: 3 }}>
-                          Read the answer above, then <b style={{ color: "#211f1a" }}>tap any claim that looks fabricated</b> to flag it. 0–3 are made up.
+                        <div style={{ fontSize: 14.5, color: "#7c766a", lineHeight: 1.4, marginTop: 4 }}>
+                          Tap a claim to cycle it: <b style={{ color: ACCENT }}>🚩 flag</b> what looks
+                          fabricated, <b style={{ color: GREEN }}>✓ verify</b> what you&apos;ve
+                          checked against the files, or leave it unmarked. This is the{" "}
+                          <b style={{ color: "#211f1a" }}>{tier.label.toLowerCase()} model</b> — {tier.note}
                         </div>
                       </div>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 16, flexWrap: "wrap" }}>
                       <button onClick={submit} disabled={submitting} style={{ ...primaryBtn, opacity: submitting ? 0.6 : 1 }}>
-                        {submitting ? "SCORING…" : `SUBMIT ${flaggedLabel} →`}
+                        {submitting ? "SCORING…" : `SUBMIT ${submitLabel} →`}
                       </button>
                       <button
-                        onClick={() => setFlagged({})}
+                        onClick={() => setVerdicts({})}
                         style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, letterSpacing: ".03em", color: "#7c766a", background: "#fff", border: "1px solid #e2dcca", padding: "11px 16px", borderRadius: 11, cursor: "pointer" }}
                       >
                         CLEAR
                       </button>
-                      <div style={{ fontFamily: MONO, fontSize: 12, color: "#9a9488" }}>flag anything suspicious — false alarms cost accuracy</div>
+                      <div style={{ fontFamily: MONO, fontSize: 12, color: "#9a9488" }}>missing a fabrication costs you — so do false flags</div>
                     </div>
                   </div>
                 )}
@@ -784,6 +914,23 @@ export function HallucinationGame({ rounds }: { rounds: RoundRef[] }) {
                     <div style={{ fontSize: 16, lineHeight: 1.55, marginTop: 16, border: "1px solid #ece5d4", borderRadius: 14, padding: "14px 16px", background: "#faf6ec", color: "#3a362e" }}>
                       {scenario.task.message}
                     </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        gap: 10,
+                        marginTop: 14,
+                        border: `1px solid ${tierColor.border}`,
+                        background: tierColor.bg,
+                        borderRadius: 12,
+                        padding: "11px 13px",
+                      }}
+                    >
+                      <TierBadge tier={tier.tier} />
+                      <div style={{ fontSize: 12.5, lineHeight: 1.4, color: "#5a554c" }}>
+                        Answered by <b style={{ color: tierColor.fg }}>{tier.modelName}</b>. {tier.note}
+                      </div>
+                    </div>
                     <button onClick={beginTask} style={{ ...primaryBtn, width: "100%", marginTop: 18, justifyContent: "center" }}>
                       OPEN IN WORK ASSISTANT →
                     </button>
@@ -795,7 +942,7 @@ export function HallucinationGame({ rounds }: { rounds: RoundRef[] }) {
             {/* hint strip */}
             {isDone && (
               <div style={{ textAlign: "center", fontFamily: MONO, fontSize: 12, color: "#9a9488", marginTop: 14, animation: "hg-popIn .5s ease .15s both" }}>
-                {flaggedCount} flagged · tap a claim to toggle
+                🚩 {flaggedCount} flagged · ✓ {verifiedCount} verified · click a claim to cycle
               </div>
             )}
           </>
@@ -808,6 +955,7 @@ export function HallucinationGame({ rounds }: { rounds: RoundRef[] }) {
             roundNo={roundIndex + 1}
             total={total}
             isLast={roundIndex + 1 >= total}
+            tier={tier.tier}
             onNext={nextRound}
           />
         )}
@@ -852,6 +1000,34 @@ const primaryBtn: React.CSSProperties = {
   cursor: "pointer",
   boxShadow: `0 12px 24px -12px ${ACCENT}`,
 };
+
+function TierBadge({ tier, big }: { tier: ModelTier; big?: boolean }) {
+  const c = TIER_COLORS[tier];
+  const info = TIER_INFO[tier];
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
+        fontFamily: MONO,
+        fontSize: big ? 12 : 10.5,
+        fontWeight: 700,
+        letterSpacing: ".06em",
+        textTransform: "uppercase",
+        color: c.fg,
+        background: c.bg,
+        border: `1px solid ${c.border}`,
+        padding: big ? "5px 11px" : "3px 8px",
+        borderRadius: 999,
+        whiteSpace: "nowrap",
+      }}
+    >
+      <span style={{ width: 6, height: 6, borderRadius: "50%", background: c.fg }} />
+      {info.label} model
+    </span>
+  );
+}
 
 function diamondAvatar(size: number): React.CSSProperties {
   return {
@@ -935,13 +1111,69 @@ function IntroModal({ onStart }: { onStart: () => void }) {
           Spot the Hallucination
         </h2>
         <p style={{ fontSize: 15.5, lineHeight: 1.5, color: "#3a362e", marginTop: 10 }}>
-          A work assistant answers a colleague&apos;s task using your files. The answer
-          sounds confident — but some claims are <b>fabricated</b>. Read the answer,
-          then <b>tap any claim you don&apos;t trust</b> to flag it. There are
-          <b> 0–3 fabrications</b> per round, and sometimes the only clue is buried in
-          the assistant&apos;s reasoning. You play <b>5 rounds</b>, each harder than the last.
-          No penalty for guessing.
+          A work assistant answers a colleague&apos;s task using your files. Read its
+          answer, then judge each claim. Across the <b>5 rounds</b> the answers come from
+          progressively stronger models — a quick <b>Small</b> model up to a{" "}
+          <b>Frontier</b> model — and the stronger the model, the <b>rarer</b> the
+          mistakes. Catch the fabrications <i>without</i> distrusting the sound claims.
         </p>
+
+        {/* model-tier ladder */}
+        <div style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap" }}>
+          <TierBadge tier="quick" big />
+          <span style={{ alignSelf: "center", color: "#b3ae9f" }}>→</span>
+          <TierBadge tier="mid" big />
+          <span style={{ alignSelf: "center", color: "#b3ae9f" }}>→</span>
+          <TierBadge tier="frontier" big />
+          <span style={{ alignSelf: "center", fontFamily: MONO, fontSize: 11, color: "#9a9488" }}>
+            fewer fabrications →
+          </span>
+        </div>
+
+        {/* standout badge: there are clues */}
+        <div
+          style={{
+            display: "flex",
+            gap: 11,
+            alignItems: "flex-start",
+            marginTop: 16,
+            border: `1.5px solid color-mix(in srgb, ${ACCENT} 42%, #ece5d4)`,
+            background: `color-mix(in srgb, ${ACCENT} 8%, #fffdf7)`,
+            borderRadius: 14,
+            padding: "13px 15px",
+          }}
+        >
+          <span style={{ fontSize: 20, lineHeight: 1.1 }}>🔍</span>
+          <div style={{ fontSize: 14, lineHeight: 1.45, color: "#3a362e" }}>
+            <b style={{ color: ACCENT }}>There are clues in every task.</b> A fabrication
+            always gives itself away — a wrong name, an invented number, a citation to a
+            file you were never given, or a line that clashes with the assistant&apos;s own
+            reasoning. Open the reasoning panel and check against the attachments to pin it
+            down.
+          </div>
+        </div>
+
+        {/* standout badge: how to flag / verify */}
+        <div
+          style={{
+            display: "flex",
+            gap: 11,
+            alignItems: "flex-start",
+            marginTop: 10,
+            border: `1.5px solid ${TIER_COLORS.quick.border}`,
+            background: TIER_COLORS.quick.bg,
+            borderRadius: 14,
+            padding: "13px 15px",
+          }}
+        >
+          <span style={{ fontSize: 20, lineHeight: 1.1 }}>👆</span>
+          <div style={{ fontSize: 14, lineHeight: 1.45, color: "#3a362e" }}>
+            <b>How to answer.</b> Click a claim once to <b style={{ color: ACCENT }}>🚩 flag</b> it
+            as fabricated, again to <b style={{ color: GREEN }}>✓ verify</b> it as sound, a
+            third time to clear it. Leaving a sound claim unmarked is safe — but{" "}
+            <b>letting a fabrication slip by costs you</b>, and so does a false flag.
+          </div>
+        </div>
 
         <div style={{ marginTop: 16, border: "1px solid #ece5d4", borderRadius: 12, background: "#faf6ec", overflow: "hidden" }}>
           <div
@@ -959,7 +1191,7 @@ function IntroModal({ onStart }: { onStart: () => void }) {
               <ul style={{ margin: "4px 0 12px", paddingLeft: 18 }}>
                 <li>Detecting fabricated claims, bad statistics and fake citations.</li>
                 <li>Catching misspelled names and clues hidden in AI reasoning.</li>
-                <li>Trusting nothing without verifying it against the source.</li>
+                <li>Calibrating trust to the model — verifying the claims that matter without distrusting sound ones.</li>
               </ul>
               <p style={{ marginTop: 0, fontWeight: 600 }}>Common arcade rules:</p>
               <ul style={{ margin: "4px 0 0", paddingLeft: 18 }}>
@@ -993,19 +1225,25 @@ function Debrief({
   roundNo,
   total,
   isLast,
+  tier,
   onNext,
 }: {
   result: ScoreResult;
   roundNo: number;
   total: number;
   isLast: boolean;
+  tier: ModelTier;
   onNext: () => void;
 }) {
+  const wrongCalls = result.falseAccusations + result.vouched;
   return (
     <div style={{ border: "1px solid #ece5d4", borderRadius: 22, background: "#fffdf7", boxShadow: "0 22px 50px -28px rgba(40,34,22,.4)", padding: "26px 28px", animation: "hg-slideUp .5s ease" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-        <div style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: 30, letterSpacing: "-0.015em" }}>
-          Round {roundNo} — debrief
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <div style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: 30, letterSpacing: "-0.015em" }}>
+            Round {roundNo} — debrief
+          </div>
+          <TierBadge tier={tier} />
         </div>
         <span style={{ ...chipStyle }}>ROUND {roundNo} / {total}</span>
       </div>
@@ -1019,8 +1257,10 @@ function Debrief({
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14, marginTop: 18 }}>
-        {statCard("#cfe6d4", "#eef7ec", "#1f8a5b", `${result.caught}/${result.totalHallucinations}`, "hallucinations caught")}
-        {statCard("#efd2c9", "#fdf1ee", "#c0563a", String(result.falseAccusations), "false accusations")}
+        {result.totalHallucinations > 0
+          ? statCard("#cfe6d4", "#eef7ec", "#1f8a5b", `${result.caught}/${result.totalHallucinations}`, "fabrications caught")
+          : statCard("#cfe6d4", "#eef7ec", "#1f8a5b", String(result.verifiedCorrect), "clean round — claims verified")}
+        {statCard("#efd2c9", "#fdf1ee", "#c0563a", String(wrongCalls), wrongCalls === 1 ? "wrong call (false flag / vouch)" : "wrong calls (false flags / vouches)")}
         {statCard("#ece5d4", "#fbf8f0", "#211f1a", `${result.accuracy}%`, "accuracy this round")}
       </div>
 
@@ -1031,7 +1271,9 @@ function Debrief({
         {result.claims.map((c) => {
           let style: React.CSSProperties = { padding: "2px 1px" };
           if (c.status === "caught") style = { background: "#b8e6b0", borderRadius: 4, padding: "2px 3px" };
+          else if (c.status === "verified-correct") style = { background: "#cfe0f7", borderRadius: 4, padding: "2px 3px" };
           else if (c.status === "missed") style = { background: "#fff", border: "1.5px dashed #c0563a", borderRadius: 4, padding: "1px 3px" };
+          else if (c.status === "vouched") style = { background: "#ef9d88", borderRadius: 4, padding: "2px 3px", textDecoration: "underline wavy #8c2f1a" };
           else if (c.status === "false-accusation") style = { background: "#f3cfa9", borderRadius: 4, padding: "2px 3px" };
           return (
             <span key={c.id} style={style}>
@@ -1041,8 +1283,10 @@ function Debrief({
         })}
       </div>
       <div style={{ display: "flex", gap: 18, flexWrap: "wrap", marginTop: 12, fontFamily: MONO, fontSize: 12, color: "#7c766a" }}>
-        <LegendSwatch bg="#b8e6b0" border="#6a9a62" label="correctly flagged" />
+        <LegendSwatch bg="#b8e6b0" border="#6a9a62" label="caught fabrication" />
+        <LegendSwatch bg="#cfe0f7" border="#7da7d9" label="verified sound" />
         <LegendSwatch bg="#fff" border="#c0563a" dashed label="missed" />
+        <LegendSwatch bg="#ef9d88" border="#8c2f1a" label="vouched for a lie" />
         <LegendSwatch bg="#f3cfa9" border="#c9933f" label="false accusation" />
       </div>
 
@@ -1092,11 +1336,11 @@ function buildImprovementHints(
   }
   if (totalFalse > 0) {
     hints.push(
-      `You flagged ${totalFalse} sound claim${totalFalse === 1 ? "" : "s"} — only flag what you genuinely can't verify; leaving good claims alone scores too.`,
+      `You flagged ${totalFalse} sound claim${totalFalse === 1 ? "" : "s"} — a false flag scores zero. Once you've checked a claim against the files, verify it instead.`,
     );
   }
   hints.push(
-    "Open the reasoning panel before you decide — the later rounds bury the clue in the assistant's thinking, not the answer.",
+    "Frontier rounds rarely fabricate — verify what checks out and resist over-flagging. Open the reasoning panel too: the later rounds bury the clue in the assistant's thinking.",
   );
   return hints.slice(0, 3);
 }

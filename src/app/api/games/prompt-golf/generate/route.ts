@@ -42,8 +42,17 @@ export async function POST(request: Request) {
   const difficulty = Number(body?.difficulty ?? configDifficulty) || 1;
   const rewrite = config?.mode === "rewrite";
 
+  // Topics already used earlier in this play-through, so each round picks a
+  // distinct theme.
+  const avoidTopics: string[] = Array.isArray(body?.avoidTopics)
+    ? body.avoidTopics.filter((t: unknown): t is string => typeof t === "string")
+    : [];
+
   const player = await getOrCreatePlayer();
-  const scenario = await generatePromptGolfRound(difficulty, { rewrite });
+  const scenario = await generatePromptGolfRound(difficulty, {
+    rewrite,
+    avoidTopics,
+  });
 
   const roundId = randomUUID();
   db.insert(promptGolfRounds)
@@ -64,5 +73,10 @@ export async function POST(request: Request) {
     criteria: scenario.criteria.map((c) => ({ id: c.id, text: c.text })),
   };
 
-  return NextResponse.json({ roundId, difficulty, scenario: safeScenario });
+  return NextResponse.json({
+    roundId,
+    difficulty,
+    topic: scenario.topic,
+    scenario: safeScenario,
+  });
 }
