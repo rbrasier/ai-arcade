@@ -5,6 +5,7 @@ import {
   attempts,
   challenges,
   games,
+  players,
   type Game,
   type GameStatus,
 } from "@/lib/db/schema";
@@ -38,6 +39,16 @@ export function getGamesWithProgress(playerId: string): GameWithProgress[] {
     .where(eq(games.isActive, true))
     .orderBy(games.sortOrder)
     .all();
+
+  // Test/QA players have every game unlocked forever, bypassing the normal
+  // clear-to-unlock progression (see `enableTestMode` / the `?testMode` link).
+  const testMode = Boolean(
+    db
+      .select({ testMode: players.testMode })
+      .from(players)
+      .where(eq(players.id, playerId))
+      .get()?.testMode,
+  );
 
   // Total challenges per game.
   const totals = db
@@ -88,7 +99,7 @@ export function getGamesWithProgress(playerId: string): GameWithProgress[] {
     let status: GameStatus;
     if (completed) {
       status = "completed";
-    } else if (index < unlockThreshold) {
+    } else if (testMode || index < unlockThreshold) {
       status = stats.cleared > 0 ? "in_progress" : "available";
     } else {
       status = "locked";

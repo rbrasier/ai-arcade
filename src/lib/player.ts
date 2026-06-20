@@ -43,10 +43,24 @@ export async function getOrCreatePlayer(): Promise<Player> {
     id: playerId,
     displayName: randomDisplayName(),
     usernameSet: false,
+    testMode: false,
     xp: 0,
     level: 1,
     createdAt: new Date(),
   };
   db.insert(players).values(created).run();
   return created;
+}
+
+/**
+ * Permanently enable test mode for a player, unlocking every game forever.
+ * Triggered by visiting the home page with the `?testMode` URL param (see the
+ * subtle link at the bottom of the game ladder). Idempotent.
+ */
+export function enableTestMode(playerId: string): void {
+  db
+    .update(players)
+    .set({ testMode: true })
+    .where(eq(players.id, playerId))
+    .run();
 }
