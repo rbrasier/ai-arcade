@@ -43,6 +43,28 @@ interface SeedGame {
 // Ordered to follow the learning progression: Act One → Act Four. The home
 // page derives each game's difficulty band from this order.
 const GAMES: SeedGame[] = [
+  // ===== Act Zero: Orientation =====
+  // An introductory, self-paced course that runs before the first game. It is
+  // not AI-scored: simply reaching the end of the eight interactive slides marks
+  // it complete at 100% (see src/app/api/games/foundations/complete/route.ts),
+  // which clears it and — via the standard "always keep the next games
+  // available" unlock rule — unlocks Spot the Hallucination.
+  {
+    slug: "ai-foundations",
+    title: "AI Foundations",
+    description:
+      "Start here. A short, hands-on tour of how AI actually works — prediction, tokens, hallucinations, context and staying in charge. Finish it to unlock the games.",
+    estMinutes: 15,
+    challenges: [
+      {
+        title: "AI Foundations — Interactive Course",
+        prompt:
+          "Work through all eight slides. Reaching the end completes the course.",
+        config: { kind: "course" },
+      },
+    ],
+  },
+
   // ===== Act One: Prompt Mastery & Safety Foundations =====
   {
     slug: "prompt-golf",

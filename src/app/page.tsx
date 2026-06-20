@@ -3,6 +3,7 @@ import { GameList } from "@/components/arcade/GameList";
 import { Leaderboard } from "@/components/arcade/Leaderboard";
 import { PlayerCard } from "@/components/arcade/PlayerCard";
 import { TopNav } from "@/components/arcade/TopNav";
+import { UnlockToast } from "@/components/arcade/UnlockToast";
 import { getOrCreatePlayer } from "@/lib/player";
 import { getGamesWithProgress, getLeaderboard } from "@/lib/progress";
 import { levelInfoForXp } from "@/lib/xp";
@@ -76,6 +77,14 @@ export default async function ArcadePage() {
           </aside>
         </div>
       </div>
+
+      <UnlockToast
+        games={games.map((g) => ({
+          slug: g.slug,
+          title: g.title,
+          locked: g.status === "locked",
+        }))}
+      />
     </main>
   );
 }

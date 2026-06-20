@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Foundations — Interactive Course</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,800&family=Spline+Sans:wght@400;500;600;700&family=Spline+Sans+Mono:wght@400;500&display=swap');
+
+  :root{
+    --paper:#f6f3ec;
+    --ink:#211d17;
+    --ink-soft:#5a5247;
+    --line:#d9d2c4;
+    --line-soft:#e7e1d5;
+    --card:#fffdf8;
+    --accent:#c2410c;
+    --accent-soft:#f0d9c9;
+    --teal:#0f766e;
+    --gold:#b08400;
+    --berry:#9d2b5e;
+    --indigo:#3b3f8f;
+    --good:#15803d;
+    --bad:#b4413a;
+    --shadow:0 1px 0 rgba(33,29,23,.04), 0 8px 30px -18px rgba(33,29,23,.45);
+  }
+
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Spline Sans',sans-serif;
+    -webkit-font-smoothing:antialiased;
+    line-height:1.5;
+  }
+
+  .shell{max-width:880px;margin:0 auto;padding:0 20px 130px;position:relative}
+
+  .topbar{
+    position:sticky;top:0;z-index:40;
+    background:linear-gradient(var(--paper) 70%, rgba(246,243,236,0));
+    padding:18px 0 14px;
+  }
+  .brandrow{display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  .brand{font-family:'Spline Sans Mono',monospace;font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:var(--ink-soft)}
+  .brand b{color:var(--accent)}
+  .counter{font-family:'Spline Sans Mono',monospace;font-size:11px;letter-spacing:.12em;color:var(--ink-soft)}
+  .progress{display:flex;gap:6px;margin-top:14px;flex-wrap:wrap}
+  .pdot{height:6px;flex:1;min-width:14px;border-radius:99px;background:var(--line);cursor:pointer;transition:background .3s, transform .2s}
+  .pdot:hover{transform:scaleY(1.6)}
+  .pdot.done{background:var(--accent-soft)}
+  .pdot.active{background:var(--accent)}
+
+  .slide{display:none;animation:rise .5s cubic-bezier(.2,.7,.2,1) both}
+  .slide.active{display:block}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+  .eyebrow{display:inline-flex;align-items:center;gap:9px;font-family:'Spline Sans Mono',monospace;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);margin-bottom:14px}
+  .eyebrow .num{font-family:'Fraunces',serif;font-weight:600;font-size:13px;background:var(--accent);color:#fff;border-radius:5px;width:24px;height:24px;display:grid;place-items:center;letter-spacing:0}
+  h1.title{font-family:'Fraunces',serif;font-weight:600;font-size:clamp(30px,5.4vw,50px);line-height:1.02;letter-spacing:-.02em;margin-bottom:14px;max-width:18ch}
+  .lede{font-size:clamp(15px,2.1vw,18px);color:var(--ink-soft);max-width:60ch;margin-bottom:30px}
+
+  .demo{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:clamp(18px,3vw,30px);box-shadow:var(--shadow);margin-bottom:26px}
+  .demo-hd{font-family:'Spline Sans Mono',monospace;font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:18px;display:flex;align-items:center;gap:8px}
+  .demo-hd::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--accent)}
+
+  .takeaway{border-left:3px solid var(--accent);background:rgba(194,65,12,.05);padding:14px 18px;border-radius:0 12px 12px 0;font-size:15px}
+  .takeaway b{color:var(--accent)}
+
+  .nav{position:fixed;left:0;right:0;bottom:0;z-index:50;background:linear-gradient(rgba(246,243,236,0),var(--paper) 40%);padding:22px 20px}
+  .nav-inner{max-width:880px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:14px}
+  .btn{font-family:'Spline Sans',sans-serif;font-weight:600;font-size:14px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:12px 22px;border-radius:99px;cursor:pointer;transition:.18s;display:inline-flex;align-items:center;gap:9px}
+  .btn:hover{border-color:var(--ink-soft)}
+  .btn:disabled{opacity:.32;cursor:not-allowed}
+  .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .btn.primary:hover{background:#a8380a}
+  .btn.primary:disabled{background:var(--accent);opacity:.4}
+  .navtitle{font-family:'Spline Sans Mono',monospace;font-size:11px;letter-spacing:.08em;color:var(--ink-soft);text-align:center;flex:1;min-width:0}
+  .navtitle span{display:block;color:var(--ink);font-family:'Fraunces',serif;font-size:15px;font-weight:500;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+  .hint{font-size:12.5px;color:var(--ink-soft);font-style:italic;margin-top:10px}
+
+  /* ---- split prompt/output frame (slides 4 & 5) ---- */
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:620px){.split{grid-template-columns:1fr}}
+  .pane{border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+  .pane-hd{font-family:'Spline Sans Mono',monospace;font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;padding:9px 13px;background:var(--line-soft);color:var(--ink-soft);display:flex;align-items:center;gap:7px}
+  .pane-hd .dot{width:7px;height:7px;border-radius:50%}
+  .pane-body{padding:15px;font-size:14px;line-height:1.65;flex:1;min-height:120px}
+  .prompt-pane .pane-body{font-family:'Spline Sans Mono',monospace;font-size:12.5px;background:#221d17;color:#e9e1d4}
+  .prompt-pane .pane-hd{background:#2e2820;color:#b9ac99}
+  .prompt-pane .hl{color:#ffb27a;background:rgba(255,178,122,.1);border-radius:3px;padding:0 2px}
+  .out-pane .pane-body{background:var(--paper)}
+  .out-pane .pane-hd .dot{background:var(--good)}
+
+  /* generic chips/toggles */
+  input[type=checkbox].ctxchk{appearance:none;width:42px;height:24px;border-radius:99px;background:var(--line);position:relative;cursor:pointer;transition:.2s;flex-shrink:0}
+  input[type=checkbox].ctxchk:checked{background:var(--accent)}
+  input[type=checkbox].ctxchk::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.2s}
+  input[type=checkbox].ctxchk:checked::after{left:21px}
+  .ctx-controls{display:flex;flex-direction:column;gap:12px;margin-bottom:18px}
+  .ctx-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .ctx-row label{font-size:13px;width:118px;color:var(--ink-soft);font-weight:500}
+  .ctx-row .desc{font-size:12.5px;color:var(--ink-soft)}
+  .ctx-meter{display:flex;align-items:center;gap:10px;margin-top:16px}
+  .barwrap{height:8px;background:var(--line-soft);border-radius:99px;overflow:hidden;flex:1}
+  .bar{height:100%;width:0;transition:width .5s}
+  .ctx-meter .bar{background:linear-gradient(90deg,var(--bad),var(--gold),var(--good))}
+  .ctx-grade{font-family:'Spline Sans Mono',monospace;font-size:12px;font-weight:500;width:130px;text-align:right}
+
+  /* slide 1 token machine */
+  .tok-sentence{font-size:clamp(17px,2.6vw,22px);font-family:'Fraunces',serif;line-height:1.8;min-height:2.4em}
+  .tok{display:inline;border-radius:5px;padding:1px 3px;transition:background .25s}
+  .tok.lit{background:var(--accent-soft)}
+  .tok.pending{color:var(--line)}
+  .promptseed{font-family:'Spline Sans Mono',monospace;font-size:12px;color:var(--ink-soft);background:var(--paper);border:1px dashed var(--line);border-radius:9px;padding:9px 12px;margin-bottom:16px}
+  .promptseed b{color:var(--accent)}
+  .nextword{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
+  .wordbtn{font-family:'Spline Sans',sans-serif;border:1px solid var(--line);background:var(--paper);border-radius:10px;padding:9px 14px;cursor:pointer;font-size:14px;position:relative;transition:.16s}
+  .wordbtn:hover{border-color:var(--accent);background:#fff}
+  .wordbtn .pct{display:block;font-family:'Spline Sans Mono',monospace;font-size:10px;color:var(--accent);margin-top:2px}
+  .wbar{height:5px;background:var(--line-soft);border-radius:99px;margin-top:6px;overflow:hidden}
+  .wbar i{display:block;height:100%;background:var(--accent);width:0;transition:width .5s}
+
+  /* slide 2 token splitter */
+  .ts-input{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+  .ts-chip{border:1px solid var(--line);background:var(--paper);border-radius:9px;padding:8px 13px;font-size:13.5px;cursor:pointer;transition:.15s}
+  .ts-chip:hover{border-color:var(--accent);background:#fff}
+  .ts-chip.on{border-color:var(--accent);background:rgba(194,65,12,.06)}
+  .ts-stage{font-size:clamp(18px,3vw,26px);font-family:'Fraunces',serif;min-height:1.8em;display:flex;flex-wrap:wrap;gap:5px;align-items:center;line-height:1.4}
+  .tpiece{border-radius:6px;padding:2px 7px;animation:tokpop .4s cubic-bezier(.2,.7,.2,1) both;font-size:.85em}
+  @keyframes tokpop{from{opacity:0;transform:translateY(8px) scale(.8)}to{opacity:1;transform:none}}
+  .ts-count{margin-top:16px;font-size:14px;color:var(--ink-soft)}
+  .ts-count b{font-family:'Spline Sans Mono',monospace;color:var(--ink)}
+
+  /* slide 3 hallucination */
+  .scan-text{font-size:15.5px;line-height:2;position:relative}
+  .claim{background:rgba(194,65,12,.07);border-bottom:2px solid var(--accent);cursor:pointer;padding:1px 5px;border-radius:5px 5px 0 0;transition:.2s;font-weight:500;position:relative}
+  .claim::after{content:"⌖ check";font-family:'Spline Sans Mono',monospace;font-size:8.5px;letter-spacing:.05em;color:var(--accent);vertical-align:super;margin-left:2px;opacity:.85}
+  .claim:hover{background:rgba(194,65,12,.16)}
+  .claim.done{cursor:default;font-weight:400}
+  .claim.done::after{content:""}
+  .claim.checked-true{background:rgba(21,128,61,.13);border-color:var(--good)}
+  .claim.checked-false{background:rgba(180,65,58,.16);border-color:var(--bad)}
+  .verdict{font-family:'Spline Sans Mono',monospace;font-size:11px;margin-left:5px;font-weight:500}
+  .scoreline{margin-top:18px;font-size:14px;color:var(--ink-soft);min-height:1.4em}
+  .clickcue{display:inline-flex;align-items:center;gap:7px;font-family:'Spline Sans Mono',monospace;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);background:rgba(194,65,12,.07);border:1px solid var(--accent-soft);border-radius:99px;padding:5px 12px;margin-bottom:16px}
+  .clickcue .tap{animation:tap 1.4s ease-in-out infinite}
+  @keyframes tap{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+
+  /* slide 4 prompt builder chips */
+  .pb-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}
+  @media(max-width:560px){.pb-grid{grid-template-columns:1fr}}
+  .pb-chip{border:1px dashed var(--line);border-radius:12px;padding:12px 14px;cursor:pointer;transition:.16s;background:var(--paper)}
+  .pb-chip:hover{border-color:var(--accent)}
+  .pb-chip.on{border-style:solid;border-color:var(--accent);background:rgba(194,65,12,.05)}
+  .pb-chip .k{font-family:'Spline Sans Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:3px}
+  .pb-chip .v{font-size:13.5px}
+
+  /* slide 6 iteration */
+  .thread{display:flex;flex-direction:column;gap:12px}
+  .bubble{padding:13px 16px;border-radius:14px;font-size:14.5px;max-width:88%;animation:pop .35s cubic-bezier(.2,.7,.2,1) both}
+  @keyframes pop{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
+  .bubble.you{align-self:flex-end;background:var(--accent);color:#fff;border-bottom-right-radius:4px}
+  .bubble.ai{align-self:flex-start;background:var(--paper);border:1px solid var(--line);border-bottom-left-radius:4px}
+  .bubble .who{font-family:'Spline Sans Mono',monospace;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;opacity:.7;margin-bottom:4px}
+  .memchip{display:inline-flex;align-items:center;gap:5px;font-family:'Spline Sans Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--teal);background:rgba(15,118,110,.09);border-radius:99px;padding:2px 8px;margin-top:8px}
+  .followups{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+  .choice{font-family:'Spline Sans',sans-serif;font-size:14px;text-align:left;border:1px solid var(--line);background:var(--paper);color:var(--ink);padding:11px 15px;border-radius:11px;cursor:pointer;transition:.16s}
+  .choice:hover{border-color:var(--ink-soft);background:#fff}
+  .memory-note{margin-top:18px;border-left:3px solid var(--teal);background:rgba(15,118,110,.06);padding:12px 16px;border-radius:0 10px 10px 0;font-size:14px}
+  .memory-note b{color:var(--teal)}
+
+  /* slide 7 models */
+  .model-stack{display:flex;flex-direction:column;gap:10px;margin-bottom:4px}
+  .model-card{border:1px solid var(--line);border-radius:14px;padding:14px 16px;cursor:pointer;background:var(--paper);transition:.2s;position:relative;overflow:hidden}
+  .model-card:hover{border-color:var(--ink-soft)}
+  .model-card.sel{border-color:var(--accent);background:#fff;box-shadow:var(--shadow)}
+  .model-card .mname{font-family:'Fraunces',serif;font-weight:600;font-size:17px;display:flex;align-items:center;gap:10px}
+  .tier{font-family:'Spline Sans Mono',monospace;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;border-radius:99px;color:#fff}
+  .tier.tiny{background:var(--teal)}.tier.mid{background:var(--gold)}.tier.frontier{background:var(--accent)}
+  .model-stats{display:flex;gap:18px;margin-top:10px;flex-wrap:wrap}
+  .mstat{font-size:12px;color:var(--ink-soft)}
+  .mstat b{display:block;font-family:'Spline Sans Mono',monospace;font-size:13px;color:var(--ink)}
+  .dotbar{display:inline-flex;gap:3px;margin-top:3px}
+  .dotbar i{width:7px;height:7px;border-radius:50%;background:var(--line)}
+  .dotbar i.fill{background:var(--accent)}
+
+  /* slide 7 streaming demo pane */
+  .stream-pane{margin-top:16px;border:1px solid var(--line);border-radius:14px;overflow:hidden;opacity:0;max-height:0;transition:opacity .4s, max-height .5s}
+  .stream-pane.show{opacity:1;max-height:640px}
+  .stream-hd{background:var(--line-soft);padding:11px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .stream-q{font-size:13px;font-weight:500}
+  .stream-meta{display:flex;gap:14px;font-family:'Spline Sans Mono',monospace;font-size:10.5px;color:var(--ink-soft)}
+  .stream-meta b{color:var(--ink)}
+  .stream-body{padding:16px;min-height:120px;font-size:14.5px;line-height:1.7;background:var(--paper)}
+  .thinking{display:flex;align-items:center;gap:9px;color:var(--teal);font-family:'Spline Sans Mono',monospace;font-size:12px;margin-bottom:12px}
+  .thinking .spin{width:13px;height:13px;border:2px solid var(--accent-soft);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .think-line{color:var(--ink-soft);font-style:italic;font-size:13px;border-left:2px solid var(--teal);padding-left:11px;margin-bottom:12px}
+  .caret::after{content:"▍";color:var(--accent);animation:blink 1s step-end infinite}
+  @keyframes blink{50%{opacity:0}}
+  .qbadge{font-family:'Spline Sans Mono',monospace;font-size:10px;padding:3px 9px;border-radius:99px;margin-top:14px;display:inline-block}
+  .qbadge.lo{background:rgba(176,132,0,.12);color:var(--gold)}
+  .qbadge.hi{background:rgba(21,128,61,.12);color:var(--good)}
+
+  /* slide 8 ledger */
+  .ledger{display:flex;flex-direction:column;gap:10px}
+  .ledger-row{display:flex;align-items:center;gap:14px;border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--paper)}
+  .ledger-row .task{flex:1;font-size:14px}
+  .toggle-who{display:flex;border:1px solid var(--line);border-radius:99px;overflow:hidden;flex-shrink:0}
+  .toggle-who button{border:none;background:none;font-family:'Spline Sans',sans-serif;font-size:12px;padding:6px 13px;cursor:pointer;color:var(--ink-soft);transition:.15s;white-space:nowrap}
+  .toggle-who button.on{background:var(--ink);color:#fff}
+  .toggle-who button.on.ai{background:var(--accent)}
+  .acc-summary{margin-top:16px;font-size:14.5px;min-height:1.5em}
+  .acc-banner{margin-top:14px;font-size:13px;color:var(--ink-soft);background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+  .acc-banner b{color:var(--accent)}
+
+  .closer{text-align:center;padding:40px 0 10px}
+  .closer h2{font-family:'Fraunces',serif;font-weight:600;font-size:clamp(26px,4vw,38px);margin-bottom:12px}
+  .recap{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:26px;text-align:left}
+  .recap-item{border:1px solid var(--line);border-radius:12px;padding:13px;background:var(--card)}
+  .recap-item .rn{font-family:'Spline Sans Mono',monospace;font-size:10px;color:var(--accent);letter-spacing:.1em}
+  .recap-item .rt{font-family:'Fraunces',serif;font-weight:600;font-size:15px;margin-top:3px}
+
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="shell" style="padding-bottom:0">
+    <div class="brandrow">
+      <div class="brand">AI&nbsp;Foundations · <b>a starter course</b></div>
+      <div class="counter"><span id="cnum">01</span> / 08</div>
+    </div>
+    <div class="progress" id="progress"></div>
+  </div>
+</div>
+
+<div class="shell">
+
+  <!-- ============ SLIDE 1 — PREDICTION ============ -->
+  <section class="slide active" data-title="It predicts text">
+    <div class="eyebrow"><span class="num">1</span> How it actually works</div>
+    <h1 class="title">It predicts the next word — it doesn&rsquo;t &ldquo;know&rdquo; things</h1>
+    <p class="lede">Underneath, the AI is a very sophisticated autocomplete. It looks at everything so far and guesses what word is most likely to come next, over and over. Understanding this one thing explains almost everything else.</p>
+
+    <div class="demo">
+      <div class="demo-hd">Watch it think — tap a word to continue the sentence</div>
+      <div class="promptseed" id="seed">Your question: <b>&ldquo;Tell me about a small animal that sat down.&rdquo;</b></div>
+      <div class="tok-sentence" id="tokSentence"></div>
+      <div class="nextword" id="nextWord"></div>
+      <p class="hint">Notice the percentages shift with the question. Your prompt is the context the model weighs up — it tilts the odds toward words that fit what you asked, which is why a clear question pulls the answer in the right direction.</p>
+    </div>
+
+    <div class="takeaway">Because it&rsquo;s predicting plausible text rather than retrieving facts, it can sound completely confident and still be wrong. <b>Fluent &ne; correct.</b></div>
+  </section>
+
+  <!-- ============ SLIDE 2 — TOKENS ============ -->
+  <section class="slide" data-title="What a token is">
+    <div class="eyebrow"><span class="num">2</span> The unit it reads in</div>
+    <h1 class="title">It doesn&rsquo;t see words — it sees tokens</h1>
+    <p class="lede">Before the AI can predict anything, your text is chopped into small pieces called <em>tokens</em>. A token is roughly a word, but long or unusual words split into several. The model reads and writes one token at a time — and you&rsquo;re often billed per token, so they matter.</p>
+
+    <div class="demo">
+      <div class="demo-hd">Tap a phrase to see how it breaks into tokens</div>
+      <div class="ts-input" id="tsInput"></div>
+      <div class="ts-stage" id="tsStage"></div>
+      <div class="ts-count" id="tsCount">Pick a phrase above.</div>
+      <p class="hint">Common words are usually one token. Rare or long words (&ldquo;unbelievable&rdquo;, &ldquo;tokenisation&rdquo;) get split into chunks. Spaces and punctuation count too.</p>
+    </div>
+
+    <div class="takeaway">Tokens are why models have a <b>length limit</b> (a &ldquo;context window&rdquo;) and why cost scales with how much you put in and get out. <b>Shorter, clearer text = fewer tokens.</b></div>
+  </section>
+
+  <!-- ============ SLIDE 3 — HALLUCINATION ============ -->
+  <section class="slide" data-title="Hallucinations">
+    <div class="eyebrow"><span class="num">3</span> Confident, but sometimes wrong</div>
+    <h1 class="title">It can invent facts that look completely real</h1>
+    <p class="lede">When the AI doesn&rsquo;t know something, it doesn&rsquo;t stop — it generates the most plausible-sounding answer. These invented details are called <em>hallucinations</em>: fake quotes, fake citations, fake numbers, all delivered with total confidence.</p>
+
+    <div class="demo">
+      <div class="demo-hd">Spot the hallucination</div>
+      <div class="clickcue"><span class="tap">👆</span> Tap each highlighted claim to fact-check it</div>
+      <p class="scan-text" id="scanText">
+        The Eiffel Tower, completed in <span class="claim" data-true="true">1889</span>, was designed by an engineering firm led by <span class="claim" data-true="true">Gustave Eiffel</span>. It stands <span class="claim" data-true="false">just over 500 metres tall</span> and was originally painted <span class="claim" data-true="true">a reddish-brown colour</span>. It briefly held the record as the world&rsquo;s tallest structure until <span class="claim" data-true="false">the Empire State Building opened in 1925</span>.
+      </p>
+      <div class="scoreline" id="scanScore">Two of the highlighted claims are confidently wrong. Tap them to find out which.</div>
+    </div>
+
+    <div class="takeaway">The fix isn&rsquo;t to distrust everything — it&rsquo;s a habit: for anything that matters (names, numbers, dates, citations), <b>assume it could be invented until you&rsquo;ve checked.</b></div>
+  </section>
+
+  <!-- ============ SLIDE 4 — CONTEXT (split) ============ -->
+  <section class="slide" data-title="Context is everything">
+    <div class="eyebrow"><span class="num">4</span> Tell it what it can&rsquo;t see</div>
+    <h1 class="title">Vague question in, vague answer out</h1>
+    <p class="lede">The AI only knows what&rsquo;s in front of it. Flip on each piece of context and watch the <em>prompt</em> on the left build — and the <em>answer</em> on the right sharpen in step.</p>
+
+    <div class="demo">
+      <div class="demo-hd">Add context — see both sides change</div>
+      <div class="ctx-controls" id="ctxControls">
+        <div class="ctx-row"><label>The goal</label><input type="checkbox" class="ctxchk" data-ctx="goal"><span class="desc">what you actually want</span></div>
+        <div class="ctx-row"><label>The audience</label><input type="checkbox" class="ctxchk" data-ctx="aud"><span class="desc">who it&rsquo;s for</span></div>
+        <div class="ctx-row"><label>The format</label><input type="checkbox" class="ctxchk" data-ctx="fmt"><span class="desc">length &amp; tone</span></div>
+        <div class="ctx-row"><label>The background</label><input type="checkbox" class="ctxchk" data-ctx="bg"><span class="desc">relevant history</span></div>
+      </div>
+      <div class="split">
+        <div class="pane prompt-pane">
+          <div class="pane-hd">Your prompt</div>
+          <div class="pane-body" id="ctxPrompt"></div>
+        </div>
+        <div class="pane out-pane">
+          <div class="pane-hd"><span class="dot"></span>The AI&rsquo;s answer</div>
+          <div class="pane-body" id="ctxOut"></div>
+        </div>
+      </div>
+      <div class="ctx-meter">
+        <div class="barwrap"><div class="bar" id="ctxBar"></div></div>
+        <div class="ctx-grade" id="ctxGrade">Bare prompt</div>
+      </div>
+    </div>
+
+    <div class="takeaway">You don&rsquo;t need clever tricks or magic words. <b>Just clarity:</b> who it&rsquo;s for, what you want, and the background only you know.</div>
+  </section>
+
+  <!-- ============ SLIDE 5 — PROMPT PATTERN (split) ============ -->
+  <section class="slide" data-title="The prompt pattern">
+    <div class="eyebrow"><span class="num">5</span> A formula that works</div>
+    <h1 class="title">Outcome + context (and an example, if quality matters)</h1>
+    <p class="lede">A reliable prompt states <em>what you want</em> and <em>the relevant background</em>. Tap to add each part — the prompt builds on the left, and the answer it produces improves on the right.</p>
+
+    <div class="demo">
+      <div class="demo-hd">Assemble the prompt — watch the answer respond</div>
+      <div class="pb-grid" id="pbGrid">
+        <div class="pb-chip" data-part="role"><span class="k">Give it a role</span><span class="v">&ldquo;Act as a friendly recruiter&hellip;&rdquo;</span></div>
+        <div class="pb-chip" data-part="outcome"><span class="k">State the outcome</span><span class="v">&ldquo;&hellip;review my CV summary&hellip;&rdquo;</span></div>
+        <div class="pb-chip" data-part="context"><span class="k">Add context</span><span class="v">&ldquo;&hellip;for junior marketing roles&hellip;&rdquo;</span></div>
+        <div class="pb-chip" data-part="format"><span class="k">Set the format</span><span class="v">&ldquo;&hellip;3 bullets, plain English.&rdquo;</span></div>
+      </div>
+      <div class="split">
+        <div class="pane prompt-pane">
+          <div class="pane-hd">Your prompt</div>
+          <div class="pane-body" id="pbPrompt"><span style="opacity:.5">Tap a part to begin&hellip;</span></div>
+        </div>
+        <div class="pane out-pane">
+          <div class="pane-hd"><span class="dot"></span>The AI&rsquo;s answer</div>
+          <div class="pane-body" id="pbOut"><span style="opacity:.5">The answer will appear here&hellip;</span></div>
+        </div>
+      </div>
+      <div class="ctx-meter">
+        <div class="barwrap"><div class="bar" id="pbBar"></div></div>
+        <div class="ctx-grade" id="pbGrade">Empty</div>
+      </div>
+    </div>
+
+    <div class="takeaway">No magic words required. <b>Clarity + an example</b> gets you 80% of the way there, every time.</div>
+  </section>
+
+  <!-- ============ SLIDE 6 — ITERATION ============ -->
+  <section class="slide" data-title="It's a conversation">
+    <div class="eyebrow"><span class="num">6</span> Don&rsquo;t expect one perfect shot</div>
+    <h1 class="title">It&rsquo;s a conversation, not a search box</h1>
+    <p class="lede">The best results come from back-and-forth. Treat the first answer as a starting point, then steer: shorter, warmer, &ldquo;you missed this&rdquo;. Crucially, the AI <strong>remembers everything earlier in the conversation</strong> — so each reply builds on the last instead of starting fresh.</p>
+
+    <div class="demo">
+      <div class="demo-hd">Steer the draft — tap a follow-up</div>
+      <div class="thread" id="thread">
+        <div class="bubble you"><div class="who">You</div>Write a thank-you note to my team.</div>
+        <div class="bubble ai"><div class="who">AI</div>Dear Team, thank you for all your hard work this quarter. Your dedication is greatly appreciated. Best regards.</div>
+      </div>
+      <div class="followups" id="followups">
+        <button class="choice" data-fu="short">Make it shorter</button>
+        <button class="choice" data-fu="warm">Warmer &amp; more personal</button>
+        <button class="choice" data-fu="specific">Mention the product launch</button>
+      </div>
+      <div class="memory-note" id="memNote">
+        <b>Why this works:</b> because the AI holds the whole thread in memory, you never re-explain. &ldquo;Make it shorter&rdquo; only makes sense if it remembers <em>what</em> to shorten — that retained context is what turns a back-and-forth into a genuinely better answer.
+      </div>
+    </div>
+
+    <div class="takeaway">The first draft is raw material. <b>Refining through dialogue</b> is the skill — and the AI&rsquo;s memory of the conversation is what makes each step count.</div>
+  </section>
+
+  <!-- ============ SLIDE 7 — MODELS & FRONTIER ============ -->
+  <section class="slide" data-title="Models & frontier models">
+    <div class="eyebrow"><span class="num">7</span> Not all AI is equal</div>
+    <h1 class="title">What a &ldquo;model&rdquo; is — and what makes one &ldquo;frontier&rdquo;</h1>
+    <p class="lede">A <em>model</em> is the trained engine behind the chatbot. They come in sizes and generations. The biggest, newest, most capable are called <em>frontier models</em> — slower and pricier, but they reason harder. Tap one to send the same question through it and watch the answer stream back.</p>
+
+    <div class="demo">
+      <div class="demo-hd">Tap a model — same question, different answer</div>
+      <div class="model-stack" id="modelStack">
+        <div class="model-card" data-m="tiny">
+          <div class="mname"><span class="tier tiny">Small</span> The quick assistant</div>
+          <div class="model-stats">
+            <div class="mstat">Capability<b>Basic</b><span class="dotbar"><i class="fill"></i><i></i><i></i><i></i></span></div>
+            <div class="mstat">Speed<b>Instant</b><span class="dotbar"><i class="fill"></i><i class="fill"></i><i class="fill"></i><i class="fill"></i></span></div>
+            <div class="mstat">Cost<b>Lowest</b><span class="dotbar"><i class="fill"></i><i></i><i></i><i></i></span></div>
+          </div>
+        </div>
+        <div class="model-card" data-m="mid">
+          <div class="mname"><span class="tier mid">Mid-size</span> The everyday workhorse</div>
+          <div class="model-stats">
+            <div class="mstat">Capability<b>Strong</b><span class="dotbar"><i class="fill"></i><i class="fill"></i><i class="fill"></i><i></i></span></div>
+            <div class="mstat">Speed<b>Fast</b><span class="dotbar"><i class="fill"></i><i class="fill"></i><i class="fill"></i><i></i></span></div>
+            <div class="mstat">Cost<b>Moderate</b><span class="dotbar"><i class="fill"></i><i class="fill"></i><i></i><i></i></span></div>
+          </div>
+        </div>
+        <div class="model-card" data-m="frontier">
+          <div class="mname"><span class="tier frontier">Frontier</span> The deep thinker</div>
+          <div class="model-stats">
+            <div class="mstat">Capability<b>Highest</b><span class="dotbar"><i class="fill"></i><i class="fill"></i><i class="fill"></i><i class="fill"></i></span></div>
+            <div class="mstat">Speed<b>Slower</b><span class="dotbar"><i class="fill"></i><i class="fill"></i><i></i><i></i></span></div>
+            <div class="mstat">Cost<b>Highest</b><span class="dotbar"><i class="fill"></i><i class="fill"></i><i class="fill"></i><i class="fill"></i></span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stream-pane" id="streamPane">
+        <div class="stream-hd">
+          <div class="stream-q">Q: &ldquo;Should we launch the product in June or wait until September?&rdquo;</div>
+          <div class="stream-meta"><span>Model: <b id="smModel">—</b></span><span>Time: <b id="smTime">—</b></span></div>
+        </div>
+        <div class="stream-body" id="streamBody"></div>
+      </div>
+    </div>
+
+    <div class="takeaway">Frontier models lead on the hardest tasks, but newer and bigger isn&rsquo;t always better for <em>you</em>. <b>Match the model to the task.</b></div>
+  </section>
+
+  <!-- ============ SLIDE 8 — ACCOUNTABILITY ============ -->
+  <section class="slide" data-title="You stay in charge">
+    <div class="eyebrow"><span class="num">8</span> The human stays the owner</div>
+    <h1 class="title">It&rsquo;s an assistant — you&rsquo;re always the owner</h1>
+    <p class="lede">You always have the final say. The question isn&rsquo;t <em>who&rsquo;s allowed to decide</em> — that&rsquo;s always you — it&rsquo;s <em>where the AI is the better-suited first hand</em> and where the work is best <em>led by you</em>. Set each task to whichever is the more effective fit.</p>
+
+    <div class="demo">
+      <div class="demo-hd">Where is each one best handled? Set the better fit</div>
+      <div class="ledger" id="ledger">
+        <div class="ledger-row"><div class="task">Drafting a first version of an email</div><div class="toggle-who" data-task="draft"><button data-w="ai">AI-suited</button><button data-w="you">You-led</button></div></div>
+        <div class="ledger-row"><div class="task">Checking the facts and figures are right</div><div class="toggle-who" data-task="facts"><button data-w="ai">AI-suited</button><button data-w="you">You-led</button></div></div>
+        <div class="ledger-row"><div class="task">Brainstorming ideas to get unstuck</div><div class="toggle-who" data-task="ideas"><button data-w="ai">AI-suited</button><button data-w="you">You-led</button></div></div>
+        <div class="ledger-row"><div class="task">Deciding whether it&rsquo;s good enough to send</div><div class="toggle-who" data-task="send"><button data-w="ai">AI-suited</button><button data-w="you">You-led</button></div></div>
+      </div>
+      <div class="acc-summary" id="accSummary">Set the better fit for each. Watch the pattern in what&rsquo;s best led by you.</div>
+      <div class="acc-banner">Whichever way you set these, <b>you remain the owner of every output</b>. &ldquo;AI-suited&rdquo; means it&rsquo;s an efficient first pass — never that you&rsquo;ve handed over responsibility.</div>
+    </div>
+
+    <div class="takeaway">Lean on the AI where it&rsquo;s the efficient first hand. <b>Keep the judgment, the checking, and ownership with you.</b> That&rsquo;s the whole game.</div>
+
+    <div class="closer">
+      <h2>That&rsquo;s the foundation.</h2>
+      <p class="lede" style="margin:0 auto">Eight ideas that turn a confusing tool into a dependable one.</p>
+      <div class="recap" id="recap"></div>
+    </div>
+  </section>
+
+</div>
+
+<div class="nav">
+  <div class="nav-inner">
+    <button class="btn" id="prevBtn" disabled>&larr; Back</button>
+    <div class="navtitle">Next up<span id="nextTitle"></span></div>
+    <button class="btn primary" id="nextBtn">Next &rarr;</button>
+  </div>
+</div>
+
+<script>
+const slides=[...document.querySelectorAll('.slide')];
+const titles=slides.map(s=>s.dataset.title);
+let idx=0;
+
+const prog=document.getElementById('progress');
+slides.forEach((s,i)=>{const d=document.createElement('div');d.className='pdot';d.onclick=()=>go(i);prog.appendChild(d);});
+const cnum=document.getElementById('cnum'),prevBtn=document.getElementById('prevBtn'),nextBtn=document.getElementById('nextBtn'),nextTitle=document.getElementById('nextTitle');
+
+function go(i){
+  i=Math.max(0,Math.min(slides.length-1,i));
+  slides[idx].classList.remove('active');idx=i;slides[idx].classList.add('active');
+  [...prog.children].forEach((d,j)=>{d.classList.toggle('active',j===idx);d.classList.toggle('done',j<idx);});
+  cnum.textContent=String(idx+1).padStart(2,'0');
+  prevBtn.disabled=idx===0;
+  const last=idx===slides.length-1;
+  // Reaching the final slide completes the course. Notify the host page (the
+  // arcade course wrapper) so it can record the 100% completion and unlock the
+  // next game. Harmless when opened standalone (no parent listener).
+  if(last){try{window.parent&&window.parent!==window&&window.parent.postMessage({type:'ai-foundations:complete'},'*');}catch(e){}}
+  nextBtn.textContent=last?'Finish ↺':'Next →';
+  nextTitle.textContent=last?'Start over':titles[idx+1];
+  window.scrollTo({top:0,behavior:'smooth'});
+  if(slides[idx].dataset.init==='1')return;
+  slides[idx].dataset.init='1';(initFns[idx]||(()=>{}))();
+}
+prevBtn.onclick=()=>go(idx-1);
+nextBtn.onclick=()=>{idx===slides.length-1?go(0):go(idx+1);};
+document.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(e.key==='ArrowRight')go(idx+1);if(e.key==='ArrowLeft')go(idx-1);});
+
+/* ===== SLIDE 1 — token predictor ===== */
+function initS1(){
+  const sent=document.getElementById('tokSentence'),opts=document.getElementById('nextWord');
+  const chain=[
+    {options:[['cat',.64],['dog',.22],['robot',.09],['lawyer',.05]]},
+    {options:[['sat',.68],['jumped',.18],['sneezed',.09],['filed',.05]]},
+    {options:[['down',.55],['on',.30],['quietly',.10],['upon',.05]]},
+    {options:[['on',.62],['near',.20],['beside',.13],['onto',.05]]},
+    {options:[['the',.84],['a',.11],['my',.03],['that',.02]]},
+    {options:[['mat',.61],['rug',.21],['floor',.13],['invoice',.05]]},
+  ];
+  let built=['A','small'];
+  function render(){sent.innerHTML=built.map(w=>`<span class="tok lit">${w}</span>`).join(' ')+' <span class="tok pending">…</span>';}
+  function step(){
+    if(built.length-2>=chain.length){
+      opts.innerHTML='';sent.innerHTML=built.map(w=>`<span class="tok lit">${w}</span>`).join(' ')+'.';
+      const r=document.createElement('button');r.className='wordbtn';r.textContent='↺ run it again';
+      r.onclick=()=>{built=['A','small'];render();step();};opts.appendChild(r);return;
+    }
+    const cur=chain[built.length-2];opts.innerHTML='';
+    cur.options.forEach(([w,p])=>{
+      const b=document.createElement('button');b.className='wordbtn';
+      b.innerHTML=`${w}<span class="pct">${Math.round(p*100)}%</span><div class="wbar"><i></i></div>`;
+      b.onclick=()=>{built.push(w);render();step();};opts.appendChild(b);
+      requestAnimationFrame(()=>{b.querySelector('i').style.width=(p*100)+'%';});
+    });
+  }
+  render();step();
+}
+
+/* ===== SLIDE 2 — token splitter ===== */
+function initS2(){
+  const input=document.getElementById('tsInput'),stage=document.getElementById('tsStage'),count=document.getElementById('tsCount');
+  const colors=['#c2410c','#0f766e','#b08400','#9d2b5e','#3b3f8f'];
+  const phrases={
+    'I love cats':['I',' love',' cats'],
+    'unbelievable':['un','believ','able'],
+    'tokenisation':['token','isation'],
+    'antidisestablishment':['anti','dis','establish','ment'],
+    'Send the report by 5pm.':['Send',' the',' report',' by',' 5','pm','.'],
+  };
+  Object.keys(phrases).forEach(p=>{
+    const c=document.createElement('button');c.className='ts-chip';c.textContent=p;
+    c.onclick=()=>{[...input.children].forEach(x=>x.classList.remove('on'));c.classList.add('on');render(phrases[p]);};
+    input.appendChild(c);
+  });
+  function render(toks){
+    stage.innerHTML='';
+    toks.forEach((t,i)=>{
+      const s=document.createElement('span');s.className='tpiece';
+      const col=colors[i%colors.length];
+      s.style.background=col+'22';s.style.color=col;s.style.animationDelay=(i*0.08)+'s';
+      s.textContent=t.replace(/ /g,'␣');stage.appendChild(s);
+    });
+    count.innerHTML=`That phrase = <b>${toks.length} token${toks.length>1?'s':''}</b>. The model reads and writes them one at a time.`;
+  }
+  input.firstChild.click();
+}
+
+/* ===== SLIDE 3 — hallucination ===== */
+function initS3(){
+  const claims=[...document.querySelectorAll('#scanText .claim')],score=document.getElementById('scanScore');
+  let found=0;const total=claims.filter(c=>c.dataset.true==='false').length;
+  claims.forEach(c=>{
+    c.onclick=()=>{
+      if(c.dataset.done)return;c.dataset.done='1';c.classList.add('done');
+      const truth=c.dataset.true==='true';
+      c.classList.add(truth?'checked-true':'checked-false');
+      const v=document.createElement('span');v.className='verdict';
+      v.style.color=truth?'var(--good)':'var(--bad)';v.textContent=truth?' ✓ checks out':' ✕ invented';c.appendChild(v);
+      if(!truth)found++;
+      if(found===total){
+        score.innerHTML=`<b style="color:var(--good)">Both caught.</b> The tower is ~330m, not 500m, and the Empire State Building opened in 1931 — both stated with the same confidence as the true facts. That&rsquo;s the trap.`;
+      }else{
+        score.textContent=truth?`That one&rsquo;s accurate. Keep looking — ${total-found} hallucination${total-found>1?'s':''} left.`:`Caught one. ${total-found} more to find.`;
+      }
+    };
+  });
+}
+
+/* ===== SLIDE 4 — context split ===== */
+function initS4(){
+  const promptEl=document.getElementById('ctxPrompt'),out=document.getElementById('ctxOut'),bar=document.getElementById('ctxBar'),grade=document.getElementById('ctxGrade');
+  const chk=[...document.querySelectorAll('#ctxControls .ctxchk')];
+  const frag={
+    goal:'<span class="hl">declining their meeting request without losing the relationship</span>',
+    aud:'<span class="hl">to a vendor I&rsquo;ve worked with before</span>',
+    fmt:'<span class="hl">Keep it warm and under 100 words.</span>',
+    bg:'<span class="hl">We may want to work with them again next quarter.</span>'
+  };
+  function update(){
+    const on=chk.filter(c=>c.checked).map(c=>c.dataset.ctx);
+    // prompt pane
+    if(on.length===0){
+      promptEl.innerHTML='Write an email declining a meeting.';
+    }else{
+      let p='Write a short email ';
+      p+= on.includes('goal')?frag.goal:'declining a meeting';
+      if(on.includes('aud'))p+=' '+frag.aud;
+      p+='. ';
+      if(on.includes('fmt'))p+=frag.fmt+' ';
+      if(on.includes('bg'))p+=frag.bg;
+      promptEl.innerHTML=p;
+    }
+    // output pane
+    const outputs={
+      0:`<span style="color:var(--bad)">Generic guess:</span><br>&ldquo;Dear Sir/Madam, I am unable to attend the meeting. Regards.&rdquo;<br><br><span style="font-size:12px;color:var(--ink-soft)">Cold, formal, could be to anyone — the AI had to invent the tone and the relationship.</span>`,
+      1:`&ldquo;Hi, thanks for the invite — I won&rsquo;t be able to make this meeting, but I appreciate you thinking of me.&rdquo;<br><br><span style="font-size:12px;color:var(--ink-soft)">Warmer now it knows the goal is to decline gracefully.</span>`,
+      2:`&ldquo;Hi [Name], thanks so much for reaching out. I&rsquo;m not able to take this meeting right now, but I&rsquo;ve really valued working with you.&rdquo;<br><br><span style="font-size:12px;color:var(--ink-soft)">It now treats them as an existing partner, not a stranger.</span>`,
+      3:`&ldquo;Hi [Name] — thanks for the invite! I can&rsquo;t make this one, but it&rsquo;s always good to hear from you. Hope you&rsquo;re keeping well.&rdquo;<br><br><span style="font-size:12px;color:var(--good)">Short, warm, on-brief — fits the 100-word, friendly format.</span>`,
+      4:`&ldquo;Hi [Name] — thanks for the invite! I can&rsquo;t make this one, but I&rsquo;d genuinely like to stay in touch — we may have things to work on together next quarter. Let&rsquo;s pick it up then.&rdquo;<br><br><span style="font-size:12px;color:var(--good)">Now it protects the future relationship — something only your context could tell it.</span>`
+    };
+    out.innerHTML=outputs[on.length];
+    bar.style.width=Math.max(8,on.length/4*100)+'%';
+    grade.textContent=['Bare prompt','Getting clearer','Solid','Strong','Excellent'][on.length];
+    grade.style.color=on.length>=3?'var(--good)':on.length>=1?'var(--gold)':'var(--bad)';
+  }
+  chk.forEach(c=>c.onchange=update);update();
+}
+
+/* ===== SLIDE 5 — prompt builder split ===== */
+function initS5(){
+  const chips=[...document.querySelectorAll('#pbGrid .pb-chip')];
+  const promptEl=document.getElementById('pbPrompt'),out=document.getElementById('pbOut'),bar=document.getElementById('pbBar'),grade=document.getElementById('pbGrade');
+  const order=['role','outcome','context','format'];
+  const txt={
+    role:'<span class="hl">Act as a friendly recruiter.</span> ',
+    outcome:'<span class="hl">Review my CV summary.</span> ',
+    context:'<span class="hl">I&rsquo;m applying for junior marketing roles.</span> ',
+    format:'<span class="hl">Give me 3 bullet points in plain English.</span>'
+  };
+  function update(){
+    const on=chips.filter(c=>c.classList.contains('on')).map(c=>c.dataset.part);
+    const ordered=order.filter(p=>on.includes(p));
+    promptEl.innerHTML = ordered.length? ordered.map(p=>txt[p]).join('') : '<span style="opacity:.5">Tap a part to begin…</span>';
+    // outputs keyed by which parts are present
+    let o;
+    if(on.length===0){o='<span style="opacity:.5">The answer will appear here…</span>';}
+    else{
+      const hasRole=on.includes('role'),hasCtx=on.includes('context'),hasFmt=on.includes('format'),hasOut=on.includes('outcome');
+      if(!hasOut && !hasCtx){
+        o='&ldquo;Sure — what would you like me to do?&rdquo;<br><br><span style="font-size:12px;color:var(--bad)">With no clear task, it can only ask you back.</span>';
+      }else if(hasFmt && hasCtx){
+        o=`Here&rsquo;s your CV summary review:<br>• Lead with one marketing-relevant achievement, not your job title.<br>• Swap vague phrases (&ldquo;hard worker&rdquo;) for a measurable result.<br>• Keep it to 2 lines — recruiters skim.<br><br><span style="font-size:12px;color:var(--good)">${hasRole?'Speaks as a recruiter, ':''}targeted, and in the exact format you asked for.</span>`;
+      }else if(hasCtx){
+        o='&ldquo;Your summary reads well, but tailor it toward marketing — highlight campaigns or audience results rather than general duties.&rdquo;<br><br><span style="font-size:12px;color:var(--gold)">On-topic now, but the shape of the answer is still a guess.</span>';
+      }else{
+        o='&ldquo;Here&rsquo;s some general feedback on your CV summary: make it concise and results-focused.&rdquo;<br><br><span style="font-size:12px;color:var(--gold)">A task, but generic — it doesn&rsquo;t know the role or format yet.</span>';
+      }
+    }
+    out.innerHTML=o;
+    bar.style.width=Math.max(8,on.length/4*100)+'%';
+    grade.textContent=['Empty','Bare','Better','Strong','Excellent'][on.length];
+    grade.style.color=on.length>=3?'var(--good)':on.length>=1?'var(--gold)':'var(--bad)';
+  }
+  chips.forEach(c=>c.onclick=()=>{c.classList.toggle('on');update();});
+  update();
+}
+
+/* ===== SLIDE 6 — iteration ===== */
+function initS6(){
+  const thread=document.getElementById('thread'),wrap=document.getElementById('followups');
+  const replies={
+    short:{you:'Make it shorter.',ai:'Team — thank you for a brilliant quarter. Your hard work made it happen. 🙏',mem:'remembered: it&rsquo;s a team thank-you note'},
+    warm:{you:'Warmer &amp; more personal.',ai:'Hi everyone — I just wanted to say how grateful I am to work with you. The energy you brought this quarter genuinely meant a lot to me. Thank you.',mem:'remembered: the note + your last edit'},
+    specific:{you:'Mention the product launch.',ai:'Team — thank you for an incredible quarter, and especially for pulling together on the product launch. It went live because of you. I&rsquo;m proud of what we built.',mem:'remembered: everything so far in the thread'}
+  };
+  wrap.querySelectorAll('button').forEach(b=>{
+    b.onclick=()=>{
+      const r=replies[b.dataset.fu];
+      const y=document.createElement('div');y.className='bubble you';y.innerHTML=`<div class="who">You</div>${r.you}`;
+      const a=document.createElement('div');a.className='bubble ai';a.innerHTML=`<div class="who">AI</div>${r.ai}<div class="memchip">🧠 ${r.mem}</div>`;
+      thread.appendChild(y);setTimeout(()=>{thread.appendChild(a);a.scrollIntoView({behavior:'smooth',block:'nearest'});},350);
+      b.disabled=true;b.style.opacity=.35;
+    };
+  });
+}
+
+/* ===== SLIDE 7 — models + streaming ===== */
+function initS7(){
+  const cards=[...document.querySelectorAll('.model-card')];
+  const pane=document.getElementById('streamPane'),body=document.getElementById('streamBody');
+  const smModel=document.getElementById('smModel'),smTime=document.getElementById('smTime');
+  let runToken=0;
+  const cfg={
+    tiny:{label:'Small',speed:14,think:null,
+      answer:'June is fine. Launching sooner is usually better.',
+      quality:['lo','Quick — but shallow. No reasoning, no trade-offs, just a guess.']},
+    mid:{label:'Mid-size',speed:22,think:null,
+      answer:'It depends on readiness. If the product is stable and marketing is prepared, June captures the earlier window. If there are open risks, September is safer. Lean June unless quality is at risk.',
+      quality:['hi','Balanced and useful — weighs both sides and gives a clear lean.']},
+    frontier:{label:'Frontier',speed:30,
+      think:['Weighing market timing vs. product readiness…','Considering competitor cycles and support capacity…','Checking the cost of a slipped date against a rushed launch…'],
+      answer:'Short answer: June, but only if three things hold. 1) The core feature set is genuinely stable — a buggy early launch costs more than a late one. 2) Support and marketing can absorb the load in June. 3) No competitor is about to release something that would make a September launch look reactive. If any of those is shaky, take September and use the time to de-risk. The deciding factor isn&rsquo;t the calendar — it&rsquo;s readiness.',
+      quality:['hi','Deepest answer — surfaces conditions and trade-offs the others skipped, after visibly reasoning first.']}
+  };
+
+  cards.forEach(c=>{
+    c.onclick=()=>{
+      cards.forEach(x=>x.classList.remove('sel'));c.classList.add('sel');
+      run(cfg[c.dataset.m]);
+    };
+  });
+
+  function run(m){
+    const myToken=++runToken;
+    pane.classList.add('show');
+    smModel.textContent=m.label;smTime.textContent='running…';
+    body.innerHTML='';
+    const t0=performance.now();
+    const startStream=()=>{
+      if(myToken!==runToken)return;
+      const ans=document.createElement('div');ans.className='caret';body.appendChild(ans);
+      const words=m.answer.split(' ');let i=0;
+      const tick=()=>{
+        if(myToken!==runToken)return;
+        if(i<words.length){
+          ans.innerHTML=words.slice(0,++i).join(' ');
+          setTimeout(tick,m.speed+Math.random()*22);
+        }else{
+          ans.classList.remove('caret');
+          smTime.textContent=((performance.now()-t0)/1000).toFixed(1)+'s';
+          const q=document.createElement('div');q.className='qbadge '+m.quality[0];
+          q.textContent=(m.quality[0]==='hi'?'✓ ':'• ')+m.quality[1];
+          body.appendChild(q);
+        }
+      };tick();
+    };
+    if(m.think){
+      const box=document.createElement('div');
+      box.innerHTML='<div class="thinking"><span class="spin"></span>Frontier model thinking first…</div>';
+      body.appendChild(box);
+      let k=0;
+      const addThought=()=>{
+        if(myToken!==runToken)return;
+        if(k<m.think.length){
+          const l=document.createElement('div');l.className='think-line';l.textContent=m.think[k++];
+          box.appendChild(l);setTimeout(addThought,620);
+        }else{setTimeout(startStream,350);}
+      };setTimeout(addThought,400);
+    }else{setTimeout(startStream,180);}
+  }
+}
+
+/* ===== SLIDE 8 — accountability ===== */
+function initS8(){
+  const groups=[...document.querySelectorAll('.toggle-who')],sum=document.getElementById('accSummary');
+  const ideal={draft:'ai',facts:'you',ideas:'ai',send:'you'};const state={};
+  function check(){
+    const set=Object.keys(state).length;
+    if(set<4){sum.textContent=`Set the better fit for each… (${set}/4)`;return;}
+    const right=Object.keys(ideal).every(k=>state[k]===ideal[k]);
+    if(right){
+      sum.innerHTML='<b style="color:var(--good)">That&rsquo;s the efficient split.</b> Let the AI take the first pass on <em>drafting</em> and <em>brainstorming</em> — fast, generative work. <em>Checking facts</em> and <em>judging if it&rsquo;s ready to send</em> are best led by you. You still own all four.';
+    }else{
+      sum.innerHTML='<span style="color:var(--gold)">Worth a rethink:</span> the AI is an efficient first hand for <em>drafting</em> and <em>ideas</em>, but <em>verifying facts</em> and <em>judging readiness</em> are best led by you — even though you stay the owner either way.';
+    }
+  }
+  groups.forEach(g=>{
+    const btns=[...g.querySelectorAll('button')];
+    btns.forEach(b=>{
+      b.onclick=()=>{btns.forEach(x=>x.classList.remove('on','ai'));b.classList.add('on');if(b.dataset.w==='ai')b.classList.add('ai');state[g.dataset.task]=b.dataset.w;check();};
+    });
+  });
+  const recap=document.getElementById('recap');
+  const items=['It predicts text','What a token is','Hallucinations are normal','Context is everything','Outcome + context','It&rsquo;s a conversation','Models & frontier','You stay the owner'];
+  recap.innerHTML=items.map((t,i)=>`<div class="recap-item"><div class="rn">0${i+1}</div><div class="rt">${t}</div></div>`).join('');
+}
+
+const initFns=[initS1,initS2,initS3,initS4,initS5,initS6,initS7,initS8];
+slides[0].dataset.init='1';initS1();
+nextTitle.textContent=titles[1];
+[...prog.children][0].classList.add('active');
+</script>
+</body>
+</html>
