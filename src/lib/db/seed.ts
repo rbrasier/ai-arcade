@@ -13,6 +13,7 @@ import {
   hallucinationRounds,
   players,
   promptGolfRounds,
+  workflowRedesignRounds,
 } from "./schema";
 
 /**
@@ -323,6 +324,7 @@ function seed() {
   db.delete(chainOfThoughtRounds).run();
   db.delete(contextCalibrationRounds).run();
   db.delete(checkpointPlacementRounds).run();
+  db.delete(workflowRedesignRounds).run();
   db.delete(attempts).run();
   db.delete(challenges).run();
   db.delete(games).run();
