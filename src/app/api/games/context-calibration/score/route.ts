@@ -84,6 +84,7 @@ export async function POST(request: Request) {
     id: it.id,
     text: it.text,
     kind: it.kind,
+    reason: it.reason,
     selected: selected.has(it.id),
   }));
 

@@ -65,6 +65,13 @@ way) and must be kept in sync as games are added:
   `generateHallucinationRound`, `generateChainOfThoughtRound`,
   `generateContextCalibrationRound`, `generateCheckpointPlacementRound`,
   `generateWorkflowRedesignRound`).
+- **A sender who fits the scenario.** Every game frames its brief as a direct
+  message from a colleague (`senderName` / `senderRole` / `senderInitials`). Both
+  the **name and the role are dynamic to the scenario** — the generators instruct
+  the model to pick a sender whose name and job title fit that round's domain and
+  to vary them round to round (never a recurring stock person), and each game's
+  deterministic mock bank carries its **own distinct roster** so no name recurs
+  across games offline.
 
 ---
 
@@ -197,9 +204,17 @@ clutter) or **distractor** (plausible but misleading — attaching it steers the
 answer wrong). Difficulty scales the misdirection pressure: easy rounds (1–2) have
 obvious noise and no/one weak distractor, while hard rounds (4–5) plant 2–3
 tempting distractors so the player must **resist attaching everything** (echoing
-Spot the Hallucination's "resist over-flagging"). The player curates which
-snippets to attach; the selection is then **executed** so the scorecard shows the
-deliverable it produced (the same "what it produced" idea as Prompt Golf).
+Spot the Hallucination's "resist over-flagging"). The **harder rounds (4–5) are
+framed as compiling a report/brief from a selection of candidate documents** —
+each snippet is a short document description (wrong-period, wrong-scope,
+superseded or never-adopted documents are the distractors) so the misdirection is
+more involved than a one-line fact. The curate screen is styled like a **chat
+composer**: the player attaches snippets from a compact context library onto a
+**pre-filled, non-editable prompt** they're about to send. The selection is then
+**executed** so the scorecard shows the deliverable it produced (the same "what it
+produced" idea as Prompt Golf). Every snippet also carries a short **`reason`**
+(ground truth, stripped pre-scoring) shown in the debrief, spelling out concretely
+why it was essential or why attaching it was irrelevant/misleading.
 
 Grading is fully deterministic against the stored `kind`s, on two axes:
 
@@ -261,6 +276,24 @@ apply to this ratio, and a round is `exceptional` only when **every** critical s
 is guarded and **no** safe or trap step is. Implemented in
 `src/app/api/games/checkpoint-placement/score/route.ts`, the shared pure helpers in
 `src/lib/checkpoint-placement-scoring.ts`, and `src/lib/ai/checkpoint-placement.ts`.
+
+_Consequences (feedback only — never scored)._ When the player runs the workflow,
+the debrief shows the **same workflow played out three ways** — **manual only**
+(every step by a human), **your design** (the AI runs it with the player's
+checkpoints), and **AI only** (fully unattended) — projected across a quarter in a
+**5,000-person organisation**. Each step carries a numeric `manualMinutes` and each
+scenario a `volumePerQuarter`; `computeOrgImpact` (in `src/lib/checkpoint-impact.ts`)
+estimates, per approach, the **workflows processed**, **total + average time**,
+**processing errors** (humans slip at a flat rate; an AI is reliable on routine
+steps but more error-prone on high-judgement ones — a checkpoint catches most of a
+step's slips at the cost of review time), **high-level consequences** (an uncaught
+error on a critical, irreversible/person-affecting step) and a single **net cost**
+that folds time, rework and consequences into equivalent hours. The payoff falls
+out of the model: all-manual is safe-ish but enormously slow, all-AI is fast but
+lets serious errors through, and the **calibrated middle wins on net** — unless the
+player left a critical unguarded (their column collapses toward all-AI) or
+over-checkpointed (their time balloons). It is the same illustrative "what it
+produced" layer as the capstone's consequences read and **never affects the score**.
 
 **Workflow Redesign Challenge** (slug `workflow-redesign`) is the **Act Four
 capstone**. Unlike the five escalating-difficulty games it is **not** a 5-round

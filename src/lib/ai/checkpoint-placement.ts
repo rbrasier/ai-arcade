@@ -27,6 +27,8 @@ export interface WorkflowStep {
   detail: string;
   /** Plain consequence cue shown to the player: reversible? who does it touch? */
   impact: string;
+  /** Human minutes this step takes today, per run — powers the org-scale impact read. */
+  manualMinutes: number;
   /** Ground truth — never sent to the client before scoring. */
   kind: StepKind;
 }
@@ -38,6 +40,11 @@ export interface CheckpointPlacementScenario {
   riskTier: RiskTier;
   /** Name of the redesigned workflow. */
   workflowName: string;
+  /**
+   * Roughly how many times this workflow runs across a 5,000-person organisation
+   * each quarter — the volume the org-scale impact read is projected over.
+   */
+  volumePerQuarter: number;
   /** The colleague who hands over the workflow (styled like a direct message). */
   brief: {
     senderName: string;
@@ -59,6 +66,7 @@ export interface CheckpointPlacementScenario {
 const scenarioSchema = z.object({
   topic: z.string(),
   workflowName: z.string(),
+  volumePerQuarter: z.number().int().positive(),
   brief: z.object({
     senderName: z.string(),
     senderRole: z.string(),
@@ -72,6 +80,7 @@ const scenarioSchema = z.object({
         title: z.string(),
         detail: z.string(),
         impact: z.string(),
+        manualMinutes: z.number().positive(),
         kind: z.enum(["critical", "optional", "safe", "trap"]),
       }),
     )
@@ -93,15 +102,16 @@ Each round is a realistic workplace process that has been redesigned so an AI ru
 Fields:
 - "topic": a 1-4 word label for the workflow's subject (e.g. "refund pipeline", "staffing review").
 - "workflowName": a short name for the redesigned workflow.
-- "brief": a colleague (name, role, two-letter initials) and a short, natural message handing the player the workflow and asking them to place checkpoints.
+- "volumePerQuarter": a realistic estimate of how many times this workflow runs across a 5,000-person organisation in a quarter. Scale it to the workflow: a high-frequency process (handling refunds, screening submissions) might run many thousands of times; a rare, high-stakes one (a restructuring review) only dozens. An integer.
+- "brief": the colleague handing over the workflow — a "senderName", a "senderRole" job title, and two-letter "senderInitials", plus a short, natural "message" asking the player to place checkpoints. The name AND the role must FIT THIS SPECIFIC workflow's domain (e.g. a refund pipeline comes from a payments or support lead, a staffing review from an HR director) and should vary from round to round — never reuse a stock name.
 - "goal": one precise sentence naming what good placement achieves (safe but still fast).
-- "steps": 4-6 steps in the order the AI runs them. Each has a short "title", a one-sentence "detail" of what the AI does, an "impact" line in PLAIN language that tells the player the consequence (is it reversible? who does it reach?), and its "kind". Write impact lines so a non-technical reader can judge the risk from them — for a "critical" step make the irreversibility/human impact clear; for a "trap" make the impact line quietly reveal it is reversible/internal even though the title sounds scary; for "safe" make it obviously trivial.
+- "steps": 4-6 steps in the order the AI runs them. Each has a short "title", a one-sentence "detail" of what the AI does, an "impact" line in PLAIN language that tells the player the consequence (is it reversible? who does it reach?), a "manualMinutes" number (roughly how many minutes a human would spend on this step by hand today — a quick check might be 1-2, a careful judgement 5-15), and its "kind". Write impact lines so a non-technical reader can judge the risk from them — for a "critical" step make the irreversibility/human impact clear; for a "trap" make the impact line quietly reveal it is reversible/internal even though the title sounds scary; for "safe" make it obviously trivial.
 - "explanation": one short paragraph for the debrief — name which steps needed a human and why, call out any trap, and state the calibration lesson.
 
 Rules:
 - The correct placement must be inferable from the impact lines alone — never require outside knowledge.
 - Do NOT order steps by kind; the critical steps must not always be last.
-- Keep workflows grounded, professional and varied across rounds (different industries/subjects).`;
+- Keep workflows grounded, professional and varied across rounds (different industries/subjects), and give each its own fitting sender (name + role), not a recurring stock person.`;
 
 /** Attach stable ids (s1..sN) to each step, plus the round's risk tier. */
 export function withStepIds(
@@ -113,12 +123,14 @@ export function withStepIds(
     title: s.title,
     detail: s.detail,
     impact: s.impact,
+    manualMinutes: s.manualMinutes,
     kind: s.kind,
   }));
   return {
     topic: raw.topic,
     riskTier,
     workflowName: raw.workflowName,
+    volumePerQuarter: raw.volumePerQuarter,
     brief: raw.brief,
     goal: raw.goal,
     steps,

@@ -15,6 +15,7 @@ import {
 } from "@/lib/db/schema";
 import { getOrCreatePlayer } from "@/lib/player";
 import { gradeCheckpoints } from "@/lib/checkpoint-placement-scoring";
+import { computeOrgImpact } from "@/lib/checkpoint-impact";
 import { bonusForScoreRatio, levelForXp } from "@/lib/xp";
 
 /**
@@ -79,6 +80,15 @@ export async function POST(request: Request) {
     checkpointedIds,
   });
 
+  // Project the same workflow three ways at organisation scale (all-manual, the
+  // player's picks, all-AI) so the debrief can show the consequences of their
+  // calibration side by side. Feedback only — never affects the score.
+  const orgImpact = computeOrgImpact(
+    scenario.steps.map((s) => ({ id: s.id, kind: s.kind, manualMinutes: s.manualMinutes })),
+    checkpointedIds,
+    scenario.volumePerQuarter,
+  );
+
   // Per-step breakdown for the debrief: the kind, and whether it was guarded.
   const checkpointed = new Set(checkpointedIds);
   const steps = scenario.steps.map((s) => ({
@@ -133,6 +143,7 @@ export async function POST(request: Request) {
     goal: scenario.goal,
     riskTier: scenario.riskTier,
     output,
+    orgImpact,
     explanation: scenario.explanation,
     xpEarned,
     bonusXp,

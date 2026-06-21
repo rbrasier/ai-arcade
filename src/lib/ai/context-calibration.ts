@@ -23,6 +23,12 @@ export interface ContextItem {
   text: string;
   /** Ground truth — never sent to the client before scoring. */
   kind: ContextItemKind;
+  /**
+   * One short line, shown only in the debrief, explaining this snippet's role —
+   * why it was essential, or concretely why it was irrelevant/misleading to
+   * attach. Ground truth (it reveals the kind), so it is stripped pre-scoring.
+   */
+  reason: string;
 }
 
 export interface ContextCalibrationScenario {
@@ -60,6 +66,7 @@ const scenarioSchema = z.object({
       z.object({
         text: z.string(),
         kind: z.enum(["essential", "helpful", "noise", "distractor"]),
+        reason: z.string(),
       }),
     )
     .min(4)
@@ -79,15 +86,16 @@ Each round is a realistic workplace task (e.g. drafting a reply, picking a date,
 
 Fields:
 - "topic": a 1-4 word label for the task's subject (e.g. "refund email", "venue booking").
-- "task": a colleague (name, role, two-letter initials) and a short, natural message asking for the deliverable.
+- "task": the colleague forwarding the work — a "senderName", a "senderRole" job title and two-letter "senderInitials", plus a short, natural "message" asking for the deliverable. The name AND the role must FIT THIS SPECIFIC task's domain (a venue booking comes from an events manager; a sales report from a commercial analyst) and should vary from round to round — never reuse a stock name.
 - "goal": one precise sentence naming the deliverable the player is curating context for.
-- "items": 4-8 snippets, each a short standalone sentence or fact, with its "kind". Mix the kinds; do NOT order them by kind (shuffle so essentials aren't always first). Make distractors genuinely tempting, not obviously wrong.
+- "items": 4-8 snippets, each a short standalone sentence or fact, with its "kind" and a "reason". Mix the kinds; do NOT order them by kind (shuffle so essentials aren't always first). Make distractors genuinely tempting, not obviously wrong.
+- "reason" (per snippet): one short line, shown only AFTER the player commits, that plainly explains this snippet's role — why it is essential, or CONCRETELY why attaching it was irrelevant or misleading (e.g. "it's last quarter's figure, not this one", "it applies to new customers, not returning ones"). For noise/distractors especially, make the reason a clear, specific explanation of why it does not belong, not a vague "not needed".
 - "explanation": one short paragraph for the debrief — name which snippets were essential, which would have misled the answer, and the calibration lesson.
 
 Rules:
 - The task must be answerable correctly from the essential (+ helpful) snippets alone.
-- Every distractor must be plausibly on-topic yet lead to a materially wrong answer if used.
-- Keep tasks grounded, professional and varied across rounds (different industries/subjects).`;
+- Every distractor must be plausibly on-topic yet lead to a materially wrong answer if used, and its "reason" must say exactly why.
+- Keep tasks grounded, professional and varied across rounds (different industries/subjects), each with its own fitting sender (name + role), not a recurring stock person.`;
 
 /** Attach stable ids (c1..cN) to each snippet. */
 export function withItemIds(raw: RawContextCalibrationScenario): ContextCalibrationScenario {
@@ -95,6 +103,7 @@ export function withItemIds(raw: RawContextCalibrationScenario): ContextCalibrat
     id: `c${i + 1}`,
     text: it.text,
     kind: it.kind,
+    reason: it.reason,
   }));
   return {
     topic: raw.topic,
@@ -133,10 +142,10 @@ export async function generateContextCalibrationRound(
   // gets harder as the temptation to over-include grows.
   const mixGuidance =
     d <= 2
-      ? "This is an EASIER round: include 1 essential snippet, 0-1 distractor (if any, make it gentle), and the rest obvious noise, so it's clear what to add and what to drop."
+      ? "This is an EASIER round: a quick single-answer task. Include 1 essential snippet, 0-1 distractor (if any, make it gentle), and the rest obvious noise, so it's clear what to add and what to drop. Keep each snippet to one short sentence."
       : d === 3
         ? "This is a MID round: include 1-2 essentials and exactly 1 genuinely tempting distractor among the noise."
-        : "This is a HARDER round: include 1-2 essentials and 2-3 tempting distractors that each look relevant but would steer the answer wrong — the player must resist attaching everything.";
+        : "This is a HARDER, MORE INVOLVED round: frame it as COMPILING A REPORT OR BRIEF from a SELECTION OF DOCUMENTS — the task asks the player to pull together a detailed deliverable (e.g. a quarterly review, a board summary, a risk report). Each snippet is a short DESCRIPTION OF A CANDIDATE DOCUMENT (what it is and what period/scope it covers), not a one-line fact. Include 2-3 essential documents the report genuinely needs and 2-3 tempting distractor documents that look on-topic but are the wrong period, wrong scope, superseded, or never adopted — so the player must resist attaching everything. Make the distractors' wrongness inferable from their description.";
 
   try {
     const raw = await generateJson(scenarioSchema, {

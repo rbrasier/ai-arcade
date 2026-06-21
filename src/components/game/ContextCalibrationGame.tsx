@@ -39,6 +39,7 @@ interface ResultItem {
   id: string;
   text: string;
   kind: ContextItemKind;
+  reason?: string;
   selected: boolean;
 }
 
@@ -396,32 +397,34 @@ export function ContextCalibrationGame({ rounds }: { rounds: RoundRef[] }) {
 
               {scenario && phase === "curate" && (
                 <>
-                  {/* the task + goal */}
+                  {/* the task + goal — compact */}
                   <div
                     style={{
                       border: "1px solid #e6f1ee",
-                      borderRadius: 14,
+                      borderRadius: 12,
                       background: "#f6faf9",
-                      padding: "14px 16px",
+                      padding: "12px 14px",
                     }}
                   >
-                    <div style={kicker}>the task · from {scenario.task.senderName}</div>
-                    <div style={{ fontSize: 15.5, lineHeight: 1.55, color: "#33433f" }}>
+                    <div style={kicker}>
+                      the task · from {scenario.task.senderName} · {scenario.task.senderRole}
+                    </div>
+                    <div style={{ fontSize: 14, lineHeight: 1.5, color: "#33433f" }}>
                       {scenario.task.message}
                     </div>
-                    <div style={{ marginTop: 12, fontSize: 15.5, fontWeight: 700, color: "#1c2422" }}>
+                    <div style={{ marginTop: 8, fontSize: 14.5, fontWeight: 700, color: "#1c2422" }}>
                       🎯 {scenario.goal}
                     </div>
                   </div>
 
-                  {/* tray */}
+                  {/* context library — compact, attachable tiles */}
                   <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
-                    <div style={kicker}>the context tray · tap to attach</div>
+                    <div style={kicker}>context library · tap to attach to your message</div>
                     <div style={{ fontFamily: MONO, fontSize: 12, color: "#7d918c" }}>
                       {selected.size} of {scenario.items.length} attached
                     </div>
                   </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
                     {scenario.items.map((it) => {
                       const on = selected.has(it.id);
                       return (
@@ -430,74 +433,164 @@ export function ContextCalibrationGame({ rounds }: { rounds: RoundRef[] }) {
                           onClick={() => toggleItem(it.id)}
                           style={{
                             display: "flex",
-                            alignItems: "flex-start",
-                            gap: 12,
+                            alignItems: "center",
+                            gap: 10,
                             textAlign: "left",
                             fontFamily: BODY,
-                            fontSize: 15,
-                            lineHeight: 1.45,
+                            fontSize: 13.5,
+                            lineHeight: 1.4,
                             color: "#1c2422",
                             background: on
-                              ? "color-mix(in srgb, var(--accent) 11%, #fff)"
+                              ? "color-mix(in srgb, var(--accent) 10%, #fff)"
                               : "#fff",
                             border: `1.5px solid ${on ? ACCENT : "#dce8e5"}`,
-                            borderRadius: 13,
-                            padding: "13px 15px",
+                            borderRadius: 10,
+                            padding: "8px 12px",
                             cursor: "pointer",
                             transition: "border-color .14s, background .14s",
                           }}
                         >
-                          <span
-                            style={{
-                              flex: "none",
-                              width: 22,
-                              height: 22,
-                              borderRadius: 7,
-                              border: `2px solid ${on ? ACCENT : "#c4d6d2"}`,
-                              background: on ? ACCENT : "transparent",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              color: "#fff",
-                              fontSize: 13,
-                              marginTop: 1,
-                            }}
-                          >
-                            {on ? "✓" : ""}
-                          </span>
+                          <span style={{ flex: "none", fontSize: 15, opacity: 0.85 }}>📄</span>
                           <span style={{ flex: 1 }}>{it.text}</span>
                           <span
                             style={{
                               fontFamily: MONO,
-                              fontSize: 10,
+                              fontSize: 9.5,
                               fontWeight: 700,
                               letterSpacing: ".04em",
                               color: on ? ACCENT : "#a7b8b3",
                               whiteSpace: "nowrap",
-                              marginTop: 3,
                             }}
                           >
-                            {on ? "ATTACHED" : "ADD +"}
+                            {on ? "✓ ATTACHED" : "ATTACH +"}
                           </span>
                         </button>
                       );
                     })}
                   </div>
 
-                  <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 4, flexWrap: "wrap" }}>
-                    <button
-                      onClick={submit}
-                      disabled={submitting}
+                  {/* the message you're about to send — context attached like a chat */}
+                  <div>
+                    <div style={kicker}>your message to the assistant</div>
+                    <div
                       style={{
-                        ...primaryBtn,
-                        opacity: submitting ? 0.5 : 1,
-                        cursor: submitting ? "default" : "pointer",
+                        border: `1.5px solid color-mix(in srgb, ${ACCENT} 35%, #d6e8e4)`,
+                        borderRadius: 14,
+                        background: "#fff",
+                        padding: "11px 12px 10px",
+                        boxShadow: "0 8px 22px -16px rgba(18,46,42,.5)",
                       }}
                     >
-                      {submitting ? "RUNNING…" : "RUN WITH THIS CONTEXT →"}
-                    </button>
-                    <div style={{ fontFamily: MONO, fontSize: 12, color: "#7d918c" }}>
-                      enough signal, no noise — calibrate
+                      {/* attachment chips */}
+                      {selected.size > 0 ? (
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 9 }}>
+                          {scenario.items
+                            .filter((it) => selected.has(it.id))
+                            .map((it) => (
+                              <span
+                                key={it.id}
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: 5,
+                                  maxWidth: 220,
+                                  fontFamily: MONO,
+                                  fontSize: 10.5,
+                                  fontWeight: 700,
+                                  color: ACCENT,
+                                  background: "color-mix(in srgb, var(--accent) 10%, #fff)",
+                                  border: `1px solid color-mix(in srgb, ${ACCENT} 30%, #d6e8e4)`,
+                                  borderRadius: 8,
+                                  padding: "4px 6px 4px 8px",
+                                }}
+                              >
+                                <span style={{ flex: "none" }}>📎</span>
+                                <span
+                                  style={{
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                    whiteSpace: "nowrap",
+                                  }}
+                                >
+                                  {it.text}
+                                </span>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleItem(it.id);
+                                  }}
+                                  aria-label="Detach"
+                                  style={{
+                                    flex: "none",
+                                    border: "none",
+                                    background: "transparent",
+                                    color: ACCENT,
+                                    fontSize: 14,
+                                    lineHeight: 1,
+                                    cursor: "pointer",
+                                    padding: 0,
+                                  }}
+                                >
+                                  ×
+                                </button>
+                              </span>
+                            ))}
+                        </div>
+                      ) : (
+                        <div
+                          style={{
+                            fontFamily: MONO,
+                            fontSize: 11,
+                            color: "#a7b8b3",
+                            padding: "1px 2px 9px",
+                          }}
+                        >
+                          no context attached yet — tap snippets above to attach them
+                        </div>
+                      )}
+
+                      {/* the pre-filled, non-editable prompt the player is about to send */}
+                      <div
+                        style={{
+                          background: "#f6faf9",
+                          border: "1px solid #e6f1ee",
+                          borderRadius: 10,
+                          padding: "10px 12px",
+                          fontSize: 14,
+                          lineHeight: 1.5,
+                          color: "#1c2422",
+                        }}
+                      >
+                        {scenario.goal}
+                      </div>
+
+                      {/* send */}
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          gap: 12,
+                          marginTop: 10,
+                          flexWrap: "wrap",
+                        }}
+                      >
+                        <span style={{ fontFamily: MONO, fontSize: 11.5, color: "#7d918c" }}>
+                          enough signal, no noise — calibrate
+                        </span>
+                        <button
+                          onClick={submit}
+                          disabled={submitting}
+                          style={{
+                            ...primaryBtn,
+                            padding: "10px 20px",
+                            opacity: submitting ? 0.5 : 1,
+                            cursor: submitting ? "default" : "pointer",
+                          }}
+                        >
+                          {submitting ? "SENDING…" : "SEND ▶"}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </>
@@ -1013,7 +1106,10 @@ function Debrief({
                   </span>
                 </div>
                 <div style={{ fontSize: 14.5, color: "#1c2422", marginTop: 4 }}>{it.text}</div>
-                <div style={{ fontSize: 13, color: "#5d706b", marginTop: 2 }}>{v.note}</div>
+                <div style={{ fontSize: 13.5, color: "#5d706b", marginTop: 4, lineHeight: 1.45 }}>
+                  <span style={{ fontWeight: 700, color: toneColor }}>{v.note}.</span>
+                  {it.reason ? ` ${it.reason}` : ""}
+                </div>
               </div>
             </div>
           );
