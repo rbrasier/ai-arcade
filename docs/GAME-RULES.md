@@ -45,24 +45,26 @@ Players earn XP for every attempt, plus a bonus for strong performance:
 ## Round generation patterns
 
 These two patterns are **shared by every multi-round, AI-generated game** (Prompt
-Golf, Spot the Hallucination, Think It Through, Context Calibration and In the
-Loop) and must be kept in sync as games are added:
+Golf, Spot the Hallucination, Think It Through, Context Calibration, In the Loop
+and the Workflow Redesign capstone — which warms its **two** scenarios the same
+way) and must be kept in sync as games are added:
 
 - **Preload all rounds behind the explainer.** When the intro / "how to play"
   modal is shown, every round is generated in the background, **sequentially**
   (one after the next), so starting and advancing has little or no wait. A
   round's generate request is memoised as a promise; `loadRound` just awaits the
   matching entry. Replay drops the cache and warms a fresh set. Implemented in
-  `PromptGolfGame`, `HallucinationGame`, `ChainOfThoughtGame` and
-  `ContextCalibrationGame`.
+  `PromptGolfGame`, `HallucinationGame`, `ChainOfThoughtGame`,
+  `ContextCalibrationGame`, `CheckpointPlacementGame` and `WorkflowRedesignGame`.
 - **No repeated theme within a play-through.** Each generated scenario carries a
   short `topic` label. Because the background warm-up is sequential, each round
   is told the topics already used (`avoidTopics`) so it picks a clearly
   different subject — no two "survey results" rounds back to back. The client
   accumulates topics in a ref; the generate routes forward them to the AI
-  prompt. Applies to all five games above (`generatePromptGolfRound`,
+  prompt. Applies to all of the games above (`generatePromptGolfRound`,
   `generateHallucinationRound`, `generateChainOfThoughtRound`,
-  `generateContextCalibrationRound`, `generateCheckpointPlacementRound`).
+  `generateContextCalibrationRound`, `generateCheckpointPlacementRound`,
+  `generateWorkflowRedesignRound`).
 
 ---
 
@@ -259,3 +261,76 @@ apply to this ratio, and a round is `exceptional` only when **every** critical s
 is guarded and **no** safe or trap step is. Implemented in
 `src/app/api/games/checkpoint-placement/score/route.ts`, the shared pure helpers in
 `src/lib/checkpoint-placement-scoring.ts`, and `src/lib/ai/checkpoint-placement.ts`.
+
+**Workflow Redesign Challenge** (slug `workflow-redesign`) is the **Act Four
+capstone**. Unlike the five escalating-difficulty games it is **not** a 5-round
+game: it runs the **2 seeded scenarios** (HR onboarding, expense review) as deep
+challenges, each played through a **four-phase loop** — **Setup** (read the as-is
+workflow and its bottlenecks), **Ideation** (free-text analysis the AI synthesises
+into insights — formative and **unscored**, via
+`src/app/api/games/workflow-redesign/ideate/route.ts`), **Build** (a drag-and-drop
+canvas — `@dnd-kit/core` — where the player drags a **capability block**
+(`summarise` / `classify` / `extract` / `flag` / `draft`) onto each stage, picks an
+**implementation tier** (`rules` / `llm` / `custom-app`) and toggles a **human
+checkpoint**) and **Validate** (an AI **technical + governance critique** of the
+finished design — illustrative narration that **never affects the score**, the same
+"what it produced" idea as Prompt Golf).
+
+The canvas is organised as **one slot per as-is stage** so the free-feeling build
+still maps 1:1 to stored ground truth. Grading is fully deterministic against each
+stage's hidden `bestCapability` / `acceptableCapabilities`, `bestImpl` /
+`acceptableImpls` and governance `checkpointKind` (`critical` / `trap` / `safe` /
+`optional`), on **three axes** — one per decision the player makes per stage:
+
+- **redesign** = mean capability fit (a stage scores `CAP_BEST = 1` for the best
+  capability, `CAP_ACCEPTABLE = 0.7` for another acceptable one, 0 otherwise) — the
+  **gate**, like completeness in Context Calibration.
+- **governance** = `0.5 × coverage + 0.5 × efficiency` (reusing In the Loop's
+  symmetric shape): `coverage = criticalCheckpointed / criticalTotal`, and
+  `efficiency = 1 − weightedOverCheckpointed / weightedNonCriticalTotal` with a
+  **trap weighing 2× a plainly-safe step** (`TRAP_WEIGHT = 2`, `SAFE_WEIGHT = 1`).
+- **buildJudgment** = mean implementation-tier fit (`IMPL_BEST = 1`,
+  `IMPL_ACCEPTABLE = 0.5`, else 0) — the "**appropriate use of custom build
+  options**" mastery axis: both **over-engineering** (a custom app where rules/LLM
+  suffice) and **under-powering** (rules on a nuanced judgement) cost.
+
+`scoreRatio = 0.45 × redesign + 0.30 × governance + 0.25 × buildJudgment`. The
+capstone inherits **both** gates of the games it unifies: it is **capped at
+`GATE_CAP = 0.5`** (below the 65% clear) if **any** bottleneck is left unaddressed
+(no acceptable capability) **or** **any** governance-critical stage is left
+unguarded. Worked examples: a perfect redesign (best capability + best impl
+everywhere, checkpoints exactly right) → **100%** (`exceptional`); every bottleneck
+addressed with the best capability but impls merely acceptable, criticals guarded
+plus one needless checkpoint → **~83%** (clears, bonus); an unaddressed bottleneck
+**or** an unguarded critical → capped **50%** (fails). Over-gating the reversible
+steps drives `efficiency` toward 0 and costs the `exceptional` rating and a chunk of
+score, while the design-quality axes (capability + build = 70% of the weight) reward
+a sound, fully-safe redesign — so missing a bottleneck or an irreversible checkpoint
+is the true failure, not over-caution. The ≥ 70% / ≥ 85% XP bonus tiers apply to this
+ratio, and a round is `exceptional` only when **every** stage has the best capability
+and best implementation **and** every critical is guarded with **no** needless gate.
+Implemented in `src/app/api/games/workflow-redesign/score/route.ts`, the shared pure
+helpers in `src/lib/workflow-redesign-scoring.ts` (with palette copy in
+`src/lib/workflow-redesign-blocks.ts`), and `src/lib/ai/workflow-redesign.ts`.
+
+_Consequences (feedback only — never scored)._ On top of the three scoring axes,
+the debrief shows a deterministic **Consequences** read so the player feels what
+their choices did, in plain **speed** and **quality** terms — honouring the
+learning-outcomes note that good redesign is "not just time saved". Each stage
+carries a numeric `manualMinutes` (the human time today, behind the `timeCost`
+string) and the scenario a `volumePerMonth`. `computeWorkflowImpact` (in
+`src/lib/workflow-redesign-scoring.ts`) derives the redesigned per-item cycle time:
+an automated stage takes `manualMinutes × IMPL_SPEED_FACTOR` (rules `0.05`, llm
+`0.12`, custom-app `0.04`, floored at `AUTOMATION_FLOOR_MIN = 0.5` min), and a
+human checkpoint **adds review time back** (`max(CHECKPOINT_REVIEW_MIN = 2,
+manualMinutes × CHECKPOINT_REVIEW_FRACTION = 0.25)`) — so **over-gating visibly
+costs speed**. It reports before→after cycle time, **% faster**, and
+**hours saved/month** at volume, plus a per-stage quality band (`sound` /
+`unaddressed` / `under-powered` / `hallucination-exposed` / `over-built`) and a
+one-line verdict. The Build phase shows a **live, speed-only** estimate (via
+`computeSpeed`, which uses only `manualMinutes` and leaks no ground truth); the
+quality read waits for the debrief. An AI **run-narration**
+(`generateWorkflowRedesignOutcome`, fed the computed metrics so prose and numbers
+agree) tells the "what happened when it went live" story. None of this touches the
+score — it is the same illustrative "what it produced" layer as the Validate
+critique.
