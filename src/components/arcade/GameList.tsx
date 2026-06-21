@@ -47,13 +47,12 @@ export function GameList({
         {/* Subtle QA escape hatch: unlocks every game forever for this player.
             Deliberately low-contrast and unobtrusive — easy to miss unless you
             know it's here. */}
-        <div className="mt-4 text-right">
+        <div className="mt-4 text-center">
           <a
             href="/?testMode"
-            className="font-arcade-mono text-[10px] tracking-[.06em] text-[#efeadd] transition-colors hover:text-[#c8c2b4]"
-            title="Unlock all games (test mode)"
+            className="font-arcade-mono text-[10px] tracking-[.06em] text-[#d4cfc5] transition-colors hover:text-[#b8b2a8]"
           >
-            ·
+            Test Mode
           </a>
         </div>
       </section>
