@@ -64,17 +64,22 @@ export async function POST(request: Request) {
 
   // Strip the ground truth — capability/impl/checkpoint answers — before sending
   // to the client. The player sees only the as-is workflow and its bottlenecks.
+  // `manualMinutes` / `volumePerMonth` are time only — NOT capability/impl/
+  // checkpoint answers — so sending them leaks no ground truth, and lets the
+  // Build phase show a live cycle-time estimate as the player designs.
   const safeScenario = {
     topic: scenario.topic,
     scenarioKey: scenario.scenarioKey,
     workflowName: scenario.workflowName,
     brief: scenario.brief,
     goal: scenario.goal,
+    volumePerMonth: scenario.volumePerMonth,
     stages: scenario.stages.map((s) => ({
       id: s.id,
       name: s.name,
       painPoint: s.painPoint,
       timeCost: s.timeCost,
+      manualMinutes: s.manualMinutes,
     })),
   };
 

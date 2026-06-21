@@ -312,3 +312,25 @@ and best implementation **and** every critical is guarded with **no** needless g
 Implemented in `src/app/api/games/workflow-redesign/score/route.ts`, the shared pure
 helpers in `src/lib/workflow-redesign-scoring.ts` (with palette copy in
 `src/lib/workflow-redesign-blocks.ts`), and `src/lib/ai/workflow-redesign.ts`.
+
+_Consequences (feedback only — never scored)._ On top of the three scoring axes,
+the debrief shows a deterministic **Consequences** read so the player feels what
+their choices did, in plain **speed** and **quality** terms — honouring the
+learning-outcomes note that good redesign is "not just time saved". Each stage
+carries a numeric `manualMinutes` (the human time today, behind the `timeCost`
+string) and the scenario a `volumePerMonth`. `computeWorkflowImpact` (in
+`src/lib/workflow-redesign-scoring.ts`) derives the redesigned per-item cycle time:
+an automated stage takes `manualMinutes × IMPL_SPEED_FACTOR` (rules `0.05`, llm
+`0.12`, custom-app `0.04`, floored at `AUTOMATION_FLOOR_MIN = 0.5` min), and a
+human checkpoint **adds review time back** (`max(CHECKPOINT_REVIEW_MIN = 2,
+manualMinutes × CHECKPOINT_REVIEW_FRACTION = 0.25)`) — so **over-gating visibly
+costs speed**. It reports before→after cycle time, **% faster**, and
+**hours saved/month** at volume, plus a per-stage quality band (`sound` /
+`unaddressed` / `under-powered` / `hallucination-exposed` / `over-built`) and a
+one-line verdict. The Build phase shows a **live, speed-only** estimate (via
+`computeSpeed`, which uses only `manualMinutes` and leaks no ground truth); the
+quality read waits for the debrief. An AI **run-narration**
+(`generateWorkflowRedesignOutcome`, fed the computed metrics so prose and numbers
+agree) tells the "what happened when it went live" story. None of this touches the
+score — it is the same illustrative "what it produced" layer as the Validate
+critique.

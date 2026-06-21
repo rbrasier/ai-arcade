@@ -5,7 +5,7 @@ import {
   type WorkflowRedesignScenario,
 } from "./workflow-redesign";
 import { CAPABILITY_BY_KIND } from "../workflow-redesign-blocks";
-import type { StageBuild } from "../workflow-redesign-scoring";
+import type { StageBuild, WorkflowImpact } from "../workflow-redesign-scoring";
 
 /**
  * Deterministic offline scenarios — one per seeded scenario key — so the
@@ -25,12 +25,14 @@ const BANK: Record<string, RawWorkflowRedesignScenario> = {
         "Onboarding a new hire eats two days of my team's week — we re-key documents, chase missing forms and write every welcome by hand. Redesign it around AI: pick the right capability for each step, the right way to build it, and put a human in the loop only where it truly matters.",
     },
     goal: "Cut the manual load and turnaround while keeping every legally-sensitive decision defensible.",
+    volumePerMonth: 90,
     stages: [
       {
         name: "Pull key details from submitted documents",
         painPoint:
           "HR reads each contract, ID and certificate by hand and re-types names, dates and numbers into the HR system.",
         timeCost: "~45 min/hire",
+        manualMinutes: 45,
         bestCapability: "extract",
         acceptableCapabilities: ["extract", "summarise"],
         bestImpl: "custom-app",
@@ -44,6 +46,7 @@ const BANK: Record<string, RawWorkflowRedesignScenario> = {
         painPoint:
           "An officer manually interprets each candidate's documents against eligibility rules to decide if they can be hired.",
         timeCost: "~20 min/hire",
+        manualMinutes: 20,
         bestCapability: "classify",
         acceptableCapabilities: ["classify", "flag"],
         bestImpl: "llm",
@@ -57,6 +60,7 @@ const BANK: Record<string, RawWorkflowRedesignScenario> = {
         painPoint:
           "IT manually works out which tools and folders the role needs and requests each one.",
         timeCost: "~30 min/hire",
+        manualMinutes: 30,
         bestCapability: "classify",
         acceptableCapabilities: ["classify", "extract"],
         bestImpl: "rules",
@@ -70,6 +74,7 @@ const BANK: Record<string, RawWorkflowRedesignScenario> = {
         painPoint:
           "Each manager writes a bespoke welcome note and schedule from scratch.",
         timeCost: "~25 min/hire",
+        manualMinutes: 25,
         bestCapability: "draft",
         acceptableCapabilities: ["draft", "summarise"],
         bestImpl: "llm",
@@ -83,6 +88,7 @@ const BANK: Record<string, RawWorkflowRedesignScenario> = {
         painPoint:
           "Gaps in forms only surface on day one, when it's too late to fix smoothly.",
         timeCost: "~15 min/hire",
+        manualMinutes: 15,
         bestCapability: "flag",
         acceptableCapabilities: ["flag", "classify"],
         bestImpl: "rules",
@@ -107,12 +113,14 @@ const BANK: Record<string, RawWorkflowRedesignScenario> = {
         "Expense review is a slog — we eyeball every receipt, check each line against policy by hand, and chase employees over email. I want it fast, but it has to stay defensible: when money moves or we reject someone's claim, we need to stand behind it.",
     },
     goal: "Speed up review and payment while keeping every money-moving and employee-facing decision defensible.",
+    volumePerMonth: 800,
     stages: [
       {
         name: "Read amounts and categories off receipts",
         painPoint:
           "Clerks manually type totals, dates and categories from photographed receipts into the system.",
         timeCost: "~6 min/claim",
+        manualMinutes: 6,
         bestCapability: "extract",
         acceptableCapabilities: ["extract", "summarise"],
         bestImpl: "custom-app",
@@ -126,6 +134,7 @@ const BANK: Record<string, RawWorkflowRedesignScenario> = {
         painPoint:
           "Reviewers read every line and judge whether it complies with a long policy document.",
         timeCost: "~8 min/claim",
+        manualMinutes: 8,
         bestCapability: "classify",
         acceptableCapabilities: ["classify", "flag"],
         bestImpl: "llm",
@@ -139,6 +148,7 @@ const BANK: Record<string, RawWorkflowRedesignScenario> = {
         painPoint:
           "Approved reimbursements are paid out to employees' accounts.",
         timeCost: "~3 min/claim",
+        manualMinutes: 3,
         bestCapability: "classify",
         acceptableCapabilities: ["classify"],
         bestImpl: "rules",
@@ -152,6 +162,7 @@ const BANK: Record<string, RawWorkflowRedesignScenario> = {
         painPoint:
           "Duplicates and odd claims slip through because no one systematically checks for them.",
         timeCost: "~4 min/claim",
+        manualMinutes: 4,
         bestCapability: "flag",
         acceptableCapabilities: ["flag", "classify"],
         bestImpl: "rules",
@@ -165,6 +176,7 @@ const BANK: Record<string, RawWorkflowRedesignScenario> = {
         painPoint:
           "Reviewers hand-write each email explaining why a claim was queried or rejected.",
         timeCost: "~5 min/claim",
+        manualMinutes: 5,
         bestCapability: "draft",
         acceptableCapabilities: ["draft", "summarise"],
         bestImpl: "llm",
@@ -300,4 +312,44 @@ export function mockValidationCritique(
     technical: technicalParts.join(" "),
     governance: govParts.join(" "),
   };
+}
+
+/** Deterministic stand-in run-narration (offline / mock path) — consistent with `impact`. */
+export function mockWorkflowRedesignOutcome(
+  scenario: WorkflowRedesignScenario,
+  impact: WorkflowImpact,
+): string {
+  const nameById = new Map(scenario.stages.map((s) => [s.id, s.name]));
+  const find = (band: WorkflowImpact["stages"][number]["band"]) =>
+    impact.stages.find((s) => s.band === band);
+
+  const speed = `Once it went live, ${scenario.workflowName.toLowerCase()} dropped from ~${Math.round(
+    impact.beforeMinutes,
+  )} to ~${Math.round(impact.afterMinutes)} minutes an item — about ${Math.round(
+    impact.pctFaster * 100,
+  )}% faster, freeing roughly ${impact.hoursSavedPerMonth} human-hours a month across ${impact.volumePerMonth} items.`;
+
+  const unaddressed = find("unaddressed");
+  const exposed = find("hallucination-exposed");
+  const underpowered = find("under-powered");
+  const overBuilt = find("over-built");
+
+  let quality: string;
+  if (unaddressed) {
+    quality = `But "${nameById.get(unaddressed.id)}" was never really redesigned, so a person is still doing it by hand and the queue backs up there.`;
+  } else if (exposed) {
+    quality = `The catch: "${nameById.get(exposed.id)}" let an AI make an irreversible, person-facing call with no human checking it — so the first hallucination reached someone before anyone noticed.`;
+  } else if (underpowered) {
+    quality = `The weak point was "${nameById.get(underpowered.id)}": a rules filter there missed the nuance and let errors through that a human later had to unpick.`;
+  } else if (overBuilt) {
+    quality = `It works, but "${nameById.get(overBuilt.id)}" was built heavier than it needed to be — paying custom-app costs for a job lighter tooling would have done.`;
+  } else if (impact.overReviewed >= 2 || impact.pctFaster < 0.5) {
+    quality = `Nothing unsafe slipped through, but you parked a human in front of ${impact.overReviewed} reversible step${
+      impact.overReviewed === 1 ? "" : "s"
+    }, handing back much of the speed the redesign was meant to buy.`;
+  } else {
+    quality = `Every risky moment was caught at a human checkpoint and the routine steps ran on their own — fast where it could be, guarded where it had to be.`;
+  }
+
+  return `${speed} ${quality}`;
 }

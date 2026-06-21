@@ -5,6 +5,7 @@ import {
   mockWorkflowRedesignScenario,
   mockIdeationSynthesis,
   mockValidationCritique,
+  mockWorkflowRedesignOutcome,
 } from "./workflow-redesign-mock";
 import type {
   CapabilityKind,
@@ -12,6 +13,7 @@ import type {
   ImplTier,
   StageBuild,
   StageGroundTruth,
+  WorkflowImpact,
 } from "../workflow-redesign-scoring";
 import { CAPABILITY_BY_KIND, IMPL_BY_TIER } from "../workflow-redesign-blocks";
 
@@ -58,6 +60,8 @@ export interface WorkflowRedesignScenario {
   };
   /** One precise sentence naming what a good redesign achieves. */
   goal: string;
+  /** Items this workflow processes per month — the volume time savings scale over. */
+  volumePerMonth: number;
   /** The ordered as-is stages the player will redesign. */
   stages: WorkflowStage[];
   /** Debrief: the shape of a strong redesign and the key trade-offs. */
@@ -79,12 +83,14 @@ const scenarioSchema = z.object({
     message: z.string(),
   }),
   goal: z.string(),
+  volumePerMonth: z.number().positive(),
   stages: z
     .array(
       z.object({
         name: z.string(),
         painPoint: z.string(),
         timeCost: z.string(),
+        manualMinutes: z.number().positive(),
         bestCapability: z.enum(CAPABILITY_ENUM),
         acceptableCapabilities: z.array(z.enum(CAPABILITY_ENUM)).min(1),
         bestImpl: z.enum(IMPL_ENUM),
@@ -122,7 +128,9 @@ The player has a fixed palette of CAPABILITY blocks to assign to each stage:
 - "safe": plainly fine to automate — low-stakes and reversible.
 - "optional": a reasonable judgement call either way — scored neutral.
 
-For each stage provide: "name", "painPoint" (what's slow/manual today), "timeCost" (rough human time today), "bestCapability" + "acceptableCapabilities" (include the best one in the list), "bestImpl" + "acceptableImpls" (include the best one), "checkpointKind", and a one-sentence "rationale" for the debrief.
+For each stage provide: "name", "painPoint" (what's slow/manual today), "timeCost" (rough human time today, e.g. "~30 min/hire"), "manualMinutes" (the same human time as a plain NUMBER of minutes per item, consistent with timeCost), "bestCapability" + "acceptableCapabilities" (include the best one in the list), "bestImpl" + "acceptableImpls" (include the best one), "checkpointKind", and a one-sentence "rationale" for the debrief.
+
+Also provide a workflow-level "volumePerMonth": a realistic NUMBER of items this workflow processes each month (e.g. ~90 hires/month, ~800 claims/month) — it scales how much time the redesign saves, so make it plausible for the workflow's scale.
 
 Design rules:
 - Make the best capability clearly the natural fit for the bottleneck described.
@@ -142,6 +150,7 @@ export function withStageIds(
     name: s.name,
     painPoint: s.painPoint,
     timeCost: s.timeCost,
+    manualMinutes: s.manualMinutes,
     bestCapability: s.bestCapability as CapabilityKind,
     acceptableCapabilities: s.acceptableCapabilities as CapabilityKind[],
     bestImpl: s.bestImpl as ImplTier,
@@ -155,6 +164,7 @@ export function withStageIds(
     workflowName: raw.workflowName,
     brief: raw.brief,
     goal: raw.goal,
+    volumePerMonth: raw.volumePerMonth,
     stages,
     explanation: raw.explanation,
   };
@@ -287,6 +297,50 @@ export async function generateValidationCritique(args: {
     });
   } catch {
     return mockValidationCritique(scenario, byId);
+  }
+}
+
+/**
+ * Narrate ONE run of the redesigned workflow once it goes live, so the scorecard
+ * shows what the player's choices DID — in plain speed-and-quality terms (the same
+ * "what it produced" idea as Prompt Golf / In the Loop). Fed the deterministic
+ * `impact` metrics so the prose and the numbers agree. Illustrative only; it never
+ * affects the score. Falls back to a deterministic stand-in offline (or on error).
+ */
+export async function generateWorkflowRedesignOutcome(args: {
+  scenario: WorkflowRedesignScenario;
+  builds: StageBuild[];
+  impact: WorkflowImpact;
+}): Promise<string> {
+  const { scenario, builds, impact } = args;
+  const byId = new Map(builds.map((b) => [b.stageId, b]));
+
+  if (!isConfigured()) {
+    return mockWorkflowRedesignOutcome(scenario, impact);
+  }
+
+  const bandById = new Map(impact.stages.map((s) => [s.id, s.band]));
+  const designLines = scenario.stages
+    .map((s) => {
+      const b = byId.get(s.id);
+      const cap = b?.capability ? CAPABILITY_BY_KIND[b.capability].label : "left manual";
+      const impl = b?.impl ? IMPL_BY_TIER[b.impl].label : "—";
+      const guard = b?.checkpoint ? "human checkpoint" : "fully automated";
+      return `- ${s.name}: ${cap} via ${impl}, ${guard} [${bandById.get(s.id)}]`;
+    })
+    .join("\n");
+
+  const metrics = `Cycle time per item: ${Math.round(impact.beforeMinutes)} min by hand → ${Math.round(impact.afterMinutes)} min redesigned (${Math.round(impact.pctFaster * 100)}% faster), ~${impact.hoursSavedPerMonth} human-hours saved per month across ${impact.volumePerMonth} items. Verdict: ${impact.verdict}.`;
+
+  try {
+    return await generatePlainText({
+      system:
+        "You narrate a single run of a redesigned workflow once it goes live, to show the player the consequences of their choices in plain SPEED and QUALITY terms. In 2-4 grounded sentences: lead with how much faster it now runs (use the given numbers), then name the most important quality consequence of their build — an 'unaddressed' step still done by hand, an 'under-powered' step letting errors through, a 'hallucination-exposed' step where an unguarded AI decision reached someone, an 'over-built' step costing more than it needs, or — if all sound — that it ran fast and the risky moments were caught. If they over-reviewed reversible steps, note the speed handed back. Do not lecture, do not output a score, and keep the numbers consistent with those given.",
+      prompt: `Workflow: ${scenario.workflowName}\nGoal: ${scenario.goal}\n\nMetrics:\n${metrics}\n\nThe player's redesign:\n${designLines}`,
+      maxOutputTokens: 320,
+    });
+  } catch {
+    return mockWorkflowRedesignOutcome(scenario, impact);
   }
 }
 

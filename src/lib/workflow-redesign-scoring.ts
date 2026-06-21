@@ -70,6 +70,8 @@ export const GATE_CAP = 0.5;
 /** Ground truth for one current-state stage of the workflow. */
 export interface StageGroundTruth {
   id: string;
+  /** Human minutes this stage takes today, per item — the numeric behind `timeCost`. */
+  manualMinutes: number;
   /** Capabilities that genuinely address this stage's bottleneck. */
   bestCapability: CapabilityKind;
   acceptableCapabilities: CapabilityKind[];
@@ -213,5 +215,197 @@ export function gradeRedesign(
     criticalCheckpointed,
     overCheckpointed: trapCheckpointed + safeCheckpointed,
     gatePassed,
+  };
+}
+
+/* ============================================================================
+ * Consequences: deterministic speed + quality read on the redesign.
+ *
+ * This is FEEDBACK ONLY — it never touches the score (see docs/GAME-RULES.md).
+ * Its job is to make the player FEEL what their capability / implementation /
+ * checkpoint choices did to the workflow: how much faster it now runs, and where
+ * a choice introduced a production risk (errors, unguarded AI judgement, or an
+ * over-built / over-reviewed step that quietly gives the speed back).
+ * ==========================================================================*/
+
+/** Fraction of the manual time an automated step takes, by implementation tier. */
+export const IMPL_SPEED_FACTOR: Record<ImplTier, number> = {
+  rules: 0.05, // near-instant deterministic check
+  llm: 0.12, // a model call — fast, a touch slower than a rule
+  "custom-app": 0.04, // purpose-built and integrated: the fastest at runtime
+};
+/** An automated step never drops below this many minutes. */
+export const AUTOMATION_FLOOR_MIN = 0.5;
+/** A human checkpoint adds review time back: this fraction of the manual time… */
+export const CHECKPOINT_REVIEW_FRACTION = 0.25;
+/** …but never less than this many minutes. */
+export const CHECKPOINT_REVIEW_MIN = 2;
+
+/** Plain-language quality read on a single stage's build choice. */
+export type QualityBand =
+  | "sound"
+  | "unaddressed"
+  | "under-powered"
+  | "hallucination-exposed"
+  | "over-built";
+
+/**
+ * Per-item minutes the stage takes AFTER the redesign, given the player's build.
+ * Pure and ground-truth-free, so the client can show a live estimate while the
+ * player is still building (it leaks no answers — only time).
+ */
+export function redesignedStageMinutes(
+  manualMinutes: number,
+  build: Pick<StageBuild, "capability" | "impl" | "checkpoint"> | undefined,
+): number {
+  // No capability assigned → the stage is still done by hand.
+  if (!build?.capability) return manualMinutes;
+  const factor = build.impl ? IMPL_SPEED_FACTOR[build.impl] : IMPL_SPEED_FACTOR.llm;
+  let minutes = Math.max(AUTOMATION_FLOOR_MIN, manualMinutes * factor);
+  // A human checkpoint adds review time back — the cost of (over-)gating.
+  if (build.checkpoint) {
+    minutes += Math.max(CHECKPOINT_REVIEW_MIN, manualMinutes * CHECKPOINT_REVIEW_FRACTION);
+  }
+  return minutes;
+}
+
+export interface SpeedSummary {
+  /** Per-item minutes the workflow takes today, by hand. */
+  beforeMinutes: number;
+  /** Per-item minutes the redesign takes. */
+  afterMinutes: number;
+  /** Share of the cycle time removed, 0..1 (can be ~0 if everything is gated). */
+  pctFaster: number;
+}
+
+/**
+ * Speed-only summary: shareable with the client for a live "estimated cycle time"
+ * readout during the Build phase (uses only `manualMinutes`, never ground truth).
+ */
+export function computeSpeed(
+  stages: { id: string; manualMinutes: number }[],
+  builds: StageBuild[],
+): SpeedSummary {
+  const byId = new Map(builds.map((b) => [b.stageId, b]));
+  let beforeMinutes = 0;
+  let afterMinutes = 0;
+  for (const s of stages) {
+    beforeMinutes += s.manualMinutes;
+    afterMinutes += redesignedStageMinutes(s.manualMinutes, byId.get(s.id));
+  }
+  const pctFaster =
+    beforeMinutes > 0 ? Math.max(0, (beforeMinutes - afterMinutes) / beforeMinutes) : 0;
+  return { beforeMinutes, afterMinutes, pctFaster };
+}
+
+export interface StageImpact {
+  id: string;
+  band: QualityBand;
+  manualMinutes: number;
+  afterMinutes: number;
+}
+
+export interface WorkflowImpact extends SpeedSummary {
+  /** Items processed per month — the volume the time saving is multiplied over. */
+  volumePerMonth: number;
+  /** Whole hours of human time saved per month at that volume. */
+  hoursSavedPerMonth: number;
+  /** Per-stage quality read. */
+  stages: StageImpact[];
+  /** Counts of stages in each quality band. */
+  counts: Record<QualityBand, number>;
+  /** Needless checkpoints on safe/trap stages — over-review drag. */
+  overReviewed: number;
+  /** One-line qualitative verdict on the redesign's production readiness. */
+  verdict: string;
+}
+
+/** Classify one stage's build into a plain-language quality band vs ground truth. */
+function qualityBand(stage: StageGroundTruth, build: StageBuild | undefined): QualityBand {
+  const capOk = Boolean(
+    build?.capability && stage.acceptableCapabilities.includes(build.capability),
+  );
+  if (!capOk) return "unaddressed";
+
+  // An unguarded LLM owning an irreversible/person-affecting call: a hallucination
+  // can reach the outside world with no one checking it.
+  if (build?.impl === "llm" && stage.checkpointKind === "critical" && !build.checkpoint) {
+    return "hallucination-exposed";
+  }
+
+  const implOk = Boolean(build?.impl && stage.acceptableImpls.includes(build.impl));
+  if (!implOk && build?.impl) {
+    if (build.impl === "custom-app" && stage.bestImpl !== "custom-app") return "over-built";
+    return "under-powered"; // rules (or an off LLM) where more capability was needed
+  }
+  return "sound";
+}
+
+/**
+ * Full consequences read: speed + per-stage quality + a one-line verdict. Pure,
+ * server-side (it needs the stored ground truth). `volumePerMonth` scales the
+ * time saving into a tangible monthly figure.
+ */
+export function computeWorkflowImpact(
+  stages: StageGroundTruth[],
+  builds: StageBuild[],
+  volumePerMonth: number,
+): WorkflowImpact {
+  const byId = new Map(builds.map((b) => [b.stageId, b]));
+  const speed = computeSpeed(stages, builds);
+
+  const counts: Record<QualityBand, number> = {
+    sound: 0,
+    unaddressed: 0,
+    "under-powered": 0,
+    "hallucination-exposed": 0,
+    "over-built": 0,
+  };
+  let overReviewed = 0;
+  const stageImpacts: StageImpact[] = stages.map((s) => {
+    const build = byId.get(s.id);
+    const band = qualityBand(s, build);
+    counts[band] += 1;
+    if (
+      build?.checkpoint &&
+      (s.checkpointKind === "safe" || s.checkpointKind === "trap")
+    ) {
+      overReviewed += 1;
+    }
+    return {
+      id: s.id,
+      band,
+      manualMinutes: s.manualMinutes,
+      afterMinutes: redesignedStageMinutes(s.manualMinutes, build),
+    };
+  });
+
+  const minutesSavedPerMonth =
+    Math.max(0, speed.beforeMinutes - speed.afterMinutes) * volumePerMonth;
+  const hoursSavedPerMonth = Math.round(minutesSavedPerMonth / 60);
+
+  let verdict: string;
+  if (counts.unaddressed > 0) {
+    verdict = "Incomplete — a bottleneck is still done by hand";
+  } else if (counts["hallucination-exposed"] > 0) {
+    verdict = "Fast but risky — AI judgement reaches the outside world unchecked";
+  } else if (counts["under-powered"] > 0) {
+    verdict = "Fast but error-prone — a step is under-powered for its nuance";
+  } else if (counts["over-built"] > 0) {
+    verdict = "Sound but over-built — a step costs more to run than it needs to";
+  } else if (overReviewed >= 2 || speed.pctFaster < 0.5) {
+    verdict = "Safe but heavy — over-reviewing gives much of the speed back";
+  } else {
+    verdict = "Production-ready — fast where it can be, guarded where it must be";
+  }
+
+  return {
+    ...speed,
+    volumePerMonth,
+    hoursSavedPerMonth,
+    stages: stageImpacts,
+    counts,
+    overReviewed,
+    verdict,
   };
 }

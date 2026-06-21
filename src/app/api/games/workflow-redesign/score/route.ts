@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 
 import {
   generateValidationCritique,
+  generateWorkflowRedesignOutcome,
   type WorkflowRedesignScenario,
 } from "@/lib/ai/workflow-redesign";
 import { db } from "@/lib/db/client";
@@ -15,6 +16,7 @@ import {
 } from "@/lib/db/schema";
 import { getOrCreatePlayer } from "@/lib/player";
 import {
+  computeWorkflowImpact,
   gradeRedesign,
   type CapabilityKind,
   type ImplTier,
@@ -98,8 +100,19 @@ export async function POST(request: Request) {
   const xpEarned = Math.round(challenge.xpReward * graded.scoreRatio);
   const bonusXp = bonusForScoreRatio(challenge.xpReward, graded.scoreRatio);
 
-  // AI critique of the finished design — illustrative, never affects the score.
-  const critique = await generateValidationCritique({ scenario, builds });
+  // Deterministic consequences of the player's choices — speed + quality. This is
+  // FEEDBACK ONLY; it never touches the score (see docs/GAME-RULES.md).
+  const volumePerMonth =
+    typeof scenario.volumePerMonth === "number" && scenario.volumePerMonth > 0
+      ? scenario.volumePerMonth
+      : 100;
+  const impact = computeWorkflowImpact(scenario.stages, builds, volumePerMonth);
+
+  // AI critique + run-narration of the finished design — illustrative, never the score.
+  const [critique, outcome] = await Promise.all([
+    generateValidationCritique({ scenario, builds }),
+    generateWorkflowRedesignOutcome({ scenario, builds, impact }),
+  ]);
 
   // Per-stage breakdown for the debrief: ground truth + the player's choice.
   const byId = new Map(builds.map((b) => [b.stageId, b]));
@@ -136,7 +149,7 @@ export async function POST(request: Request) {
       score,
       xpEarned,
       bonusXp,
-      response: JSON.stringify({ roundId, builds, critique }),
+      response: JSON.stringify({ roundId, builds, critique, outcome }),
       evaluation: {
         score,
         feedback,
@@ -172,6 +185,8 @@ export async function POST(request: Request) {
     workflowName: scenario.workflowName,
     goal: scenario.goal,
     critique,
+    outcome,
+    impact,
     explanation: scenario.explanation,
     xpEarned,
     bonusXp,

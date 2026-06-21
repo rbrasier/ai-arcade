@@ -21,10 +21,13 @@ import {
   IMPL_TIERS,
   IMPL_BY_TIER,
 } from "@/lib/workflow-redesign-blocks";
-import type {
-  CapabilityKind,
-  CheckpointKind,
-  ImplTier,
+import {
+  computeSpeed,
+  type CapabilityKind,
+  type CheckpointKind,
+  type ImplTier,
+  type QualityBand,
+  type StageBuild,
 } from "@/lib/workflow-redesign-scoring";
 
 const ACCENT = "#0d9488"; // teal — distinct from the other games
@@ -45,6 +48,7 @@ interface Stage {
   name: string;
   painPoint: string;
   timeCost: string;
+  manualMinutes: number;
 }
 interface SafeScenario {
   topic: string;
@@ -57,6 +61,7 @@ interface SafeScenario {
     message: string;
   };
   goal: string;
+  volumePerMonth: number;
   stages: Stage[];
 }
 
@@ -88,6 +93,24 @@ interface Critique {
   governance: string;
 }
 
+interface StageImpact {
+  id: string;
+  band: QualityBand;
+  manualMinutes: number;
+  afterMinutes: number;
+}
+interface WorkflowImpact {
+  beforeMinutes: number;
+  afterMinutes: number;
+  pctFaster: number;
+  volumePerMonth: number;
+  hoursSavedPerMonth: number;
+  stages: StageImpact[];
+  counts: Record<QualityBand, number>;
+  overReviewed: number;
+  verdict: string;
+}
+
 interface ScoreResult {
   score: number;
   maxScore: number;
@@ -107,6 +130,8 @@ interface ScoreResult {
   workflowName: string;
   goal: string;
   critique: Critique;
+  outcome: string;
+  impact: WorkflowImpact;
   explanation: string;
   xpEarned: number;
   bonusXp: number;
@@ -127,6 +152,30 @@ interface HistoryEntry {
 
 function emptyDesign(): StageDesign {
   return { capability: null, impl: null, checkpoint: false };
+}
+
+/** Format a per-item minute figure compactly (e.g. "45 min", "1h 5m"). */
+function fmtMins(m: number): string {
+  const rounded = Math.round(m);
+  if (rounded >= 60) {
+    const h = Math.floor(rounded / 60);
+    const r = rounded % 60;
+    return r ? `${h}h ${r}m` : `${h}h`;
+  }
+  return `${rounded} min`;
+}
+
+/** Build the StageBuild[] the scorer/speed helpers expect from the design map. */
+function buildsFromDesign(
+  stages: { id: string }[],
+  design: Record<string, StageDesign>,
+): StageBuild[] {
+  return stages.map((s) => ({
+    stageId: s.id,
+    capability: design[s.id]?.capability ?? null,
+    impl: design[s.id]?.impl ?? null,
+    checkpoint: design[s.id]?.checkpoint ?? false,
+  }));
 }
 
 export function WorkflowRedesignGame({ rounds }: { rounds: RoundRef[] }) {
@@ -314,12 +363,7 @@ export function WorkflowRedesignGame({ rounds }: { rounds: RoundRef[] }) {
     if (!roundId || !scenario) return;
     setSubmitting(true);
     try {
-      const builds = scenario.stages.map((s) => ({
-        stageId: s.id,
-        capability: design[s.id]?.capability ?? null,
-        impl: design[s.id]?.impl ?? null,
-        checkpoint: design[s.id]?.checkpoint ?? false,
-      }));
+      const builds = buildsFromDesign(scenario.stages, design);
       const res = await fetch("/api/games/workflow-redesign/score", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -994,6 +1038,71 @@ function StageSlot({
   );
 }
 
+/**
+ * Live "estimated cycle time" while the player builds — speed only (it uses just
+ * `manualMinutes`, never any ground truth, so it reveals no answers). It makes the
+ * speed consequence of each implementation / checkpoint choice felt as they design;
+ * the quality read waits for the debrief, where ground truth is allowed.
+ */
+function LiveSpeedBar({
+  scenario,
+  design,
+}: {
+  scenario: SafeScenario;
+  design: Record<string, StageDesign>;
+}) {
+  const builds = buildsFromDesign(scenario.stages, design);
+  const { beforeMinutes, afterMinutes, pctFaster } = computeSpeed(
+    scenario.stages,
+    builds,
+  );
+  const anyBuilt = builds.some((b) => b.capability);
+  const pct = Math.round(pctFaster * 100);
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        flexWrap: "wrap",
+        border: "1px solid #ddefeb",
+        borderRadius: 12,
+        background: "#fff",
+        padding: "10px 14px",
+      }}
+    >
+      <span style={{ ...miniLabel, marginBottom: 0 }}>est. cycle time</span>
+      <span style={{ fontFamily: MONO, fontSize: 13, color: "#7c9a95" }}>
+        {fmtMins(beforeMinutes)} by hand
+      </span>
+      <span style={{ fontFamily: MONO, fontSize: 13, color: "#7c9a95" }}>→</span>
+      <span style={{ fontFamily: MONO, fontSize: 15, fontWeight: 700, color: "#13211f" }}>
+        {fmtMins(afterMinutes)}
+      </span>
+      {anyBuilt && (
+        <span
+          style={{
+            fontFamily: MONO,
+            fontSize: 12,
+            fontWeight: 700,
+            color: pct > 0 ? GREEN : AMBER,
+            background: pct > 0 ? "#eef7ec" : "#fdf8ee",
+            border: `1px solid ${pct > 0 ? "#cfe6d4" : "#efe2c9"}`,
+            borderRadius: 999,
+            padding: "3px 10px",
+          }}
+        >
+          {pct}% faster
+        </span>
+      )}
+      <span style={{ fontFamily: MONO, fontSize: 11, color: "#9bb4af", marginLeft: "auto" }}>
+        per item · checkpoints add review time
+      </span>
+    </div>
+  );
+}
+
 function BuildView({
   scenario,
   design,
@@ -1036,6 +1145,8 @@ function BuildView({
           ))}
         </div>
       </div>
+
+      <LiveSpeedBar scenario={scenario} design={design} />
 
       <div style={kicker}>your redesigned pipeline · assign a block, pick how it&apos;s built, gate where needed</div>
       <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
@@ -1409,6 +1520,129 @@ function toneColor(t: "good" | "warn" | "bad") {
   return t === "good" ? GREEN : t === "warn" ? AMBER : RED;
 }
 
+const BAND_META: Record<
+  QualityBand,
+  { label: string; tone: "good" | "warn" | "bad" }
+> = {
+  sound: { label: "sound", tone: "good" },
+  unaddressed: { label: "still manual", tone: "bad" },
+  "under-powered": { label: "error-prone", tone: "bad" },
+  "hallucination-exposed": { label: "unguarded AI", tone: "bad" },
+  "over-built": { label: "over-built", tone: "warn" },
+};
+
+const BAND_ORDER: QualityBand[] = [
+  "sound",
+  "unaddressed",
+  "under-powered",
+  "hallucination-exposed",
+  "over-built",
+];
+
+/**
+ * The Consequences panel: what the player's design DID, in plain speed + quality
+ * terms. Deterministic numbers (computed server-side) plus the AI run-narration —
+ * all feedback only, never part of the score.
+ */
+function ConsequencesPanel({ result }: { result: ScoreResult }) {
+  const { impact } = result;
+  const nameById = new Map(result.stages.map((s) => [s.id, s.name]));
+  const pct = Math.round(impact.pctFaster * 100);
+  const goodSpeed = pct >= 50;
+
+  return (
+    <>
+      <div style={{ ...kicker, marginTop: 24 }}>
+        Consequences · when it went live
+      </div>
+
+      {/* speed */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12, marginTop: 10 }}>
+        {statCard(
+          goodSpeed ? "#cfe6d4" : "#efe2c9",
+          goodSpeed ? "#eef7ec" : "#fdf8ee",
+          goodSpeed ? GREEN : AMBER,
+          `${pct}%`,
+          "faster per item",
+        )}
+        {statCard(
+          "#cfe5e0",
+          "#f2faf8",
+          "#13211f",
+          `${fmtMins(impact.beforeMinutes)} → ${fmtMins(impact.afterMinutes)}`,
+          "cycle time, by hand → redesigned",
+        )}
+        {statCard(
+          "#cfe5e0",
+          "#f2faf8",
+          "#13211f",
+          `${impact.hoursSavedPerMonth}h`,
+          `human-hours saved / month · ${impact.volumePerMonth} items`,
+        )}
+      </div>
+
+      {/* verdict + quality bands */}
+      <div
+        style={{
+          marginTop: 12,
+          border: "1px solid #dde9e6",
+          borderRadius: 14,
+          background: "#f7fbfa",
+          padding: "13px 15px",
+        }}
+      >
+        <div style={{ fontSize: 14.5, fontWeight: 700, color: "#13211f" }}>
+          {impact.verdict}
+        </div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
+          {BAND_ORDER.filter((b) => impact.counts[b] > 0).map((b) => {
+            const meta = BAND_META[b];
+            const names = impact.stages
+              .filter((s) => s.band === b)
+              .map((s) => nameById.get(s.id))
+              .filter(Boolean) as string[];
+            return (
+              <span
+                key={b}
+                title={names.join(", ")}
+                style={pill(toneColor(meta.tone))}
+              >
+                {impact.counts[b]} {meta.label}
+              </span>
+            );
+          })}
+          {impact.overReviewed > 0 && (
+            <span style={pill(AMBER)}>
+              {impact.overReviewed} over-reviewed
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* AI run-narration */}
+      {result.outcome && (
+        <div
+          style={{
+            marginTop: 12,
+            display: "flex",
+            gap: 11,
+            alignItems: "flex-start",
+            border: `1.5px solid color-mix(in srgb, ${ACCENT} 30%, #cfe5e0)`,
+            background: `color-mix(in srgb, ${ACCENT} 5%, #fffdfb)`,
+            borderRadius: 14,
+            padding: "13px 15px",
+          }}
+        >
+          <span style={{ fontSize: 18, lineHeight: 1.2 }}>📟</span>
+          <div style={{ fontSize: 14.5, lineHeight: 1.55, color: "#2c423e" }}>
+            {result.outcome}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 function Debrief({
   result,
   roundNo,
@@ -1478,6 +1712,9 @@ function Debrief({
           level {result.player.level} · {result.player.xp} XP
         </span>
       </div>
+
+      {/* Consequences — deterministic speed + quality read, feedback only */}
+      <ConsequencesPanel result={result} />
 
       {/* AI critique */}
       <div style={{ ...kicker, marginTop: 24 }}>AI review · {result.critique.headline}</div>
