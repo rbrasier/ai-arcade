@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 
 import type { StepKind } from "@/lib/checkpoint-placement-scoring";
 import type { RiskTier } from "@/lib/checkpoint-tiers";
+import type { ColumnImpact, OrgImpact, RunMode } from "@/lib/checkpoint-impact";
 
 const ACCENT = "#4c63d2";
 const DISPLAY = "var(--font-bricolage), sans-serif";
@@ -63,6 +64,7 @@ interface ScoreResult {
   goal: string;
   riskTier: RiskTier;
   output: string;
+  orgImpact: OrgImpact;
   explanation: string;
   xpEarned: number;
   bonusXp: number;
@@ -934,6 +936,292 @@ function stepVerdict(kind: StepKind, checkpointed: boolean): {
   }
 }
 
+const MODE_META: Record<RunMode, { label: string; sub: string; icon: string }> = {
+  manual: { label: "Manual only", sub: "humans do every step", icon: "👤" },
+  picked: { label: "Your design", sub: "AI runs it, you placed the checkpoints", icon: "🧑‍⚖️" },
+  ai: { label: "AI only", sub: "no human in the loop", icon: "🤖" },
+};
+const MODE_ORDER: RunMode[] = ["manual", "picked", "ai"];
+
+function fmtInt(n: number): string {
+  return Math.round(n).toLocaleString("en-GB");
+}
+
+/** How one step is handled under a given run mode, for the side-by-side grid. */
+function treatmentCell(
+  mode: RunMode,
+  kind: StepKind,
+  checkpointed: boolean,
+): { label: string; icon: string; tone: "accent" | "bad" | "neutral" } {
+  if (mode === "manual") return { label: "Human", icon: "👤", tone: "neutral" };
+  const reviewed = mode === "picked" && checkpointed;
+  if (reviewed) return { label: "Reviewed", icon: "🧑", tone: "accent" };
+  if (kind === "critical") return { label: "Auto", icon: "⚠️", tone: "bad" };
+  return { label: "Auto", icon: "🤖", tone: "neutral" };
+}
+
+/**
+ * The Act-Three payoff: the same workflow played out three ways and projected
+ * across a quarter at organisation scale, so the player FEELS what their
+ * checkpoint placement does at volume. Feedback only — never scored.
+ */
+function OrgScaleImpact({
+  impact,
+  steps,
+  workflowName,
+}: {
+  impact: OrgImpact;
+  steps: ResultStep[];
+  workflowName: string;
+}) {
+  const cols: { mode: RunMode; col: ColumnImpact }[] = [
+    { mode: "manual", col: impact.manual },
+    { mode: "picked", col: impact.picked },
+    { mode: "ai", col: impact.ai },
+  ];
+  const nets = cols.map((c) => c.col.netCostHours);
+  const bestNet = Math.min(...nets);
+  const worstNet = Math.max(...nets);
+
+  const metricRows: {
+    label: string;
+    value: (c: ColumnImpact) => string;
+    highlight?: "low" | "high";
+  }[] = [
+    { label: "Workflows / quarter", value: (c) => fmtInt(c.workflows) },
+    { label: "Total time", value: (c) => `${fmtInt(c.totalHours)} hrs` },
+    { label: "Avg / workflow", value: (c) => `${c.avgMinutesPerWorkflow} min` },
+    { label: "Processing errors", value: (c) => fmtInt(c.processingErrors) },
+    {
+      label: "High-level consequences",
+      value: (c) => fmtInt(c.highLevelConsequences),
+    },
+    {
+      label: "Net cost (equiv. hrs)",
+      value: (c) => fmtInt(c.netCostHours),
+      highlight: "low",
+    },
+  ];
+
+  return (
+    <div style={{ marginTop: 24 }}>
+      <div style={kicker}>The same workflow, three ways — at organisation scale</div>
+      <p style={{ fontSize: 13.5, lineHeight: 1.5, color: "#5b6488", margin: "0 0 14px" }}>
+        In a {fmtInt(impact.orgSize)}-person organisation, <b>{workflowName}</b> runs about{" "}
+        <b>{fmtInt(impact.volumePerQuarter)}</b> times a quarter. Here&apos;s the likely impact of
+        running it three ways — all by hand, your checkpoint design, and fully unattended.
+      </p>
+
+      {/* per-step treatment grid */}
+      <div
+        style={{
+          border: "1px solid #d8def4",
+          borderRadius: 14,
+          overflow: "hidden",
+          marginBottom: 16,
+        }}
+      >
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1.5fr 1fr 1fr 1fr",
+            background: "#f6f7fd",
+            borderBottom: "1px solid #e7eafb",
+          }}
+        >
+          <div style={gridHeadCell}>Step</div>
+          {MODE_ORDER.map((m) => (
+            <div
+              key={m}
+              style={{
+                ...gridHeadCell,
+                textAlign: "center",
+                color: m === "picked" ? ACCENT : "#7c84a4",
+              }}
+            >
+              {MODE_META[m].icon} {MODE_META[m].label}
+            </div>
+          ))}
+        </div>
+        {steps.map((s, i) => (
+          <div
+            key={s.id}
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1.5fr 1fr 1fr 1fr",
+              borderBottom: i === steps.length - 1 ? "none" : "1px solid #eef0fb",
+              alignItems: "stretch",
+            }}
+          >
+            <div
+              style={{
+                padding: "9px 12px",
+                fontSize: 13,
+                color: "#1c2030",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                minWidth: 0,
+              }}
+            >
+              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {s.title}
+              </span>
+            </div>
+            {MODE_ORDER.map((m) => {
+              const t = treatmentCell(m, s.kind, s.checkpointed);
+              const color =
+                t.tone === "accent" ? ACCENT : t.tone === "bad" ? RED : "#9aa3c4";
+              const bg =
+                m === "picked"
+                  ? "color-mix(in srgb, var(--accent) 5%, #fff)"
+                  : "transparent";
+              return (
+                <div
+                  key={m}
+                  style={{
+                    padding: "9px 6px",
+                    background: bg,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 1,
+                    borderLeft: "1px solid #eef0fb",
+                  }}
+                >
+                  <span style={{ fontSize: 14 }}>{t.icon}</span>
+                  <span
+                    style={{
+                      fontFamily: MONO,
+                      fontSize: 9.5,
+                      fontWeight: 700,
+                      letterSpacing: ".03em",
+                      textTransform: "uppercase",
+                      color,
+                    }}
+                  >
+                    {t.label}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+
+      {/* org-scale metrics */}
+      <div
+        style={{
+          border: "1px solid #d8def4",
+          borderRadius: 14,
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1.5fr 1fr 1fr 1fr",
+            background: "#f6f7fd",
+            borderBottom: "1px solid #e7eafb",
+          }}
+        >
+          <div style={gridHeadCell}>Per quarter</div>
+          {cols.map(({ mode }) => (
+            <div
+              key={mode}
+              style={{
+                ...gridHeadCell,
+                textAlign: "center",
+                color: mode === "picked" ? ACCENT : "#7c84a4",
+              }}
+            >
+              {MODE_META[mode].label}
+            </div>
+          ))}
+        </div>
+        {metricRows.map((row, ri) => (
+          <div
+            key={row.label}
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1.5fr 1fr 1fr 1fr",
+              borderBottom:
+                ri === metricRows.length - 1 ? "none" : "1px solid #eef0fb",
+            }}
+          >
+            <div
+              style={{
+                padding: "10px 12px",
+                fontSize: 12.5,
+                color: "#5b6488",
+                display: "flex",
+                alignItems: "center",
+              }}
+            >
+              {row.label}
+            </div>
+            {cols.map(({ mode, col }) => {
+              const isNet = row.highlight === "low";
+              const best = isNet && col.netCostHours === bestNet && bestNet !== worstNet;
+              const worst = isNet && col.netCostHours === worstNet && bestNet !== worstNet;
+              return (
+                <div
+                  key={mode}
+                  style={{
+                    padding: "10px 6px",
+                    textAlign: "center",
+                    fontFamily: MONO,
+                    fontSize: 12.5,
+                    fontWeight: isNet ? 700 : 600,
+                    color: best ? GREEN : worst ? RED : "#1c2030",
+                    background:
+                      mode === "picked"
+                        ? "color-mix(in srgb, var(--accent) 5%, #fff)"
+                        : "transparent",
+                    borderLeft: "1px solid #eef0fb",
+                  }}
+                >
+                  {row.value(col)}
+                  {best ? " ✓" : ""}
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+
+      <div
+        style={{
+          marginTop: 12,
+          borderLeft: `3px solid ${ACCENT}`,
+          padding: "2px 0 2px 13px",
+          color: "#414a68",
+          fontSize: 14,
+          lineHeight: 1.5,
+        }}
+      >
+        {impact.verdict}
+      </div>
+      <p style={{ fontSize: 11.5, color: "#9aa3c4", margin: "8px 0 0", fontStyle: "italic" }}>
+        Illustrative projection — high-level consequences are uncaught errors on irreversible or
+        person-affecting steps; net cost folds time, rework and consequences into equivalent hours.
+        It never affects your score.
+      </p>
+    </div>
+  );
+}
+
+const gridHeadCell: React.CSSProperties = {
+  padding: "9px 12px",
+  fontFamily: MONO,
+  fontSize: 10.5,
+  fontWeight: 700,
+  letterSpacing: ".03em",
+  textTransform: "uppercase",
+  color: "#7c84a4",
+};
+
 function Debrief({
   result,
   roundNo,
@@ -1029,6 +1317,13 @@ function Debrief({
       >
         {result.output}
       </div>
+
+      {/* the same workflow three ways, projected at organisation scale */}
+      <OrgScaleImpact
+        impact={result.orgImpact}
+        steps={result.steps}
+        workflowName={result.workflowName}
+      />
 
       {/* per-step breakdown */}
       <div style={{ ...kicker, marginTop: 24 }}>The workflow, reviewed</div>

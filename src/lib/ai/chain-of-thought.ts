@@ -84,7 +84,7 @@ You produce two things the player compares:
 
 Fields:
 - "topic": a 1-4 word label for the task's subject (e.g. "expense policy", "shift rota").
-- "task": a colleague (name, role, two-letter initials) and a short, natural message describing the task. Put EVERY number, rule and constraint the task depends on right in the message, so the task is fully solvable from what's shown.
+- "task": the colleague forwarding the work — a "senderName", a "senderRole" job title and two-letter "senderInitials", plus a short, natural "message" describing the task. The name AND the role must FIT THIS SPECIFIC task's domain (an expense-policy task comes from a finance lead; a shift rota from an operations coordinator) and must vary from round to round — never reuse a stock name. Put EVERY number, rule and constraint the task depends on right in the message, so the task is fully solvable from what's shown.
 - "question": the single precise question to answer.
 - "options": 3-4 short answer options. Make the wrong ones plausible — at least one must be the trap the quick model falls for. Do not restate an option verbatim inside the reasoning.
 - "snapAnswerIndex": the 0-based option the quick assistant blurts.

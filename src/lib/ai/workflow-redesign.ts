@@ -137,6 +137,7 @@ Design rules:
 - Use the FULL range of implementation tiers across the stages — at least one stage where a custom application is genuinely warranted (high volume or stakes), and at least one where a custom app would be wasteful over-engineering (so "rules" or "llm" is best). Teaching when to commission a custom build is a core outcome.
 - Include at least one "critical" governance stage and at least one "trap", so the player must place human review thoughtfully, not everywhere.
 - Keep it grounded and professional. Set "topic" to a short label for the workflow.
+- "brief": the colleague handing over the workflow — a "senderName", a "senderRole" job title and two-letter "senderInitials", plus a short "message". The name AND the role must FIT THIS SPECIFIC workflow's domain (an onboarding workflow comes from a people-ops lead; an expense review from a finance manager) — pick a fitting sender for each scenario rather than a generic stock name.
 - "goal": one sentence on what a strong redesign achieves (faster AND defensible).
 - "explanation": a short paragraph describing the shape of a strong redesign and the key trade-offs.`;
 

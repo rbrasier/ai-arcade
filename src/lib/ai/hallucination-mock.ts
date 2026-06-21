@@ -14,9 +14,9 @@ const BANK: Record<number, Parameters<typeof withClaimIds>[0]> = {
   1: {
     topic: "customer churn",
     task: {
-      senderName: "Dana Okafor",
+      senderName: "Naomi Okonkwo",
       senderRole: "VP, Customer Success",
-      senderInitials: "DO",
+      senderInitials: "NO",
       message:
         "Can you pull together the key drivers of our Q3 churn and recommend two retention actions? Cite the research.",
     },
@@ -46,9 +46,9 @@ const BANK: Record<number, Parameters<typeof withClaimIds>[0]> = {
   2: {
     topic: "keynote speaker bio",
     task: {
-      senderName: "Marcus Lindqvist",
+      senderName: "Gregor Halvorsen",
       senderRole: "Head of Comms",
-      senderInitials: "ML",
+      senderInitials: "GH",
       message:
         "Draft a short bio paragraph on the keynote speaker for the launch event. Keep it factual.",
     },
@@ -73,9 +73,9 @@ const BANK: Record<number, Parameters<typeof withClaimIds>[0]> = {
   3: {
     topic: "dashboard adoption",
     task: {
-      senderName: "Priya Nair",
+      senderName: "Mei Tanaka",
       senderRole: "Product Lead",
-      senderInitials: "PN",
+      senderInitials: "MT",
       message: "Summarise what our usage data says about the new dashboard and cite sources.",
     },
     attachments: ["dashboard_usage.csv", "feature_feedback.pdf"],
@@ -101,9 +101,9 @@ const BANK: Record<number, Parameters<typeof withClaimIds>[0]> = {
   4: {
     topic: "gross margin",
     task: {
-      senderName: "Tom Becker",
+      senderName: "Oliver Brandt",
       senderRole: "Finance Manager",
-      senderInitials: "TB",
+      senderInitials: "OB",
       message: "What was our Q2 gross margin and how did it move? Keep it tight for the board note.",
     },
     attachments: ["q2_financials.xlsx", "board_template.docx"],
@@ -131,9 +131,9 @@ const BANK: Record<number, Parameters<typeof withClaimIds>[0]> = {
   5: {
     topic: "warehouse safety",
     task: {
-      senderName: "Aisha Rahman",
+      senderName: "Sandrine Dubois",
       senderRole: "Director of Operations",
-      senderInitials: "AR",
+      senderInitials: "SD",
       message: "Give me the headline from the warehouse incident report and one corrective action.",
     },
     attachments: ["incident_report_w34.pdf", "safety_log.csv"],

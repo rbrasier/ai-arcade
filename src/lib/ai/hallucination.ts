@@ -83,6 +83,7 @@ IMPORTANT — leave a clue. Every fabrication must be catchable from what's on s
 
 Rules:
 - "topic": a 1-4 word label for the scenario's subject (e.g. "customer churn", "warehouse safety").
+- The forwarding colleague's "senderName" and "senderRole" must FIT THIS SPECIFIC scenario's domain (a warehouse-safety brief comes from an operations or H&S lead; a churn analysis from a customer-success manager) and must vary from round to round — never reuse a stock name. Set "senderInitials" to their two initials.
 - "hallucination: true" marks a fabricated claim; mark sound claims false.
 - Make claims read as one flowing answer when concatenated in order.
 - "explanations" must justify each fabricated claim (and note any tricky-but-true claim a player might wrongly flag). If there are zero fabrications, say so and explain why every claim is sound.

@@ -15,9 +15,9 @@ const BANK: Record<number, Parameters<typeof withCriterionIds>[0]> = {
   1: {
     topic: "article summary",
     brief: {
-      senderName: "Dana Okafor",
+      senderName: "Tomás Rivera",
       senderRole: "Team Lead",
-      senderInitials: "DO",
+      senderInitials: "TR",
       message:
         "Can you get the AI to boil any long article down to something I can skim in ten seconds? Just the essentials.",
     },
@@ -38,9 +38,9 @@ const BANK: Record<number, Parameters<typeof withCriterionIds>[0]> = {
   2: {
     topic: "customer complaints",
     brief: {
-      senderName: "Marcus Lindqvist",
+      senderName: "Helena Ross",
       senderRole: "Head of Comms",
-      senderInitials: "ML",
+      senderInitials: "HR",
       message:
         "I need replies to customer complaints drafted by AI, but they must sound like us — warm, never defensive — and actually say sorry.",
     },
@@ -68,9 +68,9 @@ const BANK: Record<number, Parameters<typeof withCriterionIds>[0]> = {
   3: {
     topic: "project status update",
     brief: {
-      senderName: "Priya Nair",
+      senderName: "Kwame Mensah",
       senderRole: "Programme Manager",
-      senderInitials: "PN",
+      senderInitials: "KM",
       message:
         "Give me a way to turn my messy project notes into a status update the steering group will actually read — three bullets, max.",
     },
@@ -99,9 +99,9 @@ const BANK: Record<number, Parameters<typeof withCriterionIds>[0]> = {
   4: {
     topic: "board finance note",
     brief: {
-      senderName: "Tom Becker",
+      senderName: "Ingrid Falk",
       senderRole: "Finance Manager",
-      senderInitials: "TB",
+      senderInitials: "IF",
       message:
         "Turn our quarterly numbers into a short note the board can read — plain English, no finance jargon, and call out the single biggest risk.",
     },
@@ -130,9 +130,9 @@ const BANK: Record<number, Parameters<typeof withCriterionIds>[0]> = {
   5: {
     topic: "support ticket triage",
     brief: {
-      senderName: "Aisha Rahman",
+      senderName: "Victor Almeida",
       senderRole: "Director of Operations",
-      senderInitials: "AR",
+      senderInitials: "VA",
       message:
         "I want AI to triage incoming support tickets: tag urgency, route to the right team, and suggest a first reply — as strict JSON so our system can ingest it, nothing else.",
     },

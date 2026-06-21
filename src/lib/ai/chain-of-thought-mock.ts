@@ -16,9 +16,9 @@ const BANK: Record<number, RawChainOfThoughtScenario> = {
   1: {
     topic: "expense policy",
     task: {
-      senderName: "Dana Okafor",
+      senderName: "Hugo Bennett",
       senderRole: "Team Lead",
-      senderInitials: "DO",
+      senderInitials: "HB",
       message:
         "Quick one: our policy says any expense over £50 needs a receipt attached. Priya submitted a £42 taxi fare. Does she need to attach a receipt?",
     },
@@ -39,9 +39,9 @@ const BANK: Record<number, RawChainOfThoughtScenario> = {
   2: {
     topic: "delivery date",
     task: {
-      senderName: "Marcus Lindqvist",
+      senderName: "Lucia Romano",
       senderRole: "Operations Coordinator",
-      senderInitials: "ML",
+      senderInitials: "LR",
       message:
         "An order ships today, Monday, and the courier quotes 2 business days for delivery (business days are Mon-Fri). Which day should the customer expect it?",
     },
@@ -62,9 +62,9 @@ const BANK: Record<number, RawChainOfThoughtScenario> = {
   3: {
     topic: "support SLA",
     task: {
-      senderName: "Priya Nair",
+      senderName: "Derek Owusu",
       senderRole: "Support Manager",
-      senderInitials: "PN",
+      senderInitials: "DO",
       message:
         "A ticket was logged on Thursday. Our SLA is to resolve within 3 business days (business days are Mon-Fri; weekends don't count). What's the resolution deadline?",
     },
@@ -86,9 +86,9 @@ const BANK: Record<number, RawChainOfThoughtScenario> = {
   4: {
     topic: "bonus eligibility",
     task: {
-      senderName: "Tom Becker",
+      senderName: "Sasha Kim",
       senderRole: "HR Business Partner",
-      senderInitials: "TB",
+      senderInitials: "SK",
       message:
         "Bonus eligibility needs ALL of: employed over 12 months, a performance rating of 4 or higher, and no ACTIVE warning. Sam has been here 14 months, has a rating of 4, and had a warning that was formally cleared last month (so none is active now). Is Sam eligible?",
     },
@@ -110,9 +110,9 @@ const BANK: Record<number, RawChainOfThoughtScenario> = {
   5: {
     topic: "order total",
     task: {
-      senderName: "Aisha Rahman",
+      senderName: "Nadia Petrova",
       senderRole: "Finance Analyst",
-      senderInitials: "AR",
+      senderInitials: "NP",
       message:
         "A customer buys 3 items at £40 each. We take 10% off any order over £100, and THEN apply a £15 loyalty voucher. What's the final total they pay?",
     },

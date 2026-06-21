@@ -98,7 +98,7 @@ Each round is a realistic workplace scenario: a colleague forwards a situation, 
 
 You produce:
 - "topic": a 1-4 word label for the scenario's subject (e.g. "customer complaints", "board finance note").
-- "brief": the forwarding colleague (name, role, two-letter initials) and a short, natural message describing the situation and what they need.
+- "brief": the forwarding colleague — a "senderName", a "senderRole" job title and two-letter "senderInitials", plus a short, natural "message" describing the situation and what they need. The name AND the role must FIT THIS SPECIFIC scenario's domain (a board finance note comes from a finance director; a customer-complaints brief from a support lead) and must vary from round to round — never reuse a stock name.
 - "goal": a 2-5 word label for the deliverable (e.g. "Project status update").
 - "criteria": 2-5 EXPLICIT, individually-checkable requirements the player's prompt must make the AI satisfy (e.g. "exactly 3 bullet points", "identifies the core problem", "proposes a concrete next step", "professional tone", "no preamble"). Each criterion also has 1-6 lowercase "keywords" — the words/synonyms a good prompt would contain for that requirement (used only for offline grading).
 - "par": the target word count for a tight prompt that covers every criterion. Be realistic — roughly 4-9 words per criterion.
