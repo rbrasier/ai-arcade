@@ -45,9 +45,9 @@ Players earn XP for every attempt, plus a bonus for strong performance:
 ## Round generation patterns
 
 These two patterns are **shared by every multi-round, AI-generated game** (Prompt
-Golf, Spot the Hallucination, Think It Through, Context Calibration, In the Loop
-and the Workflow Redesign capstone — which warms its **two** scenarios the same
-way) and must be kept in sync as games are added:
+Golf, Spot the Hallucination, Think It Through, Context Calibration, Trace the
+Flow, In the Loop and the Workflow Redesign capstone — which warms its **two**
+scenarios the same way) and must be kept in sync as games are added:
 
 - **Preload all rounds behind the explainer.** When the intro / "how to play"
   modal is shown, every round is generated in the background, **sequentially**
@@ -55,7 +55,8 @@ way) and must be kept in sync as games are added:
   round's generate request is memoised as a promise; `loadRound` just awaits the
   matching entry. Replay drops the cache and warms a fresh set. Implemented in
   `PromptGolfGame`, `HallucinationGame`, `ChainOfThoughtGame`,
-  `ContextCalibrationGame`, `CheckpointPlacementGame` and `WorkflowRedesignGame`.
+  `ContextCalibrationGame`, `TraceFlowGame`, `CheckpointPlacementGame` and
+  `WorkflowRedesignGame`.
 - **No repeated theme within a play-through.** Each generated scenario carries a
   short `topic` label. Because the background warm-up is sequential, each round
   is told the topics already used (`avoidTopics`) so it picks a clearly
@@ -63,8 +64,8 @@ way) and must be kept in sync as games are added:
   accumulates topics in a ref; the generate routes forward them to the AI
   prompt. Applies to all of the games above (`generatePromptGolfRound`,
   `generateHallucinationRound`, `generateChainOfThoughtRound`,
-  `generateContextCalibrationRound`, `generateCheckpointPlacementRound`,
-  `generateWorkflowRedesignRound`).
+  `generateContextCalibrationRound`, `generateTraceFlowRound`,
+  `generateCheckpointPlacementRound`, `generateWorkflowRedesignRound`).
 - **A sender who fits the scenario.** Every game frames its brief as a direct
   message from a colleague (`senderName` / `senderRole` / `senderInitials`). Both
   the **name and the role are dynamic to the scenario** — the generators instruct
@@ -235,6 +236,53 @@ ratio, and a round is `exceptional` only when **every** essential is attached an
 **no** noise or distractor is. Implemented in
 `src/app/api/games/context-calibration/score/route.ts`, the shared pure helpers in
 `src/lib/context-calibration-scoring.ts`, and `src/lib/ai/context-calibration.ts`.
+
+**Trace the Flow** (slug `trace-the-flow`) runs **5 rounds** of escalating
+*shape* complexity and opens Act Three (Seeing Work as a System). It is the
+**literacy floor**: you can only redesign work you can first **see** as a chain
+of discrete steps and the data flowing between them. Each round is a messy,
+real-world hand-off from a colleague (the brief). The player is given the
+workflow's steps as a **shuffled tray**, each carrying a short **input** ("needs")
+and **output** ("produces"), and must **reconstruct the chain in order** (tap to
+place, reorder, remove) and **flag the broken hand-offs** — a boundary where a
+step's input doesn't match the previous step's output. The rounds are **framed by
+shape tier** — round 1 a clean straight line, round 2 a hand-off that **loses**
+information, round 3 one that **reformats** it (subtler), round 4 a **parallel
+branch**, round 5 a **loop-back** (a rework loop) — the tier→shape mapping, copy
+and generator guidance live in `src/lib/trace-flow-tiers.ts`. The shape is told to
+the player (it teaches the shape exists); *which* steps form it is ground truth.
+Each step's true `position`, any `parallelGroup`, the broken hand-offs and the
+loop-back are stored server-side and stripped before the tray is served (ids are
+**decoupled from position** by a shuffle so they leak no order).
+
+Grading is fully deterministic against the stored truth, on two axes:
+
+- **sequence** = `correctlyPlaced / total` — the **gate**, like completeness in
+  Context Calibration. A parallel-group member counts correct anywhere within its
+  group's positions (either internal order is accepted). `scoreRatio` is **capped
+  at `GATE_CAP = 0.5`** (below the 65% clear) when `sequence < 1` — you must
+  reconstruct the chain to pass.
+- **diagnosis** = `correctJudgments / totalJudgments` — the **mastery** axis,
+  **symmetric** like In the Loop. It folds three ground-truth judgment types: the
+  **broken hand-offs** flagged (a directed `fromId→toId` adjacency in the player's
+  order), the **parallel branch** recognised (round 4), and the **loop-back**
+  identified (round 5). `totalJudgments = brokenTotal + structuralItems +
+  falseFlags`, so **missing a broken hand-off AND raising a false flag both cost**
+  (the recurring "resist over-flagging" lesson). When a round has no flaws/shapes
+  (round 1) leaving everything unflagged scores `diagnosis = 1`.
+
+`scoreRatio = 0.5 × sequence + 0.5 × diagnosis`, capped at `GATE_CAP` if
+`sequence < 1`, and `score = round(scoreRatio × maxScore)`. So a single
+misplacement caps the round below the 65% clear (just as a missing essential gates
+Context Calibration), and over-flagging a sound hand-off drags diagnosis down. The
+≥ 70% / ≥ 85% XP bonus tiers apply to this ratio, and a round is `exceptional` only
+when **every** step is correctly placed **and** every hand-off/shape call is
+right. The reconstructed flow is then **narrated** once so the scorecard shows
+what it produced — a broken hand-off's downstream mess, or a clean run — the same
+illustrative "what it produced" idea as Prompt Golf, and it **never affects the
+score**. Implemented in `src/app/api/games/trace-the-flow/score/route.ts`, the
+shared pure helpers in `src/lib/trace-flow-scoring.ts`, and
+`src/lib/ai/trace-flow.ts`.
 
 **In the Loop** (slug `checkpoint-placement`) runs **5 rounds** of escalating
 risk and opens Act Four (Safe Delegation & Human-in-the-Loop Design). It teaches
