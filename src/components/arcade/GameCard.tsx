@@ -31,6 +31,34 @@ export function GameCard({ row }: { row: GameRowData }) {
       ? Math.round((game.clearedChallenges / game.totalChallenges) * 100)
       : 0;
 
+  // ---- Coming soon --------------------------------------------------------
+  // Listed in the arcade so players can see what's ahead, but the play flow
+  // isn't built yet — so this is a non-clickable card, never a link.
+  if (game.comingSoon) {
+    return (
+      <div
+        className="gcard flex items-center gap-4 rounded-[14px] border border-dashed border-[#d8d1bf] bg-[#f6f1e6] px-[18px] py-[14px]"
+        aria-disabled
+      >
+        <IconTile tone="muted" index={iconIndex} />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2.5">
+            <h3 className="font-display text-[18px] font-bold tracking-[-0.01em] text-[#9a9488] m-0">
+              {game.title}
+            </h3>
+            <LevelChip lo={levelLo} hi={levelHi} tone="muted" />
+          </div>
+          <p className="mt-[3px] text-[13.5px] leading-[1.35] text-[#a8a191]">
+            {game.description}
+          </p>
+        </div>
+        <div className="flex-none font-arcade-mono text-[11px] font-bold tracking-[.06em] whitespace-nowrap text-[#b0a99b]">
+          ✦ COMING SOON
+        </div>
+      </div>
+    );
+  }
+
   // ---- Locked -------------------------------------------------------------
   if (game.status === "locked") {
     return (
