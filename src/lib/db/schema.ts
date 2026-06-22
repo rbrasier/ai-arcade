@@ -41,6 +41,9 @@ export const games = sqliteTable("games", {
   sortOrder: integer("sort_order").notNull(),
   estMinutes: integer("est_minutes").notNull().default(24),
   isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+  // Narrative act label shown as a visual separator on the home page.
+  // Nullable so existing rows survive a non-destructive schema push.
+  act: text("act"),
 });
 
 /** A single challenge within a game. `config` holds per-game-type JSON. */

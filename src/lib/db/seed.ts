@@ -41,6 +41,7 @@ interface SeedGame {
   title: string;
   description: string;
   estMinutes: number;
+  act?: string;
   challenges: SeedChallenge[];
 }
 
@@ -55,6 +56,7 @@ const GAMES: SeedGame[] = [
   // available" unlock rule — unlocks Spot the Hallucination.
   {
     slug: "ai-foundations",
+    act: "Act Zero — Orientation",
     title: "AI Foundations",
     description:
       "Start here. A short, hands-on tour of how AI actually works — prediction, tokens, hallucinations, context and staying in charge. Finish it to unlock the games.",
@@ -72,6 +74,7 @@ const GAMES: SeedGame[] = [
   // ===== Act One: Prompt Mastery & Safety Foundations =====
   {
     slug: "prompt-golf",
+    act: "Act One — Prompt Mastery & Safety Foundations",
     title: "Prompt Golf",
     description:
       "Given a real corporate scenario, write the shortest prompt that hits every criterion without losing intent. Five rounds, each one tighter. Every word counts.",
@@ -112,6 +115,7 @@ const GAMES: SeedGame[] = [
   },
   {
     slug: "spot-the-hallucination",
+    act: "Act One — Prompt Mastery & Safety Foundations",
     title: "Spot the Hallucination",
     description:
       "Review an AI work assistant's answer and flag the fabricated claims. Five rounds, each one harder. Trust nothing; verify everything.",
@@ -157,6 +161,7 @@ const GAMES: SeedGame[] = [
   // the difficulty.
   {
     slug: "chain-of-thought",
+    act: "Act One — Prompt Mastery & Safety Foundations",
     title: "Think It Through",
     description:
       "A quick AI blurts a confident answer to a multi-step task. Decide whether to trust it or make it reason the work out step by step — then commit the final call. Five rounds, each one harder.",
@@ -193,6 +198,7 @@ const GAMES: SeedGame[] = [
   // ===== Act Two: Context Mastery =====
   {
     slug: "context-calibration",
+    act: "Act Two — Context Mastery",
     title: "Context Calibration",
     description:
       "Each round, a colleague sends a task and a tray of candidate context snippets. Attach only what the answer needs — too little starves it, too much misdirects it — then see what the AI produces. Five rounds, each one harder.",
@@ -229,6 +235,7 @@ const GAMES: SeedGame[] = [
   // ===== Act Three: Safe Delegation & Human-in-the-Loop Design =====
   {
     slug: "checkpoint-placement",
+    act: "Act Three — Safe Delegation",
     title: "In the Loop",
     description:
       "An AI workflow runs on its own — you decide where a human must step in. Too few checkpoints is liability; too many kills the speed. Five rounds of rising risk.",
@@ -274,6 +281,7 @@ const GAMES: SeedGame[] = [
   // ===== Act Four: Workflow Redesign & The Art of the Possible =====
   {
     slug: "workflow-redesign",
+    act: "Act Four — Workflow Redesign",
     title: "Workflow Redesign Challenge",
     description:
       "Redesign a real corporate workflow around AI's strengths — spot the bottlenecks, rebuild with capability blocks, and validate for technical and governance risk.",
@@ -341,6 +349,7 @@ function seed() {
         sortOrder: gameIndex,
         estMinutes: game.estMinutes,
         isActive: true,
+        act: game.act ?? null,
       })
       .run();
 

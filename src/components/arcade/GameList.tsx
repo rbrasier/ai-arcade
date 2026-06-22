@@ -12,6 +12,17 @@ function toRows(games: GameWithProgress[]): GameRowData[] {
   }));
 }
 
+function ActSeparator({ label }: { label: string }) {
+  return (
+    <div className="flex items-center gap-3 pt-3 pb-0.5">
+      <span className="font-arcade-mono text-[10px] tracking-[.09em] text-[#b0a99b] whitespace-nowrap">
+        {label.toUpperCase()}
+      </span>
+      <div className="flex-1 border-t border-[#e3dcca]" />
+    </div>
+  );
+}
+
 export function GameList({
   games,
   playerLevel,
@@ -23,6 +34,14 @@ export function GameList({
   needsUsername?: boolean;
 }) {
   const rows = toRows(games);
+
+  // Track the last seen act label to know when to inject a separator.
+  const rowsWithSeparator = rows.map((r, i) => ({
+    ...r,
+    showSeparator:
+      r.game.act != null &&
+      (i === 0 || r.game.act !== rows[i - 1].game.act),
+  }));
 
   // Render the whole ladder in its natural order (sort order). Cleared games
   // stay in their original position — still filled out as completed — rather
@@ -39,8 +58,13 @@ export function GameList({
           </span>
         </div>
         <div className="flex flex-col gap-2.5">
-          {rows.map((r) => (
-            <GameCard key={r.game.id} row={r} />
+          {rowsWithSeparator.map((r) => (
+            <div key={r.game.id}>
+              {r.showSeparator && r.game.act && (
+                <ActSeparator label={r.game.act} />
+              )}
+              <GameCard row={r} />
+            </div>
           ))}
         </div>
 
