@@ -42,6 +42,8 @@ interface SeedGame {
   description: string;
   estMinutes: number;
   act?: string;
+  /** Listed in the arcade but not yet playable — clicking through 404s. */
+  comingSoon?: boolean;
   challenges: SeedChallenge[];
 }
 
@@ -233,9 +235,119 @@ const GAMES: SeedGame[] = [
   },
 
   // ===== Act Three: Seeing Work as a System =====
-  // Documented in docs/LEARNING-OUTCOMES.md (Trace the Flow, Clean the Pipe,
-  // Right Tool for the Job) but not yet implemented, so no games are seeded for
-  // it — the act numbering intentionally jumps from Two to Four below.
+  // Designed in docs/LEARNING-OUTCOMES.md but not yet implemented: these three
+  // games are seeded so they appear in the arcade list, but they have no play
+  // routes yet (clicking through 404s) and no per-round generators/tables. The
+  // challenge rows just anchor progress/XP and carry the difficulty, matching
+  // the five-round escalating pattern the rest of the arcade uses.
+  {
+    slug: "trace-the-flow",
+    act: "Act Three — Seeing Work as a System",
+    title: "Trace the Flow",
+    description:
+      "A messy, real-world account of how a task actually gets done. Rebuild it into an ordered chain of steps, tag each input and output, and spot the broken hand-offs. Five rounds — you can't redesign what you can't see.",
+    estMinutes: 15,
+    comingSoon: true,
+    challenges: [
+      {
+        title: "Round 1 — Warm-up",
+        prompt: "Put the steps in order and tag each one's input and output.",
+        config: { difficulty: 1 },
+      },
+      {
+        title: "Round 2 — Mind the Hand-off",
+        prompt: "Order the steps and flag the broken link where information gets lost.",
+        config: { difficulty: 2 },
+      },
+      {
+        title: "Round 3 — Reformatted in Transit",
+        prompt: "Order the steps and flag the broken link where information gets lost.",
+        config: { difficulty: 3 },
+      },
+      {
+        title: "Round 4 — Parallel Branch",
+        prompt: "Order the steps, including the branch that runs alongside the main chain.",
+        config: { difficulty: 4 },
+      },
+      {
+        title: "Round 5 — Boss Round",
+        prompt: "Order the steps, including the loop-back that returns work for another pass.",
+        config: { difficulty: 5 },
+      },
+    ],
+  },
+  {
+    slug: "clean-the-pipe",
+    act: "Act Three — Seeing Work as a System",
+    title: "Clean the Pipe",
+    description:
+      "Before you run an AI step, triage the data going in. Catch the dirt that actually poisons the output — not all dirt is equal — then compare what the AI made from the raw vs the cleaned data. Five rounds, the input-side mirror of Spot the Hallucination.",
+    estMinutes: 15,
+    comingSoon: true,
+    challenges: [
+      {
+        title: "Round 1 — Warm-up",
+        prompt: "Triage the inputs, then run the step and compare the outputs.",
+        config: { difficulty: 1 },
+      },
+      {
+        title: "Round 2 — Duplicates & Blanks",
+        prompt: "Triage the inputs, then run the step and compare the outputs.",
+        config: { difficulty: 2 },
+      },
+      {
+        title: "Round 3 — Stale Record",
+        prompt: "Triage the inputs, then run the step and compare the outputs.",
+        config: { difficulty: 3 },
+      },
+      {
+        title: "Round 4 — Wrong Category",
+        prompt: "Triage the inputs, then run the step and compare the outputs.",
+        config: { difficulty: 4 },
+      },
+      {
+        title: "Round 5 — Boss Round",
+        prompt: "Triage the inputs, then run the step and compare the outputs.",
+        config: { difficulty: 5 },
+      },
+    ],
+  },
+  {
+    slug: "right-tool-for-the-job",
+    act: "Act Three — Seeing Work as a System",
+    title: "Right Tool for the Job",
+    description:
+      "Match each workflow step to the right intervention — leave it manual, rules, an LLM, or a custom app — and weigh the build, maintenance and failure costs against the drag of doing nothing. Five rounds scored on net value, not sophistication. Sometimes the smart move is to build nothing.",
+    estMinutes: 15,
+    comingSoon: true,
+    challenges: [
+      {
+        title: "Round 1 — Warm-up",
+        prompt: "Read the step's characteristics and pick the intervention with the best net value.",
+        config: { difficulty: 1 },
+      },
+      {
+        title: "Round 2 — Count the Cost",
+        prompt: "Read the step's characteristics and pick the intervention with the best net value.",
+        config: { difficulty: 2 },
+      },
+      {
+        title: "Round 3 — Resist the Shiny Option",
+        prompt: "Read the step's characteristics and pick the intervention with the best net value.",
+        config: { difficulty: 3 },
+      },
+      {
+        title: "Round 4 — Don't Under-Build",
+        prompt: "Read the step's characteristics and pick the intervention with the best net value.",
+        config: { difficulty: 4 },
+      },
+      {
+        title: "Round 5 — Boss Round",
+        prompt: "Read the step's characteristics and pick the intervention with the best net value.",
+        config: { difficulty: 5 },
+      },
+    ],
+  },
 
   // ===== Act Four: Safe Delegation & Human-in-the-Loop Design =====
   {
@@ -355,6 +467,7 @@ function seed() {
         estMinutes: game.estMinutes,
         isActive: true,
         act: game.act ?? null,
+        comingSoon: game.comingSoon ?? false,
       })
       .run();
 

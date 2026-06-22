@@ -82,8 +82,12 @@ export function getGamesWithProgress(playerId: string): GameWithProgress[] {
     perGame.map((g) => [g.gameId, { cleared: Number(g.cleared), xp: Number(g.xp) }]),
   );
 
-  // First pass: figure out which games are fully completed.
+  // First pass: figure out which games are fully completed. "Coming soon" games
+  // (seeded but not yet playable) can never be completed, so they are excluded
+  // from the unlock gate entirely — they must not count toward, or block, the
+  // progression of the playable games around them.
   const completedFlags = allGames.map((game) => {
+    if (game.comingSoon) return false;
     const total = totalByGame.get(game.id) ?? 0;
     const cleared = statsByGame.get(game.id)?.cleared ?? 0;
     return total > 0 && cleared >= total;
@@ -91,15 +95,22 @@ export function getGamesWithProgress(playerId: string): GameWithProgress[] {
   const completedCount = completedFlags.filter(Boolean).length;
   const unlockThreshold = completedCount + ALWAYS_AVAILABLE;
 
+  // A game's unlock position counts only the playable games before it, so a
+  // coming-soon game in the middle of the arc neither shifts that count nor
+  // gates on its own (never-reachable) completion.
+  let playablePos = 0;
+
   return allGames.map((game, index) => {
     const total = totalByGame.get(game.id) ?? 0;
     const stats = statsByGame.get(game.id) ?? { cleared: 0, xp: 0 };
     const completed = completedFlags[index];
+    const pos = playablePos;
+    if (!game.comingSoon) playablePos += 1;
 
     let status: GameStatus;
     if (completed) {
       status = "completed";
-    } else if (testMode || index < unlockThreshold) {
+    } else if (testMode || pos < unlockThreshold) {
       status = stats.cleared > 0 ? "in_progress" : "available";
     } else {
       status = "locked";

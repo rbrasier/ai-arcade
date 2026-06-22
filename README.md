@@ -65,12 +65,14 @@ rules). Games are grouped into acts and unlock as you clear your way forward:
   4. **Think It Through** — trust a quick answer or make the AI reason it out step by step, then commit the final call.
 - **Act Two — Context Mastery**
   5. **Context Calibration** — attach only the context the answer needs; too little starves it, too much misdirects it.
-- **Act Three — Seeing Work as a System** _(designed in the docs, not yet built)_
-  — Trace the Flow, Clean the Pipe, Right Tool for the Job.
+- **Act Three — Seeing Work as a System** _(seeded and listed, but the play flows aren't built yet)_
+  6. **Trace the Flow** — rebuild a messy task into an ordered chain of input→output steps and spot the broken hand-offs.
+  7. **Clean the Pipe** — triage the data going into an AI step; catch the dirt that actually poisons the output.
+  8. **Right Tool for the Job** — match each step to manual / rules / LLM / custom app, weighing the costs on both sides.
 - **Act Four — Safe Delegation & Human-in-the-Loop Design**
-  6. **In the Loop** — place human checkpoints where an AI workflow needs them, without killing efficiency.
+  9. **In the Loop** — place human checkpoints where an AI workflow needs them, without killing efficiency.
 - **Act Five — Workflow Redesign & The Art of the Possible**
-  7. **Workflow Redesign Challenge** — the capstone: redesign a real corporate workflow around AI's strengths.
+  10. **Workflow Redesign Challenge** — the capstone: redesign a real corporate workflow around AI's strengths.
 
 ## Project layout
 
