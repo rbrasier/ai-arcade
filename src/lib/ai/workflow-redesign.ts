@@ -18,7 +18,7 @@ import type {
 import { CAPABILITY_BY_KIND, IMPL_BY_TIER } from "../workflow-redesign-blocks";
 
 /**
- * The Act Four capstone, "Workflow Redesign Challenge", generates a realistic,
+ * The Act Five capstone, "Workflow Redesign Challenge", generates a realistic,
  * recognisable corporate workflow (HR onboarding, expense review, …) that the
  * player redesigns around AI's strengths across four phases: Setup (read the
  * as-is workflow and its bottlenecks), Ideation (free-text analysis the AI

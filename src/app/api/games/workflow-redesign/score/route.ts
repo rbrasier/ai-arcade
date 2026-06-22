@@ -44,7 +44,7 @@ function parseBuild(raw: unknown): StageBuild | null {
 }
 
 /**
- * Score a "Workflow Redesign Challenge" round (Act Four capstone). Grading is
+ * Score a "Workflow Redesign Challenge" round (Act Five capstone). Grading is
  * fully server-side against the stored stage ground truth, on three axes (see
  * docs/GAME-RULES.md):
  *

@@ -30,20 +30,17 @@ which unlocks Spot the Hallucination.
 
 - Write tight, effective, unambiguous prompts
 - Detect hallucinations and fabricated claims in AI output
+- Recognise that AI can reason through multi-step work that used to be manual
+- Calibrate when a quick answer is enough vs when to demand the working
+- Read a chain of thought and stay accountable for the final decision
 
 ### Mini-Games
 
 **Prompt Golf** — Given a real corporate scenario and a checklist of criteria, write the shortest prompt that makes an AI hit every requirement without losing intent. Five rounds of escalating difficulty; one is a "rewrite" round where the player trims a bloated draft prompt down to size. Scored on precision (criteria coverage) and word economy (vs par).
 
-**Spot the Hallucination** — Review AI-generated passages and flag fabricated claims. Scored on accuracy.
+**Spot the Hallucination** — Review an AI work assistant's answer and flag the fabricated claims. Five rounds framed by model tier (Quick → Mid → Frontier), with fabrications growing rarer and subtler as the tier rises — so a sound answer is a valid round and the player must resist over-flagging. Each claim is a three-state verdict (flag / verify / unmarked), scored on accuracy.
 
 **Think It Through** — A bridge into the next act. A quick (non-reasoning) model blurts a confident answer to a realistic multi-step desk task — the kind of job people used to grind out by hand. The player decides whether to trust that snap answer or make the AI **reason it out step by step**, watches the chain of thought unfold, then commits the final answer. The lesson is the mindset shift: AI can now reason through multi-step work, so the human's job moves from *doing the steps* to *directing and verifying the reasoning*. Five rounds of escalating difficulty; easy rounds have a sound snap answer (don't over-demand working), harder rounds bait the snap answer with a trap only the reasoning avoids. Scored on the final answer (the gate) plus the trust call.
-
-### Learning Outcomes
-
-- Recognise that AI can reason through multi-step work that used to be manual
-- Calibrate when a quick answer is enough vs when to demand the working
-- Read a chain of thought and stay accountable for the final decision
 
 ---
 
@@ -61,7 +58,92 @@ which unlocks Spot the Hallucination.
 
 ---
 
-## Act Three: Safe Delegation & Human-in-the-Loop Design
+## Act Three: Seeing Work as a System
+
+Act Three is the bridge from *talking to AI* (Acts One–Two) to *redesigning
+work with AI* (Acts Four–Five). It builds the underlying system-thinking the
+later acts assume, in a clean causal chain: **see the steps → make sure good
+data flows through them → decide which steps are worth changing, and how.**
+
+### Learning Outcomes
+
+- Decompose fuzzy, "I just do my job" work into discrete, namable steps — each
+  with an input and an output — and spot where a hand-off loses information
+- Recognise that AI quality is bounded by *input* quality: most "the AI is dumb"
+  failures are data problems (missing context, inconsistent formats, stale or
+  wrong-category source) — the input-hygiene counterpart to Spot the
+  Hallucination's output vigilance
+- Match a step's characteristics (volume, variability, risk, structure) to the
+  right intervention — manual, rules-based, LLM, or a custom app — and weigh the
+  cost of intervening *and* of not intervening, so "leave it manual" is a real,
+  sometimes-correct answer (the antidote to AI-solutionism)
+
+### Mini-Games
+
+**Trace the Flow** *(What a workflow is — the literacy floor)* — The player is
+given a messy, realistic narrative of how a task actually gets done ("first
+someone emails the form, then I check it against the spreadsheet, then if it's
+over $5k I forward it to Priya…") and reconstructs it into an ordered chain of
+discrete step cards, each tagged with its **input** and **output**. The core
+mechanic is tap-to-place ordering, plus spotting a **broken link** — a hand-off
+where one step's input doesn't match the previous step's output (information
+lost or reformatted). Later rounds introduce non-linear shapes: a hidden
+**parallel branch** and a **loop-back** ("if rejected, return to step 2"),
+teaching that real workflows aren't always a straight line. This comes first
+because every later game assumes the learner can already see work as a chain —
+you can't redesign what you can't see.
+
+_Learning outcomes:_ break opaque work into discrete input→output steps; name
+each step; detect broken hand-offs; recognise parallel branches and loop-backs.
+
+**Clean the Pipe** *(Data management — input hygiene)* — The mirror of Spot the
+Hallucination, on the **input** side. The player is about to run an AI step (e.g.
+"summarise these customer complaints into themes") and is shown the data going
+in — and it's dirty: inconsistent date formats, a half-empty row, duplicates, a
+stale 2019 record, one entry that's actually a different category entirely. The
+player triages the inputs *before* pressing run, then sees two outputs side by
+side: what the AI produced from the **raw** data versus the **cleaned** data —
+the contrast is the lesson. Scored on catching the **consequential** problems
+(a duplicate barely matters; the wrong-category record poisons the whole
+summary), so it teaches that **not all dirt is equal** and heads off the
+over-correction of obsessive cleaning. Pairs deliberately with Spot the
+Hallucination: output vigilance and input hygiene are the two halves of trusting
+AI work.
+
+_Learning outcomes:_ recognise garbage-in-garbage-out as a data problem, not an
+AI problem; triage which input flaws actually change the output; calibrate
+cleaning effort to consequence rather than tidiness.
+
+**Right Tool for the Job** *(Tool choice + intervention cost — fused)* — Each
+round presents a single workflow step with revealed characteristics — **volume**
+(12 times a year vs 4,000 times a day), **variability** (identical every time vs
+every case different), **risk** (a typo vs legal exposure) and **structure**
+(clean form fields vs free text). The player picks an intervention: **leave
+manual**, **rules-based automation**, **LLM**, or **commission a custom app**.
+The round then charges them — each choice surfaces a **build cost**, **ongoing
+maintenance**, and a simulated **failure cost** over a year, against the **drag
+cost** of doing nothing. Some rounds are rigged so the "exciting" answer (build a
+custom AI app!) is **wrong** because the volume can never pay back the build, and
+the rewarded answer is "leave it manual"; others punish **under-intervening** — a
+high-volume, high-drag step left alone bleeds cost all year. Scoring is **net
+value, not sophistication.** This is a standalone, generalised version of the
+Act Five Build drill-down — it pre-teaches the exact judgment the Workflow
+Redesign Challenge later asks players to apply in context.
+
+_Learning outcomes:_ match the intervention to a step's volume / variability /
+risk / structure; account for build, maintenance and failure costs against the
+cost of inaction; resist AI-solutionism — recognise when "leave it manual" is
+the correct call.
+
+| Order | Game | Concept | Why here |
+|-------|------|---------|----------|
+| 1 | **Trace the Flow** | What a workflow is | Literacy floor — must come first |
+| 2 | **Clean the Pipe** | Data management | Inputs feed the workflow you just learned to see |
+| 3 | **Right Tool for the Job** | Tool choice + intervention cost | Now you can see steps and judge what to do with each |
+
+---
+
+## Act Four: Safe Delegation & Human-in-the-Loop Design
 
 ### Learning Outcomes
 
@@ -83,7 +165,7 @@ Too many checkpoints kills efficiency. Too few creates liability. Scoring reward
 
 ---
 
-## Act Four: Workflow Redesign & The Art of the Possible
+## Act Five: Workflow Redesign & The Art of the Possible
 
 ### Learning Outcomes
 
@@ -99,7 +181,7 @@ Four-phase interactive loop:
 
 2. **Ideation** — Freeform prompt box. Player analyses the workflow in natural language: "What are the bottlenecks? Where could AI add value?" AI synthesises their thinking into structured insights.
 
-3. **Build** — Drag-and-drop canvas. Player redesigns the workflow using AI capability blocks (summarise, classify, extract, flag, human review checkpoint). Each block has a drill-down showing implementation options:
+3. **Build** — Drag-and-drop canvas (one slot per as-is stage). Player redesigns the workflow by dragging an AI capability block (summarise, classify, extract, flag, draft) onto each stage, picking an implementation tier, and toggling a human-review checkpoint. The implementation tiers are:
    - Rules-based filter (fast, limited)
    - LLM classification (nuanced, hallucination risk)
    - Custom Application (IT-built, tailored, highest capability and speed)
@@ -118,5 +200,6 @@ Four-phase interactive loop:
 |-------|---------------|
 | Act One | "I can communicate with AI precisely and safely" |
 | Act Two | "I understand why AI behaves the way it does" |
-| Act Three | "I know where humans must stay in the loop" |
-| Act Four | "I can redesign work itself — and know when to call in specialists" |
+| Act Three | "I can see my work as a system of steps, data and choices" |
+| Act Four | "I know where humans must stay in the loop" |
+| Act Five | "I can redesign work itself — and know when to call in specialists" |

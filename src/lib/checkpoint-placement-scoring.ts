@@ -7,7 +7,7 @@
  *
  * Scoring model (see docs/GAME-RULES.md): two axes per round, graded against the
  * stored `kind` of every workflow step. The two failure modes are SYMMETRIC,
- * exactly as the Act Three learning outcome frames them ("too few checkpoints
+ * exactly as the Act Four learning outcome frames them ("too few checkpoints
  * creates liability; too many kills efficiency") — so this mirrors Context
  * Calibration's 0.5 / 0.5 + gate-cap shape rather than a gate-heavy split.
  *

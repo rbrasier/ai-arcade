@@ -44,6 +44,12 @@ export const games = sqliteTable("games", {
   // Narrative act label shown as a visual separator on the home page.
   // Nullable so existing rows survive a non-destructive schema push.
   act: text("act"),
+  // "Coming soon" games are seeded so they show up in the arcade list, but their
+  // play flows aren't built yet (clicking through 404s). They are excluded from
+  // the unlock gate in `getGamesWithProgress` — they can never be completed, so
+  // they must not count toward, or block, the progression of playable games.
+  // Nullable for the same non-destructive `drizzle-kit push` reason as `act`.
+  comingSoon: integer("coming_soon", { mode: "boolean" }).default(false),
 });
 
 /** A single challenge within a game. `config` holds per-game-type JSON. */
@@ -223,7 +229,7 @@ export const checkpointPlacementRounds = sqliteTable("checkpoint_placement_round
 });
 
 /**
- * A generated "Workflow Redesign Challenge" round (Act Four capstone). The full
+ * A generated "Workflow Redesign Challenge" round (Act Five capstone). The full
  * scenario — including each stage's ground-truth best capability, best
  * implementation tier and governance checkpoint kind — is stored server-side so
  * grading never trusts the client. Created when a round is generated; read back
