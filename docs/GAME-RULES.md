@@ -237,7 +237,7 @@ ratio, and a round is `exceptional` only when **every** essential is attached an
 `src/lib/context-calibration-scoring.ts`, and `src/lib/ai/context-calibration.ts`.
 
 **In the Loop** (slug `checkpoint-placement`) runs **5 rounds** of escalating
-risk and opens Act Three (Safe Delegation & Human-in-the-Loop Design). It teaches
+risk and opens Act Four (Safe Delegation & Human-in-the-Loop Design). It teaches
 **where a human must stay in the loop** of an AI-redesigned workflow — and that
 this cuts both ways: too few checkpoints lets an irreversible bad call slip
 through (**liability**), while too many throw away the speed the redesign was for
@@ -295,7 +295,7 @@ player left a critical unguarded (their column collapses toward all-AI) or
 over-checkpointed (their time balloons). It is the same illustrative "what it
 produced" layer as the capstone's consequences read and **never affects the score**.
 
-**Workflow Redesign Challenge** (slug `workflow-redesign`) is the **Act Four
+**Workflow Redesign Challenge** (slug `workflow-redesign`) is the **Act Five
 capstone**. Unlike the five escalating-difficulty games it is **not** a 5-round
 game: it runs the **2 seeded scenarios** (HR onboarding, expense review) as deep
 challenges, each played through a **four-phase loop** — **Setup** (read the as-is

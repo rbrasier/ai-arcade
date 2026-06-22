@@ -223,7 +223,7 @@ export const checkpointPlacementRounds = sqliteTable("checkpoint_placement_round
 });
 
 /**
- * A generated "Workflow Redesign Challenge" round (Act Four capstone). The full
+ * A generated "Workflow Redesign Challenge" round (Act Five capstone). The full
  * scenario — including each stage's ground-truth best capability, best
  * implementation tier and governance checkpoint kind — is stored server-side so
  * grading never trusts the client. Created when a round is generated; read back

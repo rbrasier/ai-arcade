@@ -21,7 +21,7 @@ optional in development thanks to a built-in mock evaluator.
 npm install
 cp .env.example .env        # optional: add ANTHROPIC_API_KEY for real evaluations
 npm run db:push             # create the SQLite schema
-npm run db:seed             # load 5 games + demo leaderboard data
+npm run db:seed             # load the games (no demo players — the leaderboard fills in as people play)
 npm run dev                 # http://localhost:3000
 ```
 
@@ -52,14 +52,25 @@ Or do it all in one step:
 
 ## Games
 
-This scaffold seeds 5 games (~2 hours of play). The first two have playable
-challenge flows; the rest are placeholders ready for real designs.
+The arcade follows a structured learning arc (see
+[`docs/LEARNING-OUTCOMES.md`](docs/LEARNING-OUTCOMES.md) for the full design and
+[`docs/GAME-RULES.md`](docs/GAME-RULES.md) for the shared scoring/XP/unlock
+rules). Games are grouped into acts and unlock as you clear your way forward:
 
-1. **Prompt Golf** — hit the target output with the fewest, cleanest words.
-2. **Spot the Hallucination** — flag fabricated claims in AI-generated passages.
-3. **Few-Shot Architect** _(placeholder)_
-4. **Chain of Thought** _(placeholder)_
-5. **Eval Designer** _(placeholder)_
+- **Act Zero — Orientation**
+  1. **AI Foundations** — a short, self-paced course on how AI works; finish it to unlock the games.
+- **Act One — Prompt Mastery & Safety Foundations**
+  2. **Prompt Golf** — write the shortest prompt that hits every criterion (precision × word economy vs par).
+  3. **Spot the Hallucination** — flag fabricated claims in an AI assistant's answer; resist over-flagging as the model tier rises.
+  4. **Think It Through** — trust a quick answer or make the AI reason it out step by step, then commit the final call.
+- **Act Two — Context Mastery**
+  5. **Context Calibration** — attach only the context the answer needs; too little starves it, too much misdirects it.
+- **Act Three — Seeing Work as a System** _(designed in the docs, not yet built)_
+  — Trace the Flow, Clean the Pipe, Right Tool for the Job.
+- **Act Four — Safe Delegation & Human-in-the-Loop Design**
+  6. **In the Loop** — place human checkpoints where an AI workflow needs them, without killing efficiency.
+- **Act Five — Workflow Redesign & The Art of the Possible**
+  7. **Workflow Redesign Challenge** — the capstone: redesign a real corporate workflow around AI's strengths.
 
 ## Project layout
 

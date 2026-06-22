@@ -1,6 +1,6 @@
 /**
  * Pure, dependency-free scoring helpers for the "Workflow Redesign Challenge"
- * (Act Four — the capstone). Imports nothing from the AI connector or the server
+ * (Act Five — the capstone). Imports nothing from the AI connector or the server
  * runtime so it can be shared by the scoring route and (where useful) the client.
  *
  * The capstone integrates the whole arc, so it grades the player's redesigned

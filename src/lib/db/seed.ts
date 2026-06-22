@@ -45,7 +45,7 @@ interface SeedGame {
   challenges: SeedChallenge[];
 }
 
-// Ordered to follow the learning progression: Act One → Act Four. The home
+// Ordered to follow the learning progression: Act One → Act Five. The home
 // page derives each game's difficulty band from this order.
 const GAMES: SeedGame[] = [
   // ===== Act Zero: Orientation =====
@@ -232,10 +232,15 @@ const GAMES: SeedGame[] = [
     ],
   },
 
-  // ===== Act Three: Safe Delegation & Human-in-the-Loop Design =====
+  // ===== Act Three: Seeing Work as a System =====
+  // Documented in docs/LEARNING-OUTCOMES.md (Trace the Flow, Clean the Pipe,
+  // Right Tool for the Job) but not yet implemented, so no games are seeded for
+  // it — the act numbering intentionally jumps from Two to Four below.
+
+  // ===== Act Four: Safe Delegation & Human-in-the-Loop Design =====
   {
     slug: "checkpoint-placement",
-    act: "Act Three — Safe Delegation",
+    act: "Act Four — Safe Delegation",
     title: "In the Loop",
     description:
       "An AI workflow runs on its own — you decide where a human must step in. Too few checkpoints is liability; too many kills the speed. Five rounds of rising risk.",
@@ -278,10 +283,10 @@ const GAMES: SeedGame[] = [
     ],
   },
 
-  // ===== Act Four: Workflow Redesign & The Art of the Possible =====
+  // ===== Act Five: Workflow Redesign & The Art of the Possible =====
   {
     slug: "workflow-redesign",
-    act: "Act Four — Workflow Redesign",
+    act: "Act Five — Workflow Redesign",
     title: "Workflow Redesign Challenge",
     description:
       "Redesign a real corporate workflow around AI's strengths — spot the bottlenecks, rebuild with capability blocks, and validate for technical and governance risk.",
