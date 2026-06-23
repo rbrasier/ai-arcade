@@ -111,13 +111,16 @@ export function VideoPlaceholder({
         <div
           style={{
             fontFamily: MONO,
-            fontSize: 9.5,
+            fontSize: 13,
             letterSpacing: ".06em",
             textTransform: "uppercase",
-            color: "rgba(255,253,247,0.38)",
+            color: "rgba(255,253,247,0.6)",
+            background: "rgba(0,0,0,0.25)",
+            borderRadius: 6,
+            padding: "4px 10px",
           }}
         >
-          video coming soon
+          Video explainer coming soon
         </div>
       </div>
     </div>
