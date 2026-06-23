@@ -13,6 +13,7 @@ import {
   hallucinationRounds,
   players,
   promptGolfRounds,
+  rightToolRounds,
   workflowRedesignRounds,
 } from "./schema";
 
@@ -315,11 +316,10 @@ const GAMES: SeedGame[] = [
   {
     slug: "right-tool-for-the-job",
     act: "Act Three — Seeing Work as a System",
-    title: "Right Tool for the Job",
+    title: "Fit for Purpose",
     description:
-      "Match each workflow step to the right intervention — leave it manual, rules, an LLM, or a custom app — and weigh the build, maintenance and failure costs against the drag of doing nothing. Five rounds scored on net value, not sophistication. Sometimes the smart move is to build nothing.",
+      "One workflow step, four ways to handle it — leave it manual, rules, an LLM, or a custom app. Weigh the build, maintenance and failure costs against the drag of doing nothing, and pick the best value. Five rounds scored on net value, not sophistication. Sometimes the smart move is to build nothing.",
     estMinutes: 15,
-    comingSoon: true,
     challenges: [
       {
         title: "Round 1 — Warm-up",
@@ -449,6 +449,7 @@ function seed() {
   db.delete(chainOfThoughtRounds).run();
   db.delete(contextCalibrationRounds).run();
   db.delete(checkpointPlacementRounds).run();
+  db.delete(rightToolRounds).run();
   db.delete(workflowRedesignRounds).run();
   db.delete(attempts).run();
   db.delete(challenges).run();

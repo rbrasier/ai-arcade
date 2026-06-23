@@ -229,6 +229,29 @@ export const checkpointPlacementRounds = sqliteTable("checkpoint_placement_round
 });
 
 /**
+ * A generated "Fit for Purpose" (Right Tool for the Job) round. The full scenario
+ * — including each intervention's hidden cost params — is stored server-side so
+ * grading never trusts the client. Created when a round is generated; read back
+ * when scored.
+ */
+export const rightToolRounds = sqliteTable("right_tool_rounds", {
+  id: text("id").primaryKey(),
+  playerId: text("player_id")
+    .notNull()
+    .references(() => players.id),
+  challengeId: text("challenge_id")
+    .notNull()
+    .references(() => challenges.id),
+  difficulty: integer("difficulty").notNull().default(1),
+  scenario: text("scenario", { mode: "json" })
+    .$type<Record<string, unknown>>()
+    .notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+});
+
+/**
  * A generated "Workflow Redesign Challenge" round (Act Five capstone). The full
  * scenario — including each stage's ground-truth best capability, best
  * implementation tier and governance checkpoint kind — is stored server-side so
@@ -262,4 +285,5 @@ export type PromptGolfRound = typeof promptGolfRounds.$inferSelect;
 export type ChainOfThoughtRound = typeof chainOfThoughtRounds.$inferSelect;
 export type ContextCalibrationRound = typeof contextCalibrationRounds.$inferSelect;
 export type CheckpointPlacementRound = typeof checkpointPlacementRounds.$inferSelect;
+export type RightToolRound = typeof rightToolRounds.$inferSelect;
 export type WorkflowRedesignRound = typeof workflowRedesignRounds.$inferSelect;

@@ -45,9 +45,9 @@ Players earn XP for every attempt, plus a bonus for strong performance:
 ## Round generation patterns
 
 These two patterns are **shared by every multi-round, AI-generated game** (Prompt
-Golf, Spot the Hallucination, Think It Through, Context Calibration, In the Loop
-and the Workflow Redesign capstone — which warms its **two** scenarios the same
-way) and must be kept in sync as games are added:
+Golf, Spot the Hallucination, Think It Through, Context Calibration, Fit for
+Purpose, In the Loop and the Workflow Redesign capstone — which warms its **two**
+scenarios the same way) and must be kept in sync as games are added:
 
 - **Preload all rounds behind the explainer.** When the intro / "how to play"
   modal is shown, every round is generated in the background, **sequentially**
@@ -55,7 +55,8 @@ way) and must be kept in sync as games are added:
   round's generate request is memoised as a promise; `loadRound` just awaits the
   matching entry. Replay drops the cache and warms a fresh set. Implemented in
   `PromptGolfGame`, `HallucinationGame`, `ChainOfThoughtGame`,
-  `ContextCalibrationGame`, `CheckpointPlacementGame` and `WorkflowRedesignGame`.
+  `ContextCalibrationGame`, `RightToolForTheJobGame`, `CheckpointPlacementGame`
+  and `WorkflowRedesignGame`.
 - **No repeated theme within a play-through.** Each generated scenario carries a
   short `topic` label. Because the background warm-up is sequential, each round
   is told the topics already used (`avoidTopics`) so it picks a clearly
@@ -63,8 +64,8 @@ way) and must be kept in sync as games are added:
   accumulates topics in a ref; the generate routes forward them to the AI
   prompt. Applies to all of the games above (`generatePromptGolfRound`,
   `generateHallucinationRound`, `generateChainOfThoughtRound`,
-  `generateContextCalibrationRound`, `generateCheckpointPlacementRound`,
-  `generateWorkflowRedesignRound`).
+  `generateContextCalibrationRound`, `generateRightToolRound`,
+  `generateCheckpointPlacementRound`, `generateWorkflowRedesignRound`).
 - **A sender who fits the scenario.** Every game frames its brief as a direct
   message from a colleague (`senderName` / `senderRole` / `senderInitials`). Both
   the **name and the role are dynamic to the scenario** — the generators instruct
@@ -235,6 +236,49 @@ ratio, and a round is `exceptional` only when **every** essential is attached an
 **no** noise or distractor is. Implemented in
 `src/app/api/games/context-calibration/score/route.ts`, the shared pure helpers in
 `src/lib/context-calibration-scoring.ts`, and `src/lib/ai/context-calibration.ts`.
+
+**Fit for Purpose** (slug `right-tool-for-the-job`) runs **5 rounds** of escalating
+judgement inside Act Three (Seeing Work as a System). It teaches the practical
+decision of **matching an intervention to a single workflow step** — and the harder
+lesson that this cuts both ways: reaching for a fancy build on a tiny job wastes
+money (**over-building**), while leaving a high-volume step manual quietly bleeds
+cost all year (**under-building**). Each round's scenario — a colleague's hand-off
+and **one** workflow step with revealed **characteristics** (volume, manual time
+per run, the cost of a slip, variability and structure) — is generated live by the
+AI connector (with a deterministic mock fallback). The player picks **one of four**
+interventions — `manual`, `rules`, `llm` or `custom-app` — and the round then
+**reveals the full cost** of every option (the same "what it produced" idea as
+Prompt Golf).
+
+Grading is fully deterministic against each option's stored, hidden cost params. A
+cost model turns them into an **annual cost** (lower is better):
+
+- `annualCost = buildCost / AMORTISE_YEARS + annualMaintenance + errorRate ×
+  volume × riskCostPerFailure + residualMinutes × volume × MINUTE_COST`, with
+  `AMORTISE_YEARS = 3` and `MINUTE_COST = 0.75` (£/staff-minute).
+- `manual` is the **status-quo baseline** (build 0, maintenance 0, the full manual
+  time as residual labour) — the "drag cost of doing nothing", and the natural
+  scale for how much a mis-pick wastes.
+
+The single decision is graded on **net value, not sophistication**:
+
+- `regret = annualCost(chosen) − annualCost(best)` — £/yr wasted versus the
+  cheapest option.
+- `scoreRatio = clamp(1 − regret / annualCost(manual), 0, 1)`.
+
+So the cheapest option scores **100%** (`exceptional`); a near-optimal pick clears;
+and **both** over-building a low-volume step **and** under-building a high-volume one
+drive regret past the baseline and **fail** the round — the two real failure modes,
+mirroring "resist over-flagging" and "resist the pile-on" elsewhere in the arcade.
+The five rounds are rigged (via `src/lib/right-tool-tiers.ts`) so a **different tool
+wins each round** — rules on clean high-volume work, an LLM on free text, leaving it
+manual at tiny volume, rules again on a huge structured backlog, and a custom app
+only when volume **and** risk are both high — so no single reflex ("always automate",
+"always build") clears the game. The ≥ 70% / ≥ 85% XP bonus tiers apply to this
+ratio, and a round is `exceptional` only when the player picks the single cheapest
+option. Implemented in
+`src/app/api/games/right-tool-for-the-job/score/route.ts`, the shared pure helpers in
+`src/lib/right-tool-for-the-job-scoring.ts`, and `src/lib/ai/right-tool-for-the-job.ts`.
 
 **In the Loop** (slug `checkpoint-placement`) runs **5 rounds** of escalating
 risk and opens Act Four (Safe Delegation & Human-in-the-Loop Design). It teaches
