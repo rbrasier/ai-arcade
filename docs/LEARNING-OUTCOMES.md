@@ -108,11 +108,19 @@ the contrast is the lesson. Scored on catching the **consequential** problems
 summary), so it teaches that **not all dirt is equal** and heads off the
 over-correction of obsessive cleaning. Pairs deliberately with Spot the
 Hallucination: output vigilance and input hygiene are the two halves of trusting
-AI work.
+AI work. The **harder rounds** escalate beyond row-level dirt to whole **sources
+whose data *type* doesn't suit the system** — audio feeding a text summariser, a
+different-schema export, scanned PDFs — where the player must weigh **leaving the
+data as-is against migrating it**, with the **migration effort cost** shown
+(round 4 introduces one such source; the boss round has two, one worth migrating
+and one tolerable mismatch best left alone). The lesson lands on a second axis,
+**effort**: spend cleaning and migration effort only where it actually pays off.
 
 _Learning outcomes:_ recognise garbage-in-garbage-out as a data problem, not an
 AI problem; triage which input flaws actually change the output; calibrate
-cleaning effort to consequence rather than tidiness.
+cleaning effort to consequence rather than tidiness — including when a
+type-mismatched source is worth a costly migration and when it should be left
+as-is.
 
 **Right Tool for the Job** *(Tool choice + intervention cost — fused)* — Each
 round presents a single workflow step with revealed characteristics — **volume**

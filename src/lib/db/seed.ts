@@ -8,12 +8,14 @@ import {
   chainOfThoughtRounds,
   challenges,
   checkpointPlacementRounds,
+  cleanThePipeRounds,
   contextCalibrationRounds,
   games,
   hallucinationRounds,
   players,
   promptGolfRounds,
   rightToolRounds,
+  traceFlowRounds,
   workflowRedesignRounds,
 } from "./schema";
 
@@ -236,19 +238,17 @@ const GAMES: SeedGame[] = [
   },
 
   // ===== Act Three: Seeing Work as a System =====
-  // Designed in docs/LEARNING-OUTCOMES.md but not yet implemented: these three
-  // games are seeded so they appear in the arcade list, but they have no play
-  // routes yet (clicking through 404s) and no per-round generators/tables. The
-  // challenge rows just anchor progress/XP and carry the difficulty, matching
-  // the five-round escalating pattern the rest of the arcade uses.
+  // All three Act Three games are now fully built and playable: Trace the Flow,
+  // Clean the Pipe and Fit for Purpose (slug right-tool-for-the-job). Each runs
+  // the five-round escalating pattern, with scenarios generated live by the AI
+  // connector (deterministic mock fallback) and per-round tables/generators.
   {
     slug: "trace-the-flow",
     act: "Act Three — Seeing Work as a System",
     title: "Trace the Flow",
     description:
-      "A messy, real-world account of how a task actually gets done. Rebuild it into an ordered chain of steps, tag each input and output, and spot the broken hand-offs. Five rounds — you can't redesign what you can't see.",
+      "A messy, real-world account of how a task actually gets done. Rebuild it into an ordered chain of steps, read each one's input and output, and spot the broken hand-offs. Five rounds — you can't redesign what you can't see.",
     estMinutes: 15,
-    comingSoon: true,
     challenges: [
       {
         title: "Round 1 — Warm-up",
@@ -284,7 +284,6 @@ const GAMES: SeedGame[] = [
     description:
       "Before you run an AI step, triage the data going in. Catch the dirt that actually poisons the output — not all dirt is equal — then compare what the AI made from the raw vs the cleaned data. Five rounds, the input-side mirror of Spot the Hallucination.",
     estMinutes: 15,
-    comingSoon: true,
     challenges: [
       {
         title: "Round 1 — Warm-up",
@@ -302,13 +301,15 @@ const GAMES: SeedGame[] = [
         config: { difficulty: 3 },
       },
       {
-        title: "Round 4 — Wrong Category",
-        prompt: "Triage the inputs, then run the step and compare the outputs.",
+        title: "Round 4 — A Source That Doesn't Fit",
+        prompt:
+          "Triage the rows, then decide what to do with a source whose data type doesn't suit the system — leave it, or migrate it for a cost.",
         config: { difficulty: 4 },
       },
       {
         title: "Round 5 — Boss Round",
-        prompt: "Triage the inputs, then run the step and compare the outputs.",
+        prompt:
+          "Triage the rows, then weigh two ill-fitting sources: migrate the one that pays off and leave the one that doesn't.",
         config: { difficulty: 5 },
       },
     ],
@@ -450,6 +451,8 @@ function seed() {
   db.delete(contextCalibrationRounds).run();
   db.delete(checkpointPlacementRounds).run();
   db.delete(rightToolRounds).run();
+  db.delete(cleanThePipeRounds).run();
+  db.delete(traceFlowRounds).run();
   db.delete(workflowRedesignRounds).run();
   db.delete(attempts).run();
   db.delete(challenges).run();
