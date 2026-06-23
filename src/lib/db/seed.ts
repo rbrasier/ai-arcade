@@ -8,11 +8,13 @@ import {
   chainOfThoughtRounds,
   challenges,
   checkpointPlacementRounds,
+  cleanThePipeRounds,
   contextCalibrationRounds,
   games,
   hallucinationRounds,
   players,
   promptGolfRounds,
+  traceFlowRounds,
   workflowRedesignRounds,
 } from "./schema";
 
@@ -283,7 +285,6 @@ const GAMES: SeedGame[] = [
     description:
       "Before you run an AI step, triage the data going in. Catch the dirt that actually poisons the output — not all dirt is equal — then compare what the AI made from the raw vs the cleaned data. Five rounds, the input-side mirror of Spot the Hallucination.",
     estMinutes: 15,
-    comingSoon: true,
     challenges: [
       {
         title: "Round 1 — Warm-up",
@@ -301,13 +302,15 @@ const GAMES: SeedGame[] = [
         config: { difficulty: 3 },
       },
       {
-        title: "Round 4 — Wrong Category",
-        prompt: "Triage the inputs, then run the step and compare the outputs.",
+        title: "Round 4 — A Source That Doesn't Fit",
+        prompt:
+          "Triage the rows, then decide what to do with a source whose data type doesn't suit the system — leave it, or migrate it for a cost.",
         config: { difficulty: 4 },
       },
       {
         title: "Round 5 — Boss Round",
-        prompt: "Triage the inputs, then run the step and compare the outputs.",
+        prompt:
+          "Triage the rows, then weigh two ill-fitting sources: migrate the one that pays off and leave the one that doesn't.",
         config: { difficulty: 5 },
       },
     ],
@@ -449,6 +452,8 @@ function seed() {
   db.delete(chainOfThoughtRounds).run();
   db.delete(contextCalibrationRounds).run();
   db.delete(checkpointPlacementRounds).run();
+  db.delete(cleanThePipeRounds).run();
+  db.delete(traceFlowRounds).run();
   db.delete(workflowRedesignRounds).run();
   db.delete(attempts).run();
   db.delete(challenges).run();
