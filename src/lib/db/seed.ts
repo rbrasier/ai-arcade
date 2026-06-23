@@ -14,6 +14,7 @@ import {
   hallucinationRounds,
   players,
   promptGolfRounds,
+  traceFlowRounds,
   workflowRedesignRounds,
 } from "./schema";
 
@@ -236,19 +237,19 @@ const GAMES: SeedGame[] = [
   },
 
   // ===== Act Three: Seeing Work as a System =====
-  // Designed in docs/LEARNING-OUTCOMES.md but not yet implemented: these three
-  // games are seeded so they appear in the arcade list, but they have no play
-  // routes yet (clicking through 404s) and no per-round generators/tables. The
-  // challenge rows just anchor progress/XP and carry the difficulty, matching
-  // the five-round escalating pattern the rest of the arcade uses.
+  // Trace the Flow is fully built. The remaining two (Clean the Pipe, Right Tool
+  // for the Job) are designed in docs/LEARNING-OUTCOMES.md but not yet
+  // implemented: they're seeded so they appear in the arcade list, but they have
+  // no play routes yet (clicking through 404s) and no per-round generators/tables.
+  // Their challenge rows just anchor progress/XP and carry the difficulty,
+  // matching the five-round escalating pattern the rest of the arcade uses.
   {
     slug: "trace-the-flow",
     act: "Act Three — Seeing Work as a System",
     title: "Trace the Flow",
     description:
-      "A messy, real-world account of how a task actually gets done. Rebuild it into an ordered chain of steps, tag each input and output, and spot the broken hand-offs. Five rounds — you can't redesign what you can't see.",
+      "A messy, real-world account of how a task actually gets done. Rebuild it into an ordered chain of steps, read each one's input and output, and spot the broken hand-offs. Five rounds — you can't redesign what you can't see.",
     estMinutes: 15,
-    comingSoon: true,
     challenges: [
       {
         title: "Round 1 — Warm-up",
@@ -452,6 +453,7 @@ function seed() {
   db.delete(contextCalibrationRounds).run();
   db.delete(checkpointPlacementRounds).run();
   db.delete(cleanThePipeRounds).run();
+  db.delete(traceFlowRounds).run();
   db.delete(workflowRedesignRounds).run();
   db.delete(attempts).run();
   db.delete(challenges).run();

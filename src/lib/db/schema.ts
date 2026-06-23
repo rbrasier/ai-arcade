@@ -252,6 +252,29 @@ export const cleanThePipeRounds = sqliteTable("clean_the_pipe_rounds", {
 });
 
 /**
+ * A generated "Trace the Flow" round. The full scenario — including each step's
+ * canonical `position`, any `parallelGroup`, the broken hand-offs and the
+ * loop-back — is stored server-side so grading never trusts the client. Created
+ * when a round is generated; read back when scored.
+ */
+export const traceFlowRounds = sqliteTable("trace_flow_rounds", {
+  id: text("id").primaryKey(),
+  playerId: text("player_id")
+    .notNull()
+    .references(() => players.id),
+  challengeId: text("challenge_id")
+    .notNull()
+    .references(() => challenges.id),
+  difficulty: integer("difficulty").notNull().default(1),
+  scenario: text("scenario", { mode: "json" })
+    .$type<Record<string, unknown>>()
+    .notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+});
+
+/**
  * A generated "Workflow Redesign Challenge" round (Act Five capstone). The full
  * scenario — including each stage's ground-truth best capability, best
  * implementation tier and governance checkpoint kind — is stored server-side so
@@ -286,4 +309,5 @@ export type ChainOfThoughtRound = typeof chainOfThoughtRounds.$inferSelect;
 export type ContextCalibrationRound = typeof contextCalibrationRounds.$inferSelect;
 export type CheckpointPlacementRound = typeof checkpointPlacementRounds.$inferSelect;
 export type CleanThePipeRound = typeof cleanThePipeRounds.$inferSelect;
+export type TraceFlowRound = typeof traceFlowRounds.$inferSelect;
 export type WorkflowRedesignRound = typeof workflowRedesignRounds.$inferSelect;
