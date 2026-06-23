@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { golfResult, type GolfTone } from "@/lib/prompt-golf-scoring";
+import { VideoPlaceholder } from "./VideoExplainer";
+import { EXPLAINER_SCRIPTS } from "@/lib/game-explainer-scripts";
 
 const ACCENT = "#ec5a3a";
 const DISPLAY = "var(--font-bricolage), sans-serif";
@@ -773,7 +775,9 @@ function IntroModal({ onStart }: { onStart: () => void }) {
         animation: "hg-overlayIn .25s ease",
       }}
     >
-      <div style={{ maxWidth: 520, width: "100%", background: "#fffdf7", border: "1px solid #ece5d4", borderRadius: 20, boxShadow: "0 30px 60px -24px rgba(33,31,26,.6)", padding: "26px 28px", animation: "hg-modalIn .4s cubic-bezier(.2,.9,.3,1)", maxHeight: "86vh", overflowY: "auto" }}>
+      <div style={{ maxWidth: 960, width: "100%", background: "#fffdf7", border: "1px solid #ece5d4", borderRadius: 20, boxShadow: "0 30px 60px -24px rgba(33,31,26,.6)", padding: "26px 28px", animation: "hg-modalIn .4s cubic-bezier(.2,.9,.3,1)", maxHeight: "86vh", overflowY: "auto", display: "flex", gap: 24, alignItems: "stretch", flexWrap: "wrap" }}>
+        <VideoPlaceholder script={EXPLAINER_SCRIPTS["prompt-golf"]} accent={ACCENT} />
+        <div style={{ flex: "1 1 380px", minWidth: 0 }}>
         <div style={{ fontFamily: MONO, fontSize: 11, fontWeight: 700, color: "#9a9488", textTransform: "uppercase", letterSpacing: ".06em" }}>
           how to play
         </div>
@@ -821,6 +825,7 @@ function IntroModal({ onStart }: { onStart: () => void }) {
         <button onClick={onStart} style={{ ...primaryBtn, width: "100%", marginTop: 18, justifyContent: "center" }}>
           START ROUND 1 →
         </button>
+        </div>
       </div>
     </div>
   );

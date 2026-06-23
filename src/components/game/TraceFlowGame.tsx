@@ -9,6 +9,8 @@ import {
   type ShapeTier,
   type FlowShape,
 } from "@/lib/trace-flow-tiers";
+import { VideoPlaceholder } from "./VideoExplainer";
+import { EXPLAINER_SCRIPTS } from "@/lib/game-explainer-scripts";
 
 const ACCENT = "#2b7fb8";
 const DISPLAY = "var(--font-bricolage), sans-serif";
@@ -1127,7 +1129,9 @@ function IntroModal({ onStart }: { onStart: () => void }) {
   const [rulesOpen, setRulesOpen] = useState(false);
   return (
     <div style={overlay("fixed")}>
-      <div style={{ ...modalCard(520), padding: "26px 28px" }}>
+      <div style={{ ...modalCard(960), padding: "26px 28px", display: "flex", gap: 24, alignItems: "stretch", flexWrap: "wrap" }}>
+        <VideoPlaceholder script={EXPLAINER_SCRIPTS["trace-the-flow"]} accent={ACCENT} />
+        <div style={{ flex: "1 1 380px", minWidth: 0 }}>
         <div style={modalKicker}>how to play</div>
         <h2 style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: 26, letterSpacing: "-0.015em", margin: "8px 0 0" }}>
           Trace the Flow
@@ -1198,6 +1202,7 @@ function IntroModal({ onStart }: { onStart: () => void }) {
         <button onClick={onStart} style={{ ...primaryBtn, width: "100%", marginTop: 18, justifyContent: "center" }}>
           START ROUND 1 →
         </button>
+        </div>
       </div>
     </div>
   );

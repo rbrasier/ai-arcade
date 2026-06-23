@@ -29,6 +29,8 @@ import {
   type QualityBand,
   type StageBuild,
 } from "@/lib/workflow-redesign-scoring";
+import { VideoPlaceholder } from "./VideoExplainer";
+import { EXPLAINER_SCRIPTS } from "@/lib/game-explainer-scripts";
 
 const ACCENT = "#0d9488"; // teal — distinct from the other games
 const DISPLAY = "var(--font-bricolage), sans-serif";
@@ -1398,7 +1400,9 @@ function IntroModal({ onStart }: { onStart: () => void }) {
   const [rulesOpen, setRulesOpen] = useState(false);
   return (
     <div style={overlay()}>
-      <div style={{ ...modalCard(540), padding: "26px 28px" }}>
+      <div style={{ ...modalCard(960), padding: "26px 28px", display: "flex", gap: 24, alignItems: "stretch", flexWrap: "wrap" }}>
+        <VideoPlaceholder script={EXPLAINER_SCRIPTS["workflow-redesign"]} accent={ACCENT} />
+        <div style={{ flex: "1 1 380px", minWidth: 0 }}>
         <div style={modalKicker}>how to play · the capstone</div>
         <h2 style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: 26, letterSpacing: "-0.015em", margin: "8px 0 0" }}>
           Workflow Redesign Challenge
@@ -1462,6 +1466,7 @@ function IntroModal({ onStart }: { onStart: () => void }) {
         <button onClick={onStart} style={{ ...primaryBtn, width: "100%", marginTop: 18, justifyContent: "center" }}>
           START SCENARIO 1 →
         </button>
+        </div>
       </div>
     </div>
   );

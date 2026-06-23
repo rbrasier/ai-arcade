@@ -4,6 +4,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+import { VideoPlaceholder } from "./VideoExplainer";
+import { EXPLAINER_SCRIPTS } from "@/lib/game-explainer-scripts";
+
 const ACCENT = "#6c5ce0";
 const DISPLAY = "var(--font-bricolage), sans-serif";
 const BODY = "var(--font-hanken), system-ui, sans-serif";
@@ -986,7 +989,7 @@ function IntroModal({ onStart }: { onStart: () => void }) {
     >
       <div
         style={{
-          maxWidth: 520,
+          maxWidth: 960,
           width: "100%",
           background: "#fffdfb",
           border: "1px solid #e4dff3",
@@ -996,8 +999,14 @@ function IntroModal({ onStart }: { onStart: () => void }) {
           animation: "hg-modalIn .4s cubic-bezier(.2,.9,.3,1)",
           maxHeight: "86vh",
           overflowY: "auto",
+          display: "flex",
+          gap: 24,
+          alignItems: "stretch",
+          flexWrap: "wrap",
         }}
       >
+        <VideoPlaceholder script={EXPLAINER_SCRIPTS["chain-of-thought"]} accent={ACCENT} />
+        <div style={{ flex: "1 1 380px", minWidth: 0 }}>
         <div
           style={{
             fontFamily: MONO,
@@ -1078,6 +1087,7 @@ function IntroModal({ onStart }: { onStart: () => void }) {
         <button onClick={onStart} style={{ ...primaryBtn, width: "100%", marginTop: 18, justifyContent: "center" }}>
           START ROUND 1 →
         </button>
+        </div>
       </div>
     </div>
   );
