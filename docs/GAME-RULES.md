@@ -45,9 +45,9 @@ Players earn XP for every attempt, plus a bonus for strong performance:
 ## Round generation patterns
 
 These two patterns are **shared by every multi-round, AI-generated game** (Prompt
-Golf, Spot the Hallucination, Think It Through, Context Calibration, In the Loop
-and the Workflow Redesign capstone — which warms its **two** scenarios the same
-way) and must be kept in sync as games are added:
+Golf, Spot the Hallucination, Think It Through, Context Calibration, Clean the
+Pipe, In the Loop and the Workflow Redesign capstone — which warms its **two**
+scenarios the same way) and must be kept in sync as games are added:
 
 - **Preload all rounds behind the explainer.** When the intro / "how to play"
   modal is shown, every round is generated in the background, **sequentially**
@@ -55,7 +55,8 @@ way) and must be kept in sync as games are added:
   round's generate request is memoised as a promise; `loadRound` just awaits the
   matching entry. Replay drops the cache and warms a fresh set. Implemented in
   `PromptGolfGame`, `HallucinationGame`, `ChainOfThoughtGame`,
-  `ContextCalibrationGame`, `CheckpointPlacementGame` and `WorkflowRedesignGame`.
+  `ContextCalibrationGame`, `CleanThePipeGame`, `CheckpointPlacementGame` and
+  `WorkflowRedesignGame`.
 - **No repeated theme within a play-through.** Each generated scenario carries a
   short `topic` label. Because the background warm-up is sequential, each round
   is told the topics already used (`avoidTopics`) so it picks a clearly
@@ -63,8 +64,8 @@ way) and must be kept in sync as games are added:
   accumulates topics in a ref; the generate routes forward them to the AI
   prompt. Applies to all of the games above (`generatePromptGolfRound`,
   `generateHallucinationRound`, `generateChainOfThoughtRound`,
-  `generateContextCalibrationRound`, `generateCheckpointPlacementRound`,
-  `generateWorkflowRedesignRound`).
+  `generateContextCalibrationRound`, `generateCleanThePipeRound`,
+  `generateCheckpointPlacementRound`, `generateWorkflowRedesignRound`).
 - **A sender who fits the scenario.** Every game frames its brief as a direct
   message from a colleague (`senderName` / `senderRole` / `senderInitials`). Both
   the **name and the role are dynamic to the scenario** — the generators instruct
@@ -235,6 +236,75 @@ ratio, and a round is `exceptional` only when **every** essential is attached an
 **no** noise or distractor is. Implemented in
 `src/app/api/games/context-calibration/score/route.ts`, the shared pure helpers in
 `src/lib/context-calibration-scoring.ts`, and `src/lib/ai/context-calibration.ts`.
+
+**Clean the Pipe** (slug `clean-the-pipe`) runs **5 rounds** of escalating
+difficulty and is the second game of Act Three. It is the **input-side mirror of
+Spot the Hallucination**: the player is about to run an AI step on a batch of
+data, the data going in is dirty, and they **triage it before pressing run** —
+then see the deliverable the step produced from the **raw** vs the **cleaned**
+data. The lesson is that **not all dirt is equal**: catch the records that
+actually poison the output, and resist over-cleaning the harmless ones. Each
+round's scenario — a desk task, the AI step about to run, and the data going in —
+is generated live by the AI connector (with a deterministic mock fallback).
+
+Each round presents two kinds of **input item**, each carrying hidden ground
+truth (`consequential` + a `correctAction`, stripped pre-scoring):
+
+- **Records** (every round) — data rows the player triages **keep / fix / drop**.
+  `keep` = genuinely fine, or harmless dirt (a cosmetic duplicate, a trivial
+  format diff) — touching it wastes effort; `fix` = consequential but recoverable
+  (a blank in the field the step needs); `drop` = consequential and doesn't
+  belong / is unrecoverable (a wrong-category entry, a stale record that flips the
+  result).
+- **Sources** (rounds **4–5 only**) — an abstract source whose data **type
+  doesn't suit the system** (e.g. audio recordings feeding a text summariser, a
+  different-schema/mixed-currency export, scanned PDFs). The player chooses
+  **leave / migrate**, with the source's **`migrationEffort` (hours) shown**.
+  Round **4 plants one** such source (consequential → `migrate` is worth it);
+  round **5 (boss) plants two** — one worth migrating and one **tolerable
+  mismatch** best **left** (its large migration cost isn't worth paying), so the
+  player must spend migration effort only where it pays off. The tier→shape
+  mapping and generator guidance live in `src/lib/clean-the-pipe-tiers.ts`.
+
+Grading is fully deterministic against the stored ground truth, on two axes:
+
+- **accuracy** (the **gate**) — a Spot-the-Hallucination-style per-item gradient
+  over the **consequential** items: the right action → **1**; addressed with the
+  other clean-out (`PARTIAL_CREDIT = 0.5`); left untouched (`keep`/`leave`) →
+  **0**. `accuracy = creditSum / consequentialTotal`.
+- **effort** (the **mastery** axis — calibrate cleaning to consequence) —
+  `1 − wastedEffort / maxWaste`. Each action has an effort weight (`keep`/`leave`
+  **0**, `drop` **1**, `fix` **2**, `migrate` **4**); waste = effort spent on
+  harmless items (over-cleaning a fine record, needlessly migrating a tolerable
+  source) plus **excess** effort on consequential items (e.g. `fix` where a
+  `drop` suffices). It is normalised against an aggressive
+  "fix-everything / migrate-everything" strategy, so that strategy → ≈0 and the
+  ideal triage → 1; migration's weight (4) makes a needless migration dominate.
+
+`scoreRatio = 0.5 × accuracy + 0.5 × effort`, **capped at `GATE_CAP = 0.5`** if
+**any** consequential item is left untouched (the output is poisoned → below the
+65% clear), and `score = round(scoreRatio × maxScore)`. So letting bad data slip
+through caps the round below the clear, **and** scrubbing everything drives effort
+toward 0 → also a fail (over-cleaning is a real failure mode). Worked outcomes:
+perfect triage → **100%** (`exceptional`); leaving a consequential record or
+source untouched → capped **50%** (fails); needlessly migrating the tolerable
+boss-round source on top of an otherwise-ideal play → about **83%** (clears, but
+loses the top tier and the `exceptional` rating). The ≥ 70% / ≥ 85% XP bonus
+tiers apply to this ratio, and a round is `exceptional` only when **every**
+consequential item is handled with the right action and **no** harmless item is
+touched. Implemented in `src/app/api/games/clean-the-pipe/score/route.ts`, the
+shared pure helpers in `src/lib/clean-the-pipe-scoring.ts`, and
+`src/lib/ai/clean-the-pipe.ts`.
+
+_Consequences (feedback only — never scored)._ On submit, the step is "run" on
+the raw vs the triaged data and the debrief shows the **two deliverables side by
+side** (the signature "raw vs cleaned" read the game is built around, the same
+"what it produced" idea as Prompt Golf), each tagged with a quality band
+(`sound` / `degraded` / `poisoned`). Alongside it a deterministic **effort vs
+payoff** read (`computeCleanThePipeImpact`) reports the **hours** the player spent
+(record clean-ups + migration) against the calibrated target — so leaving a
+consequential source as-is reads as "cheap but broken" and migrating a tolerable
+source as "expensive for nothing." None of this touches the score.
 
 **In the Loop** (slug `checkpoint-placement`) runs **5 rounds** of escalating
 risk and opens Act Four (Safe Delegation & Human-in-the-Loop Design). It teaches
