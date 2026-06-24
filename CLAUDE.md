@@ -16,4 +16,12 @@ referenced code together so they stay in sync.
 All AI (challenge scoring and dynamic challenge generation) routes through a
 single connector at `src/lib/ai/connector.ts`, built on the Vercel AI SDK. The
 provider is selectable via `AI_PROVIDER` (`anthropic` | `openai` | `bedrock`)
-and falls back to a deterministic mock when no credentials are configured.
+and falls back to a deterministic mock when no credentials are configured. A
+fourth provider, `claude-cli`, shells out to a locally installed, authenticated
+Claude Code CLI (no API key) — intended for **offline round-bank generation**
+(`npm run rounds:generate`), not the deployed web app's request path.
+
+Scenario generation is normally served from pre-generated **round banks**
+(`src/lib/rounds/`, picked at random at runtime); the connector is only the
+fallback when a bank is empty. See `docs/GAME-RULES.md` and
+`src/lib/rounds/README.md`.

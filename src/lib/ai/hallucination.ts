@@ -1,6 +1,8 @@
 import { z } from "zod";
 
 import { tierInfoForDifficulty } from "@/lib/hallucination-tiers";
+import { pickRound } from "@/lib/rounds/bank";
+
 import { generateJson, isConfigured } from "./connector";
 import { mockHallucinationRound } from "./hallucination-mock";
 
@@ -96,9 +98,17 @@ Rules:
  */
 export async function generateHallucinationRound(
   difficulty: number,
-  opts: { avoidTopics?: string[] } = {},
+  opts: { avoidTopics?: string[]; fromBank?: boolean } = {},
 ): Promise<HallucinationScenario> {
   const d = Math.max(1, Math.min(5, Math.round(difficulty)));
+
+  // Prefer a pre-generated round from the static bank (see src/lib/rounds).
+  if (opts.fromBank !== false) {
+    const picked = pickRound<HallucinationScenario>("hallucination", d, {
+      avoidTopics: opts.avoidTopics,
+    });
+    if (picked) return picked;
+  }
   const tier = tierInfoForDifficulty(d);
 
   if (!isConfigured()) {

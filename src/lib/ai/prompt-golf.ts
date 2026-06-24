@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { pickRound } from "@/lib/rounds/bank";
+
 import { generateJson, generatePlainText, isConfigured } from "./connector";
 import {
   mockEvaluatePromptGolf,
@@ -133,9 +135,22 @@ export function withCriterionIds(
  */
 export async function generatePromptGolfRound(
   difficulty: number,
-  opts: { rewrite?: boolean; avoidTopics?: string[] } = {},
+  opts: { rewrite?: boolean; avoidTopics?: string[]; fromBank?: boolean } = {},
 ): Promise<PromptGolfScenario> {
   const d = Math.max(1, Math.min(5, Math.round(difficulty)));
+
+  // Prefer a pre-generated round from the static bank (see src/lib/rounds).
+  // A rewrite round needs a scenario that carries a `messyPrompt` draft.
+  if (opts.fromBank !== false) {
+    const picked = pickRound<PromptGolfScenario>("prompt-golf", d, {
+      avoidTopics: opts.avoidTopics,
+      predicate: opts.rewrite ? (s) => Boolean(s.messyPrompt) : undefined,
+    });
+    if (picked) {
+      if (!opts.rewrite) delete picked.messyPrompt;
+      return picked;
+    }
+  }
 
   if (!isConfigured()) {
     return mockPromptGolfRound(d, opts.rewrite);

@@ -50,6 +50,22 @@ Flow, Clean the Pipe, Fit for Purpose, In the Loop and the Workflow Redesign
 capstone — which warms its **two** scenarios the same way) and must be kept in
 sync as games are added:
 
+- **Pre-generated round banks, picked at random.** Rather than calling the AI
+  connector on every play, each AI-generated game ships a **static bank** of
+  pre-made rounds (`src/lib/rounds/banks/<game>.json`) and the generator picks
+  one at **random** at runtime via `pickRound` (`src/lib/rounds/bank.ts`). Banks
+  key their rounds by **difficulty** (`"1"`..`"5"`) — or, for the Workflow
+  Redesign capstone, by `scenarioKey` — and store the **full** scenario including
+  ground truth (the generate routes strip it before it reaches the client,
+  exactly as for a live scenario). The pick honours `avoidTopics` (see below) and
+  is a **deep clone** so callers may mutate it freely. Live AI generation is now
+  only a **fallback**: each `generate*Round` first tries the bank, then (if the
+  bank is empty) the AI connector, then its deterministic mock — so the arcade
+  stays fully playable at every level of configuration. The banks are produced
+  offline by `scripts/generate-round-banks.ts` (`npm run rounds:generate`), which
+  reuses the same generators with `fromBank: false` to force fresh scenarios; the
+  per-game target is configurable (default **150** = 30 per difficulty, split
+  evenly across buckets). Regenerating requires a configured AI provider.
 - **Preload all rounds behind the explainer.** When the intro / "how to play"
   modal is shown, every round is generated in the background, **sequentially**
   (one after the next), so starting and advancing has little or no wait. A
@@ -62,8 +78,10 @@ sync as games are added:
   short `topic` label. Because the background warm-up is sequential, each round
   is told the topics already used (`avoidTopics`) so it picks a clearly
   different subject — no two "survey results" rounds back to back. The client
-  accumulates topics in a ref; the generate routes forward them to the AI
-  prompt. Applies to all of the games above (`generatePromptGolfRound`,
+  accumulates topics in a ref; the generate routes forward them, and the round
+  source honours them either way — `pickRound` skips banked rounds whose `topic`
+  is already used, and the live fallback forwards them to the AI prompt. Applies
+  to all of the games above (`generatePromptGolfRound`,
   `generateHallucinationRound`, `generateChainOfThoughtRound`,
   `generateContextCalibrationRound`, `generateTraceFlowRound`,
   `generateCleanThePipeRound`, `generateRightToolRound`,

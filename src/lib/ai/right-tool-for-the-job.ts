@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { pickRound } from "@/lib/rounds/bank";
+
 import { generateJson, generatePlainText, isConfigured } from "./connector";
 import { mockRightToolRound } from "./right-tool-for-the-job-mock";
 import { tierInfoForDifficulty, type ToolTier } from "../right-tool-tiers";
@@ -166,9 +168,17 @@ export function normaliseScenario(
  */
 export async function generateRightToolRound(
   difficulty: number,
-  opts: { avoidTopics?: string[] } = {},
+  opts: { avoidTopics?: string[]; fromBank?: boolean } = {},
 ): Promise<RightToolScenario> {
   const d = Math.max(1, Math.min(5, Math.round(difficulty)));
+
+  // Prefer a pre-generated round from the static bank (see src/lib/rounds).
+  if (opts.fromBank !== false) {
+    const picked = pickRound<RightToolScenario>("right-tool-for-the-job", d, {
+      avoidTopics: opts.avoidTopics,
+    });
+    if (picked) return picked;
+  }
   const tier = tierInfoForDifficulty(d);
 
   if (!isConfigured()) {

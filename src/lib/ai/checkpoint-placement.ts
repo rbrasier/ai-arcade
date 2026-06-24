@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { pickRound } from "@/lib/rounds/bank";
+
 import { generateJson, generatePlainText, isConfigured } from "./connector";
 import { mockCheckpointPlacementRound } from "./checkpoint-placement-mock";
 import { tierInfoForDifficulty, type RiskTier } from "../checkpoint-tiers";
@@ -149,9 +151,19 @@ export function withStepIds(
  */
 export async function generateCheckpointPlacementRound(
   difficulty: number,
-  opts: { avoidTopics?: string[] } = {},
+  opts: { avoidTopics?: string[]; fromBank?: boolean } = {},
 ): Promise<CheckpointPlacementScenario> {
   const d = Math.max(1, Math.min(5, Math.round(difficulty)));
+
+  // Prefer a pre-generated round from the static bank (see src/lib/rounds).
+  if (opts.fromBank !== false) {
+    const picked = pickRound<CheckpointPlacementScenario>(
+      "checkpoint-placement",
+      d,
+      { avoidTopics: opts.avoidTopics },
+    );
+    if (picked) return picked;
+  }
   const tier = tierInfoForDifficulty(d);
 
   if (!isConfigured()) {
