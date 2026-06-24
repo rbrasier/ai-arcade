@@ -1119,7 +1119,7 @@ function flowCanvas(isOver: boolean): React.CSSProperties {
   return {
     border: `1.5px dashed ${isOver ? ACCENT : "#b9d0e2"}`,
     borderRadius: 16,
-    background: isOver
+    backgroundColor: isOver
       ? "color-mix(in srgb, var(--accent) 6%, #f7fbfe)"
       : "#f7fbfe",
     // subtle dotted grid, like a Visio diagram canvas
@@ -1128,7 +1128,7 @@ function flowCanvas(isOver: boolean): React.CSSProperties {
     backgroundPosition: "8px 8px",
     padding: "16px 16px",
     minHeight: 210,
-    transition: "border-color .14s, background .14s",
+    transition: "border-color .14s, background-color .14s",
   };
 }
 
