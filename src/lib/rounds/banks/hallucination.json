@@ -1,1 +1,1223 @@
-{}
+{
+  "1": [
+    {
+      "topic": "software license audit",
+      "task": {
+        "senderName": "Priya Chatterjee",
+        "senderRole": "IT Asset Manager",
+        "senderInitials": "PC",
+        "message": "Hi — board review is on Friday and I need a clean summary of where we stand on software compliance. Can you pull the key findings from the Q2 audit report and flag the biggest risks for me? Attaching the audit PDF and our inventory sheet."
+      },
+      "attachments": [
+        "Q2_2026_License_Audit_Report.pdf — covers 14 licensed software titles; flags 3 non-compliant products (Adobe Creative Cloud, AutoCAD, Zoom); Adobe CC: 52 active users / 45 purchased licenses (shortfall: 7 seats); AutoCAD: 18 users / 15 licenses (shortfall: 3 seats); combined remediation estimate: $22,500; recommendation: centralise procurement through IT by end of Q3 2026.",
+        "Software_Inventory_Spreadsheet.xlsx — full inventory of all 14 titles with user counts, license counts, and upcoming renewal dates."
+      ],
+      "promptText": "Summarise the key findings from our Q2 software license audit and highlight the main compliance risks for the board.",
+      "reasoningSteps": [
+        "Opening the Q2 2026 audit report — it covers 14 licensed software titles in total.",
+        "Three titles are flagged non-compliant: Adobe Creative Cloud, AutoCAD, and Zoom.",
+        "Adobe Creative Cloud shows 52 active users against 45 purchased licenses — a shortfall of 7 seats.",
+        "AutoCAD has 18 users with only 15 purchased licenses — a shortfall of 3 seats.",
+        "The estimated cost to remediate all shortfalls combined is $22,500.",
+        "The report recommends centralising all software procurement through the IT department by the end of Q3 2026."
+      ],
+      "claims": [
+        {
+          "id": "c1",
+          "text": "The Q2 2026 software license audit reviewed 14 licensed titles across the business.",
+          "hallucination": false
+        },
+        {
+          "id": "c2",
+          "text": "Three products were found to be out of compliance: Adobe Creative Cloud, AutoCAD, and Microsoft Teams.",
+          "hallucination": true
+        },
+        {
+          "id": "c3",
+          "text": "Adobe Creative Cloud is the most exposed product, with a seat shortfall of 12 — 52 active users against only 40 purchased licenses.",
+          "hallucination": true
+        },
+        {
+          "id": "c4",
+          "text": "According to the ISO/IEC Software Asset Management Compliance Benchmark published last quarter, organisations with unresolved license gaps face an exposure rating averaging exactly 61.3% of their total IT audit risk score.",
+          "hallucination": true
+        },
+        {
+          "id": "c5",
+          "text": "The total estimated remediation cost across all non-compliant products is $22,500.",
+          "hallucination": false
+        },
+        {
+          "id": "c6",
+          "text": "The audit recommends centralising all future software procurement through the IT department by the end of Q3 2026.",
+          "hallucination": false
+        }
+      ],
+      "explanations": [
+        "FABRICATION — Wrong product name: Both the audit report attachment and reasoning step 2 identify the three non-compliant products as Adobe Creative Cloud, AutoCAD, and Zoom. 'Microsoft Teams' does not appear anywhere in the provided materials — a blatant substitution.",
+        "FABRICATION — Contradicts the reasoning: Reasoning step 3 explicitly states the Adobe Creative Cloud shortfall is 7 seats (52 users against 45 licenses). The claim changes the shortfall to 12 and the license count to 40 — both figures directly contradict the source document.",
+        "FABRICATION — Invented citation with over-precise statistic: No 'ISO/IEC Software Asset Management Compliance Benchmark' appears in either attachment or anywhere in the provided materials. The figure '61.3%' is suspiciously precise and is entirely fabricated.",
+        "Claims 1, 5, and 6 are sound and directly supported by the Q2 audit report attachment and the reasoning steps."
+      ]
+    },
+    {
+      "topic": "supplier lead times",
+      "task": {
+        "senderName": "Cassandra Ortega",
+        "senderRole": "Supply Chain Manager",
+        "senderInitials": "CO",
+        "message": "Hey — can you pull together a quick summary of our supplier lead time situation for me? I've attached the Q2 performance report and our procurement policy doc. Need something punchy I can share with the ops director by end of day. Thanks!"
+      },
+      "attachments": [
+        "Supplier_Performance_Report_Q2_2026.xlsx — Company-wide average lead time: 14.3 days across all suppliers; top performer Henriksen Logistics: 8.2 days; 67% of Tier 1 suppliers met the 10-day SLA target this quarter.",
+        "Procurement_Policy_2026.pdf — Tier 1 supplier SLA: 10-day maximum lead time; repeated non-compliance triggers a mandatory quarterly review process."
+      ],
+      "promptText": "Summarize the key findings on supplier lead times from the attached Q2 performance report and procurement policy document.",
+      "reasoningSteps": [
+        "The Q2 Supplier Performance Report gives a company-wide average lead time of 14.3 days across all suppliers.",
+        "The single best performer is Henriksen Logistics, averaging 8.2 days — comfortably inside the SLA target.",
+        "The Procurement Policy sets a 10-day lead time SLA for all Tier 1 suppliers, with repeated non-compliance triggering a quarterly review.",
+        "The Q2 report shows only 67% of Tier 1 suppliers met the 10-day SLA this quarter, meaning roughly one-third remain out of compliance.",
+        "No external industry benchmark reports were included in the provided attachments — only the two internal documents were supplied."
+      ],
+      "claims": [
+        {
+          "id": "c1",
+          "text": "Our Q2 Supplier Performance Report puts the average lead time across all suppliers at 14.3 days,",
+          "hallucination": false
+        },
+        {
+          "id": "c2",
+          "text": "with standout performer Henricksen Logistics achieving just 8.2 days.",
+          "hallucination": true
+        },
+        {
+          "id": "c3",
+          "text": "Overall, an impressive 91.4% of Tier 1 suppliers met the 10-day SLA target this quarter,",
+          "hallucination": true
+        },
+        {
+          "id": "c4",
+          "text": "a standard mandated for all Tier 1 partners under the 2026 Procurement Policy.",
+          "hallucination": false
+        },
+        {
+          "id": "c5",
+          "text": "The Gartner Supply Chain Top 25 (2026) benchmarks best-in-class Tier 1 lead times at 7–9 days,",
+          "hallucination": true
+        },
+        {
+          "id": "c6",
+          "text": "confirming that closing the remaining compliance gap should be the team's top focus heading into Q3.",
+          "hallucination": false
+        }
+      ],
+      "explanations": [
+        "FABRICATION — misspelled supplier name: The assistant wrote 'Henricksen Logistics' (extra 'c'), but both the attachment and reasoning step 2 spell the company 'Henriksen Logistics.' The correct spelling is visible on screen.",
+        "FABRICATION — invented statistic that directly contradicts the reasoning: The assistant claims 91.4% of Tier 1 suppliers met the SLA, but the Q2 report (and reasoning step 4) explicitly states only 67% did — meaning about one-third were non-compliant, the opposite picture.",
+        "FABRICATION — citation to a source never provided: The 'Gartner Supply Chain Top 25 (2026)' report does not appear in either attachment. Reasoning step 5 even flags this explicitly, noting no external benchmark reports were supplied."
+      ]
+    },
+    {
+      "topic": "software licence audit",
+      "task": {
+        "senderName": "Marcus Okafor",
+        "senderRole": "IT Procurement Lead",
+        "senderInitials": "MO",
+        "message": "Hi — finance meeting is this afternoon and they want a quick summary of the Q1 software licence audit. I've attached the inventory sheet, our IT policy doc, and the latest Microsoft invoice. Can you pull the key findings together for me?"
+      },
+      "attachments": [
+        "Software_Inventory_Q1_2026.xlsx — 412 active Microsoft 365 licences across 6 departments; 88 Adobe Creative Cloud licences, 54 active in last 30 days (61% utilisation); inventory signed off by IT Director Sandra Graves on 14 March 2026",
+        "IT_Licence_Policy_v4.pdf — unused licences must be flagged within 14 days of detection; full audit required annually",
+        "Microsoft_Invoice_Mar2026.pdf — Microsoft 365 Business Standard at £12.50 per user/month; total monthly charge £5,150 for 412 users"
+      ],
+      "promptText": "Can you summarise the key findings from our Q1 software licence audit and flag any compliance risks?",
+      "reasoningSteps": [
+        "The inventory spreadsheet lists 412 active Microsoft 365 licences across 6 departments and 88 Adobe Creative Cloud licences.",
+        "Adobe utilisation: 54 of 88 licences were used in the last 30 days — roughly 61%, leaving 34 idle seats.",
+        "The IT policy document states unused licences must be flagged within 14 days of detection; those idle Adobe seats represent a potential compliance gap.",
+        "The Microsoft invoice confirms Business Standard tier at £12.50 per user per month, totalling £5,150 for 412 users.",
+        "The inventory was signed off by IT Director Sandra Graves on 14 March 2026."
+      ],
+      "claims": [
+        {
+          "id": "c1",
+          "text": "The Q1 audit identified 412 active Microsoft 365 licences spread across six departments, billed at £12.50 per user each month.",
+          "hallucination": false
+        },
+        {
+          "id": "c2",
+          "text": "Adobe Creative Cloud licence utilisation stands at 91.4%, indicating near-full adoption of the creative suite across the business.",
+          "hallucination": true
+        },
+        {
+          "id": "c3",
+          "text": "The inventory was signed off by IT Director Samantha Graves on 14 March, confirming the official audit scope.",
+          "hallucination": true
+        },
+        {
+          "id": "c4",
+          "text": "Under the current IT licence policy, any idle software seats must be flagged within 14 days of detection.",
+          "hallucination": false
+        },
+        {
+          "id": "c5",
+          "text": "According to the Gartner SaaS Cost Optimisation Report 2025, enterprises typically waste 28–35% of software spend on unused licences — suggesting this organisation is broadly in line with industry norms.",
+          "hallucination": true
+        }
+      ],
+      "explanations": [
+        "Claim 2 is fabricated: the inventory attachment clearly states Adobe utilisation is 61% (54 of 88 licences active). The assistant inflated this to the over-precise figure of 91.4%, which directly contradicts the spreadsheet.",
+        "Claim 3 is fabricated: both the reasoning steps and the inventory attachment name the IT Director as Sandra Graves. The claim quietly changes her first name to 'Samantha' — catchable by anyone who compares the answer against the reasoning or the attachment.",
+        "Claim 5 is fabricated: no Gartner report was included in the attachments or mentioned anywhere in the provided materials. The assistant invented this citation to add credibility; there is no way a player could have seen it referenced anywhere on screen.",
+        "Claims 1 and 4 are sound: the Microsoft licence count, unit price, and the 14-day flagging rule all match the provided attachments exactly."
+      ]
+    },
+    {
+      "topic": "GDPR compliance audit",
+      "task": {
+        "senderName": "Priya Shenkar",
+        "senderRole": "Data Protection Lead",
+        "senderInitials": "PS",
+        "message": "Hi — the ICO just sent us a formal enforcement letter. I've attached it along with our Q2 compliance checklist. Can you run both through the assistant and get a quick summary of our gaps and what needs actioning urgently? The team keeps saying July 15 is the deadline but I want to verify the actual date from the letter. Thanks"
+      },
+      "attachments": [
+        "ICO_Enforcement_Letter_10Jun2026.pdf",
+        "GDPR_Compliance_Checklist_Q2_2026.pdf"
+      ],
+      "promptText": "Please summarise our main GDPR compliance gaps and list the actions we need to take urgently, based on the attached documents.",
+      "reasoningSteps": [
+        "The ICO enforcement letter is dated June 10, 2026, and is signed by Deputy Commissioner Emily Kearns. It specifies a 30-day window for a formal written response, placing the true deadline at July 10, 2026.",
+        "The Q2 compliance checklist identifies three outstanding items: (1) update DPO contact details in the public register, (2) complete data mapping for the newly deployed CRM system, and (3) refresh cookie consent banners across the company website.",
+        "The checklist records the current cookie consent acceptance rate at 73%, which falls below the internal target of 80% — flagged as a priority remediation item.",
+        "Only the two attached documents were available for review. No external reports or third-party audits were included in the attachments."
+      ],
+      "claims": [
+        {
+          "id": "c1",
+          "text": "The ICO enforcement letter, signed by Deputy Commissioner John Clifton, requires a formal written response within 30 days of its June 10, 2026 date.",
+          "hallucination": true
+        },
+        {
+          "id": "c2",
+          "text": "This means the true hard deadline is July 10 — five days earlier than the July 15 date circulating internally.",
+          "hallucination": false
+        },
+        {
+          "id": "c3",
+          "text": "The Q2 compliance checklist flags three open actions: updating DPO contact details in the public register, completing data mapping for the new CRM, and refreshing website cookie consent banners.",
+          "hallucination": false
+        },
+        {
+          "id": "c4",
+          "text": "Our cookie consent acceptance rate currently stands at 91.4%, comfortably above the internal 80% benchmark, so the banner refresh can be treated as a lower-priority item.",
+          "hallucination": true
+        },
+        {
+          "id": "c5",
+          "text": "According to the EU Digital Compliance Quarterly (Spring 2026 edition), organisations that miss ICO response windows face average initial penalties of £4.2 million — underlining why early action is critical.",
+          "hallucination": true
+        }
+      ],
+      "explanations": [
+        "Claim 1 is fabricated: reasoning step 1 explicitly states the ICO letter was signed by Deputy Commissioner Emily Kearns, not John Clifton. The assistant substituted a plausible-sounding but entirely invented name.",
+        "Claim 4 is fabricated: reasoning step 3 and the compliance checklist both record a cookie consent rate of 73%, which is below — not above — the 80% internal target. The assistant invented the figure 91.4% and reversed the benchmark comparison, incorrectly downgrading the urgency of this item.",
+        "Claim 5 is fabricated: reasoning step 4 notes that only the two provided documents were available. No EU Digital Compliance Quarterly report appears in the attachments; the assistant invented both the publication and the specific £4.2 million penalty figure to add false authority.",
+        "Claim 2 is sound: 30 days from June 10 is July 10. The assistant correctly computed the deadline directly from the letter.",
+        "Claim 3 is sound: it is a faithful summary of the three open items listed in the Q2 compliance checklist, as described in reasoning step 2."
+      ]
+    },
+    {
+      "topic": "software licence audit",
+      "task": {
+        "senderName": "Priya Nambiar",
+        "senderRole": "Head of IT Procurement",
+        "senderInitials": "PN",
+        "message": "Hi — budget review is first thing tomorrow and the CFO wants a clear picture of our Slack licence situation. I've attached the Q2 utilisation report and the renewal quote we got last week. Can you pull together a quick summary with the headline numbers and any red flags?"
+      },
+      "attachments": [
+        "Slack_Seat_Utilisation_Q2_2026.pdf — 612 active users, 900 licences purchased, report period April–June 2026",
+        "Slack_Renewal_Quote_July_2026.pdf — Pro plan, $130/seat/year, 900 seats, total $117,000/year"
+      ],
+      "promptText": "Can you summarise our Slack licence usage and costs based on the attached files, and flag any concerns?",
+      "reasoningSteps": [
+        "The utilisation report shows 612 active users out of 900 total licences purchased.",
+        "612 ÷ 900 = 68.0% utilisation, meaning 288 seats are currently unused.",
+        "The renewal quote confirms the Pro plan at $130/seat/year for 900 seats, totalling $117,000 annually.",
+        "288 unused seats × $130/year = $37,440 in potential annual waste.",
+        "Slack is a product of Salesforce — useful context when framing renewal negotiations with the vendor."
+      ],
+      "claims": [
+        {
+          "id": "c1",
+          "text": "Our Slack workspace has 612 active users against 900 purchased licences.",
+          "hallucination": false
+        },
+        {
+          "id": "c2",
+          "text": "Licence utilisation currently sits at exactly 74.3%, leaving approximately 233 seats idle and billing with no active user.",
+          "hallucination": true
+        },
+        {
+          "id": "c3",
+          "text": "The renewal is priced at $130 per seat per year on the Slack Pro plan, totalling $117,000 annually.",
+          "hallucination": false
+        },
+        {
+          "id": "c4",
+          "text": "The Gartner 2025 SaaS Spend Efficiency Report benchmarks average enterprise licence waste at 31.7% — our idle seats already exceed that threshold.",
+          "hallucination": true
+        },
+        {
+          "id": "c5",
+          "text": "Those unused licences translate to roughly $37,440 in avoidable annual spend — a compelling figure to raise with Saleforce at renewal.",
+          "hallucination": true
+        }
+      ],
+      "explanations": [
+        "Claim 2 is fabricated: the reasoning steps correctly calculate 612 ÷ 900 = 68.0% utilisation with 288 idle seats. The model invents both '74.3%' and '233 seats', contradicting its own visible working in step 2.",
+        "Claim 4 is fabricated: no Gartner report appears anywhere in the attachments. The report title, year, and '31.7%' figure are entirely invented — a classic citation to a source never provided.",
+        "Claim 5 contains a misspelled proper noun: Slack's parent company is 'Salesforce', spelled correctly in reasoning step 5. The model writes 'Saleforce' (dropping the second 's'), catchable from basic knowledge or by cross-checking the reasoning."
+      ]
+    }
+  ],
+  "2": [
+    {
+      "topic": "vendor contract renewal",
+      "task": {
+        "senderName": "Fatima Okonkwo",
+        "senderRole": "Head of Procurement",
+        "senderInitials": "FO",
+        "message": "Hi — we need to make a call on the Nexvaris renewal by end of next week. Can you pull together a quick summary of the key terms, how they benchmark against market rates, and what it would cost us to switch? Attachments have everything you should need."
+      },
+      "attachments": [
+        "Renewal_Proposal_Nexvaris_Q3_2026.pdf",
+        "Current_Contract_Terms_Nexvaris.pdf",
+        "IT_Benchmark_Pricing_Survey_2026.pdf"
+      ],
+      "promptText": "Summarise the key terms of the Nexvaris renewal proposal, benchmark it against market rates, and outline the switching cost if we move to an alternative platform.",
+      "reasoningSteps": [
+        "The current contract covers 250 licensed seats at $34/user/month ($102,000/year) and expires 31 October 2026.",
+        "The renewal proposal raises the per-seat rate to $38.08/user/month — a 12% uplift — and expands coverage to 275 seats.",
+        "The IT Benchmark Pricing Survey 2026 (attached) reports the market median for comparable SaaS workflow platforms at $36/user/month, placing the proposed Nexvaris rate above the median.",
+        "SLA terms: uptime guarantee is unchanged at 99.9%; however, the P1 incident support response time increases from 1 hour to 2 hours under the new agreement.",
+        "The renewal proposal attachment estimates switching to an alternative platform at approximately $145,000, covering data migration and staff retraining."
+      ],
+      "claims": [
+        {
+          "id": "c1",
+          "text": "Nexvaris is proposing a 12% price increase, raising the per-seat cost from $34 to $38.08/user/month and expanding the licence count from 250 to 275 seats.",
+          "hallucination": false
+        },
+        {
+          "id": "c2",
+          "text": "The attached IT Benchmark Pricing Survey 2026 puts the market median for comparable SaaS workflow platforms at $41/user/month, meaning the renewed Nexvaris rate would sit below market.",
+          "hallucination": true
+        },
+        {
+          "id": "c3",
+          "text": "The SLA uptime guarantee holds steady at 99.9%, though P1 incident support response time worsens from one hour to four hours under the new contract.",
+          "hallucination": true
+        },
+        {
+          "id": "c4",
+          "text": "The current agreement expires on 31 October 2026, leaving roughly four months to negotiate or run a competitive tender if needed.",
+          "hallucination": false
+        },
+        {
+          "id": "c5",
+          "text": "Switching to an alternative platform is estimated at approximately $145,000, covering data migration and staff retraining.",
+          "hallucination": false
+        }
+      ],
+      "explanations": [
+        "FABRICATION — Claim 2 states the benchmark median is $41/user/month, but reasoning step 3 explicitly records $36/user/month from the attached IT Benchmark Pricing Survey 2026. The model read the figure correctly during analysis but inflated it in the answer, which also flips the conclusion: Nexvaris actually sits above market, not below it. The clue is buried in the reasoning steps.",
+        "FABRICATION — Claim 3 states P1 support response time worsens to four hours, but reasoning step 4 records the change as one hour to two hours. The model correctly extracted '2 hours' from the contract during reasoning but wrote '4 hours' in the final answer. Again, the clue is in the reasoning steps, not the answer itself.",
+        "Claim 1 is sound — the 12% uplift, exact new price ($38.08), and seat expansion (250 → 275) all match the values stated in reasoning step 2 drawn from the renewal proposal.",
+        "Claim 4 is sound — the 31 October 2026 expiry comes from reasoning step 1, and 'roughly four months' is accurate given today's date of 24 June 2026.",
+        "Claim 5 is sound — the $145,000 switching estimate is taken directly from the renewal proposal as noted in reasoning step 5."
+      ]
+    },
+    {
+      "topic": "software license audit",
+      "task": {
+        "senderName": "Marcus Olufemi",
+        "senderRole": "Head of IT Procurement",
+        "senderInitials": "MO",
+        "message": "Hi — I've attached the Q2 licence inventory, the Microsoft renewal quote, and our H1 budget report. Can you pull out the key numbers so I have a clean summary ready for Sandra in Finance this afternoon? Cheers, Marcus"
+      },
+      "attachments": [
+        "License_Inventory_Q2_2026.xlsx — 47 Microsoft 365 E3 licences active; 12 flagged for renewal in August 2026; current contracted rate $32.00/user/month.",
+        "Vendor_Renewal_Quote_MSFT_2026.pdf — Microsoft renewal quote: $34.50/user/month for E3 tier, all 47 seats; quote valid until 31 July 2026.",
+        "IT_Budget_Report_H1_2026.pdf — Microsoft 365 line item: $18,048/year (47 seats × $32.00 × 12 months); spend on track versus approved budget."
+      ],
+      "promptText": "Summarise the key findings from these three documents so I can present the licence renewal situation to the Finance Director this afternoon.",
+      "reasoningSteps": [
+        "Checking the inventory file: 47 Microsoft 365 E3 licences are currently active, with 12 specifically flagged for renewal in August 2026.",
+        "Current annual spend from the budget report: 47 × $32.00 × 12 = $18,048 per year — consistent with the line item shown.",
+        "Renewal quote: $34.50 per user per month for all 47 seats, giving an annual total of 47 × $34.50 × 12 = $19,458.",
+        "Per-seat price movement: ($34.50 − $32.00) ÷ $32.00 = 0.078, i.e. a 7.8% year-over-year increase.",
+        "Only 12 of the 47 licences expire imminently; it may be worth auditing actual usage before committing to a full 47-seat renewal at the higher rate."
+      ],
+      "claims": [
+        {
+          "id": "c1",
+          "text": "The audit covers 47 active Microsoft 365 E3 licences, with 12 seats flagged for renewal in August 2026.",
+          "hallucination": false
+        },
+        {
+          "id": "c2",
+          "text": "The organisation currently spends $18,048 per year on these licences at the contracted rate of $32.00 per user per month.",
+          "hallucination": false
+        },
+        {
+          "id": "c3",
+          "text": "Microsoft's renewal quote sets the new rate at $34.50 per user per month, bringing the annual cost to $19,458 across all 47 seats.",
+          "hallucination": false
+        },
+        {
+          "id": "c4",
+          "text": "This represents a 9.4% year-over-year price increase per seat.",
+          "hallucination": true
+        },
+        {
+          "id": "c5",
+          "text": "Given that only 12 licences are immediately expiring, it is advisable to review actual seat utilisation before committing to a full 47-seat renewal at the higher rate.",
+          "hallucination": false
+        }
+      ],
+      "explanations": [
+        "Claim 4 is fabricated. The clue is buried in the reasoning steps: step 4 explicitly calculates the per-seat increase as ($34.50 − $32.00) ÷ $32.00 = 7.8%, not 9.4%. A reader who checks the arithmetic in the reasoning will catch the contradiction — this is a classic mid-tier error where the model gets the underlying numbers right but then states a plausible-sounding (but wrong) summary figure.",
+        "Claims 1, 2, 3, and 5 are all directly verifiable from the three attached documents and are internally consistent with the reasoning steps — no fabrication is present in those claims."
+      ]
+    },
+    {
+      "topic": "SaaS license renewal",
+      "task": {
+        "senderName": "Priya Mehta",
+        "senderRole": "Head of IT Procurement",
+        "senderInitials": "PM",
+        "message": "Hey — renewal call with Salesforce is tomorrow at 2 pm and I want to walk in prepared. Can you pull a quick brief from the docs I've attached? Need to know our spend, how much of the licence we're actually using, and what their proposal is asking for."
+      },
+      "attachments": [
+        "Salesforce_Contract_2024-2026.pdf — 150 seats at $850/seat/year ($127,500 total); contract period Sep 1 2024–Aug 31 2026; 60-day written notice required to cancel or modify",
+        "Q1_2026_Seat_Utilization.xlsx — 118 of 150 seats active as of Mar 31 2026; breakdown: Sales 61, Customer Success 32, Operations 25",
+        "Salesforce_Renewal_Proposal_Jun2026.pdf — Option A: 150 seats at $910/seat/year; Option B: 200 seats at $880/seat/year; 5% discount on either option for a 3-year commitment"
+      ],
+      "promptText": "Summarise our current contract position, utilisation rate, and the key terms in their renewal proposal so Priya can negotiate effectively tomorrow.",
+      "reasoningSteps": [
+        "The contract PDF confirms 150 seats at $850/seat, totalling $127,500/year, expiring August 31 2026.",
+        "Checking the utilisation spreadsheet: 118 active users out of 150 seats. That is 118 ÷ 150 = 78.7%, leaving 32 seats unused.",
+        "The renewal proposal Option A raises the per-seat price to $910 — an increase of $60 on the current $850, which is a 7.1% rise. Option B at $880 only makes financial sense if headcount grows significantly, which the utilisation data does not support.",
+        "A 5% multi-year discount applies to either option for a 3-year term; on Option A that brings the effective rate to $864.50/seat.",
+        "Right-sizing to 120 seats at $910 = $109,200/year — a saving of $18,300 versus the current contract value.",
+        "60-day notice clause: counting back 60 days from August 31 gives a deadline of July 2, 2026."
+      ],
+      "claims": [
+        {
+          "id": "c1",
+          "text": "The current Salesforce contract runs to August 31, 2026, covering 150 seats at $850 per seat — an annual commitment of $127,500.",
+          "hallucination": false
+        },
+        {
+          "id": "c2",
+          "text": "Seat utilisation sits at approximately 82%, with 118 of the 150 licences actively used as of Q1 2026.",
+          "hallucination": true
+        },
+        {
+          "id": "c3",
+          "text": "Salesforce's renewal proposal increases the per-seat rate by 7.1% to $910, though a 5% discount is available on any option for a three-year commitment.",
+          "hallucination": false
+        },
+        {
+          "id": "c4",
+          "text": "The 2025 Gartner SaaS Efficiency Benchmark places average enterprise seat utilisation at 85%, meaning our current figure already trails the industry norm.",
+          "hallucination": true
+        },
+        {
+          "id": "c5",
+          "text": "Right-sizing to 120 seats at the proposed $910 rate would reduce annual spend to $109,200 — a saving of roughly $18,300 on the current contract.",
+          "hallucination": false
+        },
+        {
+          "id": "c6",
+          "text": "The contract's 60-day notice clause means a decision must be communicated by July 2, 2026 to avoid automatic renewal on existing terms.",
+          "hallucination": false
+        }
+      ],
+      "explanations": [
+        "Claim 2 is fabricated: the reasoning step explicitly calculates 118 ÷ 150 = 78.7%, yet the answer states 'approximately 82%'. The only clue is buried in the reasoning — a reader who checks the arithmetic will catch the inflation.",
+        "Claim 4 is fabricated: no Gartner report appears in any of the three attached documents. The model invented a plausible-sounding external benchmark to lend authority to a comparison, a classic hallucinated citation.",
+        "Claims 1, 3, 5, and 6 are all sound and directly derivable from the attached contract, utilisation spreadsheet, and renewal proposal. The 7.1% price rise, the $18,300 saving figure, and the July 2 notice deadline are all correct calculations that a careful player might double-check but will find accurate."
+      ]
+    },
+    {
+      "topic": "software license audit",
+      "task": {
+        "senderName": "Priya Nandakumar",
+        "senderRole": "IT Asset Manager",
+        "senderInitials": "PN",
+        "message": "Hey — I have a vendor review meeting Thursday and need a tight summary of the Q2 license audit findings. If you can pull out the key gaps and flag the cost implications that would be perfect. Attaching the audit report, the Microsoft EA seat summary, and the overage cost matrix."
+      },
+      "attachments": [
+        "Q2_Software_License_Audit_Report_2026.pdf — 23 products reviewed; Microsoft 365, Adobe Creative Cloud, and Salesforce flagged for compliance gaps; overall portfolio compliance rate 87%.",
+        "Microsoft_EA_Seat_Utilisation_Summary.docx — 340 seats currently licensed under the Enterprise Agreement; 412 seats recorded as active users.",
+        "Vendor_Overage_Cost_Matrix_Q2.xlsx — Microsoft 365 overage rate: $38 per seat per month; Adobe Creative Cloud overage rate: $24 per seat per month; Salesforce overage rate: $31 per seat per month."
+      ],
+      "promptText": "Based on the attached audit report and supporting documents, give me a clear summary of the key compliance gaps and cost implications I can use in Thursday's vendor review meeting.",
+      "reasoningSteps": [
+        "The Q2 audit report covers 23 software products in total. Three are flagged — Microsoft 365, Adobe Creative Cloud, and Salesforce — giving a non-compliance rate of roughly 13% (3 of 23).",
+        "The Microsoft EA Seat Utilisation Summary shows 340 licensed seats against 412 active users, a 72-seat overage.",
+        "The Vendor Overage Cost Matrix lists Microsoft 365 at $38 per seat per month. Monthly exposure: 72 × $38 = $2,736.",
+        "Adobe Creative Cloud overage is 7 seats; Salesforce is 4 seats — both flagged but lower priority given smaller headcounts and lower per-seat rates.",
+        "The audit report recommends remediating all overages before the Q3 contract renewal window to avoid retroactive billing penalties."
+      ],
+      "claims": [
+        {
+          "id": "c1",
+          "text": "The Q2 audit reviewed 23 licensed software products and found compliance gaps with three vendors — Microsoft 365, Adobe Creative Cloud, and Salesforce — representing a 13% non-compliance rate across the portfolio.",
+          "hallucination": false
+        },
+        {
+          "id": "c2",
+          "text": "Microsoft 365 is the most critical exposure: 412 seats are actively in use against a licensed count of 340, creating a 72-seat overage.",
+          "hallucination": false
+        },
+        {
+          "id": "c3",
+          "text": "At the contracted overage rate of $42 per seat per month, the Microsoft shortfall alone generates an estimated monthly liability of approximately $3,024.",
+          "hallucination": true
+        },
+        {
+          "id": "c4",
+          "text": "Adobe Creative Cloud and Salesforce show smaller overages of 7 and 4 seats respectively, with lower per-seat rates making their combined exposure a secondary priority.",
+          "hallucination": false
+        },
+        {
+          "id": "c5",
+          "text": "According to Gartner's 2025 Software Asset Management Benchmark Report, organisations of this profile typically overspend by 18–22% annually on enterprise software due to unmonitored seat growth.",
+          "hallucination": true
+        },
+        {
+          "id": "c6",
+          "text": "The audit recommends resolving all flagged overages before the Q3 contract renewal window to avoid retroactive billing penalties.",
+          "hallucination": false
+        }
+      ],
+      "explanations": [
+        "Claim 3 is fabricated: the reasoning steps record the Microsoft 365 overage rate from the Cost Matrix as $38 per seat per month, producing a correct total of $2,736 — but the answer quietly substitutes $42 and $3,024. The clue is buried in reasoning step 3, not in the answer itself.",
+        "Claim 5 is fabricated: no Gartner report appears anywhere in the three attachments. The assistant invented an authoritative-sounding external citation to pad the answer — a classic mid-tier hallucination pattern where a plausible source is conjured to add weight.",
+        "Claims 1, 2, 4, and 6 are all sound and directly traceable to figures in the attached documents. Players who flag claim 1's '13%' figure should note it is mathematically correct (3 of 23 ≈ 13%) and supported by the audit report's 87% compliance rate."
+      ]
+    },
+    {
+      "topic": "software license audit",
+      "task": {
+        "senderName": "Priya Mehta",
+        "senderRole": "IT Procurement Lead",
+        "senderInitials": "PM",
+        "message": "Hi — legal just forwarded us an audit notice from Autodesk. I need a quick summary of where we stand before tomorrow's call with their compliance team. I've attached the audit letter, our current license inventory, and last month's IT usage report."
+      },
+      "attachments": [
+        "Autodesk Audit Notice (March 28, 2026): Requests reconciliation of AutoCAD seat deployment against our licensed count of 72 seats; compliance window stated as 90 days from letter date; references contract ID AD-2024-7891.",
+        "License Inventory Report (IT Dept., June 2026): 83 AutoCAD seats deployed — Engineering 54, Design 19, Facilities 10; 6 seats flagged as inactive/uninstalled in the past 60 days.",
+        "IT Usage Report (May 2026): Average monthly active AutoCAD users = 71; Engineering team recorded as highest-utilisation group; 12 Revit seats also active but not in scope of current audit."
+      ],
+      "promptText": "Can you give me a quick briefing on our AutoCAD compliance position — how many seats are we over, when is the deadline, and what should we do next?",
+      "reasoningSteps": [
+        "The audit letter specifies our licensed AutoCAD seat count as 72 and is dated March 28, 2026; adding 90 days places the compliance deadline on June 26, 2026.",
+        "The inventory report lists 83 deployed seats total. Six are flagged as inactive or uninstalled in the past 60 days, leaving 77 seats in active use.",
+        "77 active seats minus the 72 we are licensed for gives a gap of exactly 5 seats — that is the number requiring remediation.",
+        "Engineering holds 54 of the 83 deployed seats and is confirmed as the dominant user group in the May usage report.",
+        "Autodesk's standard path for self-disclosed compliance gaps is a retroactive true-up purchase; no penalty clause is triggered provided the shortfall is resolved within the stated audit window."
+      ],
+      "claims": [
+        {
+          "id": "c1",
+          "text": "The Autodesk audit letter, dated March 28, 2026, opens a 90-day compliance window — our deadline to respond is June 26, 2026.",
+          "hallucination": false
+        },
+        {
+          "id": "c2",
+          "text": "Our license inventory records 83 deployed AutoCAD seats; discounting the 6 inactive installations leaves 77 active seats against our licensed limit of 72, putting us 8 seats out of compliance.",
+          "hallucination": true
+        },
+        {
+          "id": "c3",
+          "text": "Engineering holds the largest share of deployments — 54 of the 83 seats — and is the highest-utilisation group per the May IT report.",
+          "hallucination": false
+        },
+        {
+          "id": "c4",
+          "text": "Autodesk's standard resolution for self-disclosed gaps is a retroactive true-up purchase, with no financial penalty applying provided the shortfall is closed within the audit window.",
+          "hallucination": false
+        },
+        {
+          "id": "c5",
+          "text": "The recommended immediate action is to engage our Autodesk reseller to quote a retroactive seat purchase and submit our reconciliation response before the June 26 deadline.",
+          "hallucination": false
+        }
+      ],
+      "explanations": [
+        "Claim 2 is fabricated: it states we are '8 seats out of compliance,' but reasoning step 3 explicitly calculates the gap as 77 − 72 = 5 seats. The clue is buried in the model's own working — a player who checks the reasoning against the answer will catch the arithmetic contradiction. The correct remediation count (5 seats) is never stated in the answer itself, making this a subtler catch than a surface-level fact-check.",
+        "All other claims are sound. The June 26 deadline is correctly derived from the March 28 letter date plus 90 days. Engineering's seat share (54 of 83) and top-usage ranking are both confirmed by the inventory and usage attachments. Autodesk's true-up policy is consistent with their published compliance programme and is not contradicted by any provided document."
+      ]
+    }
+  ],
+  "3": [
+    {
+      "topic": "dashboard adoption",
+      "task": {
+        "senderName": "Mei Tanaka",
+        "senderRole": "Product Lead",
+        "senderInitials": "MT",
+        "message": "Summarise what our usage data says about the new dashboard and cite sources."
+      },
+      "attachments": [
+        "dashboard_usage.csv",
+        "feature_feedback.pdf"
+      ],
+      "promptText": "Summarise adoption of the new dashboard from the attached data, with citations.",
+      "reasoningSteps": [
+        "Reading dashboard_usage.csv — weekly active users up 23% since launch.",
+        "Scanning feature_feedback.pdf — users praise the filters, dislike load time.",
+        "Writing a short summary with citations to the attachments."
+      ],
+      "claims": [
+        {
+          "id": "c1",
+          "text": "Weekly active users are up 23% since the dashboard launched [usage.csv].",
+          "hallucination": false
+        },
+        {
+          "id": "c2",
+          "text": "Users consistently praise the new filtering but flag slow load times [feedback.pdf].",
+          "hallucination": false
+        },
+        {
+          "id": "c3",
+          "text": "A Gartner benchmark shows this adoption rate is top-quartile for B2B SaaS [Gartner 2024].",
+          "hallucination": true
+        }
+      ],
+      "explanations": [
+        "The \"Gartner 2024\" benchmark is fabricated — no such report was attached or referenced anywhere in the files.",
+        "The 23% lift and the filter/load-time feedback both trace to the provided attachments."
+      ]
+    },
+    {
+      "topic": "dashboard adoption",
+      "task": {
+        "senderName": "Mei Tanaka",
+        "senderRole": "Product Lead",
+        "senderInitials": "MT",
+        "message": "Summarise what our usage data says about the new dashboard and cite sources."
+      },
+      "attachments": [
+        "dashboard_usage.csv",
+        "feature_feedback.pdf"
+      ],
+      "promptText": "Summarise adoption of the new dashboard from the attached data, with citations.",
+      "reasoningSteps": [
+        "Reading dashboard_usage.csv — weekly active users up 23% since launch.",
+        "Scanning feature_feedback.pdf — users praise the filters, dislike load time.",
+        "Writing a short summary with citations to the attachments."
+      ],
+      "claims": [
+        {
+          "id": "c1",
+          "text": "Weekly active users are up 23% since the dashboard launched [usage.csv].",
+          "hallucination": false
+        },
+        {
+          "id": "c2",
+          "text": "Users consistently praise the new filtering but flag slow load times [feedback.pdf].",
+          "hallucination": false
+        },
+        {
+          "id": "c3",
+          "text": "A Gartner benchmark shows this adoption rate is top-quartile for B2B SaaS [Gartner 2024].",
+          "hallucination": true
+        }
+      ],
+      "explanations": [
+        "The \"Gartner 2024\" benchmark is fabricated — no such report was attached or referenced anywhere in the files.",
+        "The 23% lift and the filter/load-time feedback both trace to the provided attachments."
+      ]
+    },
+    {
+      "topic": "dashboard adoption",
+      "task": {
+        "senderName": "Mei Tanaka",
+        "senderRole": "Product Lead",
+        "senderInitials": "MT",
+        "message": "Summarise what our usage data says about the new dashboard and cite sources."
+      },
+      "attachments": [
+        "dashboard_usage.csv",
+        "feature_feedback.pdf"
+      ],
+      "promptText": "Summarise adoption of the new dashboard from the attached data, with citations.",
+      "reasoningSteps": [
+        "Reading dashboard_usage.csv — weekly active users up 23% since launch.",
+        "Scanning feature_feedback.pdf — users praise the filters, dislike load time.",
+        "Writing a short summary with citations to the attachments."
+      ],
+      "claims": [
+        {
+          "id": "c1",
+          "text": "Weekly active users are up 23% since the dashboard launched [usage.csv].",
+          "hallucination": false
+        },
+        {
+          "id": "c2",
+          "text": "Users consistently praise the new filtering but flag slow load times [feedback.pdf].",
+          "hallucination": false
+        },
+        {
+          "id": "c3",
+          "text": "A Gartner benchmark shows this adoption rate is top-quartile for B2B SaaS [Gartner 2024].",
+          "hallucination": true
+        }
+      ],
+      "explanations": [
+        "The \"Gartner 2024\" benchmark is fabricated — no such report was attached or referenced anywhere in the files.",
+        "The 23% lift and the filter/load-time feedback both trace to the provided attachments."
+      ]
+    },
+    {
+      "topic": "dashboard adoption",
+      "task": {
+        "senderName": "Mei Tanaka",
+        "senderRole": "Product Lead",
+        "senderInitials": "MT",
+        "message": "Summarise what our usage data says about the new dashboard and cite sources."
+      },
+      "attachments": [
+        "dashboard_usage.csv",
+        "feature_feedback.pdf"
+      ],
+      "promptText": "Summarise adoption of the new dashboard from the attached data, with citations.",
+      "reasoningSteps": [
+        "Reading dashboard_usage.csv — weekly active users up 23% since launch.",
+        "Scanning feature_feedback.pdf — users praise the filters, dislike load time.",
+        "Writing a short summary with citations to the attachments."
+      ],
+      "claims": [
+        {
+          "id": "c1",
+          "text": "Weekly active users are up 23% since the dashboard launched [usage.csv].",
+          "hallucination": false
+        },
+        {
+          "id": "c2",
+          "text": "Users consistently praise the new filtering but flag slow load times [feedback.pdf].",
+          "hallucination": false
+        },
+        {
+          "id": "c3",
+          "text": "A Gartner benchmark shows this adoption rate is top-quartile for B2B SaaS [Gartner 2024].",
+          "hallucination": true
+        }
+      ],
+      "explanations": [
+        "The \"Gartner 2024\" benchmark is fabricated — no such report was attached or referenced anywhere in the files.",
+        "The 23% lift and the filter/load-time feedback both trace to the provided attachments."
+      ]
+    },
+    {
+      "topic": "dashboard adoption",
+      "task": {
+        "senderName": "Mei Tanaka",
+        "senderRole": "Product Lead",
+        "senderInitials": "MT",
+        "message": "Summarise what our usage data says about the new dashboard and cite sources."
+      },
+      "attachments": [
+        "dashboard_usage.csv",
+        "feature_feedback.pdf"
+      ],
+      "promptText": "Summarise adoption of the new dashboard from the attached data, with citations.",
+      "reasoningSteps": [
+        "Reading dashboard_usage.csv — weekly active users up 23% since launch.",
+        "Scanning feature_feedback.pdf — users praise the filters, dislike load time.",
+        "Writing a short summary with citations to the attachments."
+      ],
+      "claims": [
+        {
+          "id": "c1",
+          "text": "Weekly active users are up 23% since the dashboard launched [usage.csv].",
+          "hallucination": false
+        },
+        {
+          "id": "c2",
+          "text": "Users consistently praise the new filtering but flag slow load times [feedback.pdf].",
+          "hallucination": false
+        },
+        {
+          "id": "c3",
+          "text": "A Gartner benchmark shows this adoption rate is top-quartile for B2B SaaS [Gartner 2024].",
+          "hallucination": true
+        }
+      ],
+      "explanations": [
+        "The \"Gartner 2024\" benchmark is fabricated — no such report was attached or referenced anywhere in the files.",
+        "The 23% lift and the filter/load-time feedback both trace to the provided attachments."
+      ]
+    }
+  ],
+  "4": [
+    {
+      "topic": "gross margin",
+      "task": {
+        "senderName": "Oliver Brandt",
+        "senderRole": "Finance Manager",
+        "senderInitials": "OB",
+        "message": "What was our Q2 gross margin and how did it move? Keep it tight for the board note."
+      },
+      "attachments": [
+        "q2_financials.xlsx",
+        "board_template.docx"
+      ],
+      "promptText": "State Q2 gross margin and the quarter-over-quarter movement from the financials.",
+      "reasoningSteps": [
+        "Reading q2_financials.xlsx — gross margin is 61% in Q2, down from 64% in Q1.",
+        "So margin declined 3 points quarter over quarter.",
+        "CFO Priya Venkataraman signed off the figures.",
+        "Drafting the board note line."
+      ],
+      "claims": [
+        {
+          "id": "c1",
+          "text": "Q2 gross margin came in at 61%.",
+          "hallucination": false
+        },
+        {
+          "id": "c2",
+          "text": "That represents a 3-point improvement over Q1,",
+          "hallucination": true
+        },
+        {
+          "id": "c3",
+          "text": "as confirmed in the Q2 financials [q2_financials.xlsx],",
+          "hallucination": false
+        },
+        {
+          "id": "c4",
+          "text": "and signed off by CFO Priya Venkataraman.",
+          "hallucination": false
+        },
+        {
+          "id": "c5",
+          "text": "We recommend holding pricing steady into Q3.",
+          "hallucination": false
+        }
+      ],
+      "explanations": [
+        "Even a frontier model slips occasionally — here just once, and subtly. The reasoning says margin fell from 64% to 61% — a 3-point decline — yet the answer claims a 3-point improvement. The only clue was buried in the reasoning steps.",
+        "Everything else is sound: the 61% figure, the citation to q2_financials.xlsx, the correctly-spelled CFO Priya Venkataraman, and the pricing recommendation. Flagging any of those would be a false accusation."
+      ]
+    },
+    {
+      "topic": "gross margin",
+      "task": {
+        "senderName": "Oliver Brandt",
+        "senderRole": "Finance Manager",
+        "senderInitials": "OB",
+        "message": "What was our Q2 gross margin and how did it move? Keep it tight for the board note."
+      },
+      "attachments": [
+        "q2_financials.xlsx",
+        "board_template.docx"
+      ],
+      "promptText": "State Q2 gross margin and the quarter-over-quarter movement from the financials.",
+      "reasoningSteps": [
+        "Reading q2_financials.xlsx — gross margin is 61% in Q2, down from 64% in Q1.",
+        "So margin declined 3 points quarter over quarter.",
+        "CFO Priya Venkataraman signed off the figures.",
+        "Drafting the board note line."
+      ],
+      "claims": [
+        {
+          "id": "c1",
+          "text": "Q2 gross margin came in at 61%.",
+          "hallucination": false
+        },
+        {
+          "id": "c2",
+          "text": "That represents a 3-point improvement over Q1,",
+          "hallucination": true
+        },
+        {
+          "id": "c3",
+          "text": "as confirmed in the Q2 financials [q2_financials.xlsx],",
+          "hallucination": false
+        },
+        {
+          "id": "c4",
+          "text": "and signed off by CFO Priya Venkataraman.",
+          "hallucination": false
+        },
+        {
+          "id": "c5",
+          "text": "We recommend holding pricing steady into Q3.",
+          "hallucination": false
+        }
+      ],
+      "explanations": [
+        "Even a frontier model slips occasionally — here just once, and subtly. The reasoning says margin fell from 64% to 61% — a 3-point decline — yet the answer claims a 3-point improvement. The only clue was buried in the reasoning steps.",
+        "Everything else is sound: the 61% figure, the citation to q2_financials.xlsx, the correctly-spelled CFO Priya Venkataraman, and the pricing recommendation. Flagging any of those would be a false accusation."
+      ]
+    },
+    {
+      "topic": "gross margin",
+      "task": {
+        "senderName": "Oliver Brandt",
+        "senderRole": "Finance Manager",
+        "senderInitials": "OB",
+        "message": "What was our Q2 gross margin and how did it move? Keep it tight for the board note."
+      },
+      "attachments": [
+        "q2_financials.xlsx",
+        "board_template.docx"
+      ],
+      "promptText": "State Q2 gross margin and the quarter-over-quarter movement from the financials.",
+      "reasoningSteps": [
+        "Reading q2_financials.xlsx — gross margin is 61% in Q2, down from 64% in Q1.",
+        "So margin declined 3 points quarter over quarter.",
+        "CFO Priya Venkataraman signed off the figures.",
+        "Drafting the board note line."
+      ],
+      "claims": [
+        {
+          "id": "c1",
+          "text": "Q2 gross margin came in at 61%.",
+          "hallucination": false
+        },
+        {
+          "id": "c2",
+          "text": "That represents a 3-point improvement over Q1,",
+          "hallucination": true
+        },
+        {
+          "id": "c3",
+          "text": "as confirmed in the Q2 financials [q2_financials.xlsx],",
+          "hallucination": false
+        },
+        {
+          "id": "c4",
+          "text": "and signed off by CFO Priya Venkataraman.",
+          "hallucination": false
+        },
+        {
+          "id": "c5",
+          "text": "We recommend holding pricing steady into Q3.",
+          "hallucination": false
+        }
+      ],
+      "explanations": [
+        "Even a frontier model slips occasionally — here just once, and subtly. The reasoning says margin fell from 64% to 61% — a 3-point decline — yet the answer claims a 3-point improvement. The only clue was buried in the reasoning steps.",
+        "Everything else is sound: the 61% figure, the citation to q2_financials.xlsx, the correctly-spelled CFO Priya Venkataraman, and the pricing recommendation. Flagging any of those would be a false accusation."
+      ]
+    },
+    {
+      "topic": "gross margin",
+      "task": {
+        "senderName": "Oliver Brandt",
+        "senderRole": "Finance Manager",
+        "senderInitials": "OB",
+        "message": "What was our Q2 gross margin and how did it move? Keep it tight for the board note."
+      },
+      "attachments": [
+        "q2_financials.xlsx",
+        "board_template.docx"
+      ],
+      "promptText": "State Q2 gross margin and the quarter-over-quarter movement from the financials.",
+      "reasoningSteps": [
+        "Reading q2_financials.xlsx — gross margin is 61% in Q2, down from 64% in Q1.",
+        "So margin declined 3 points quarter over quarter.",
+        "CFO Priya Venkataraman signed off the figures.",
+        "Drafting the board note line."
+      ],
+      "claims": [
+        {
+          "id": "c1",
+          "text": "Q2 gross margin came in at 61%.",
+          "hallucination": false
+        },
+        {
+          "id": "c2",
+          "text": "That represents a 3-point improvement over Q1,",
+          "hallucination": true
+        },
+        {
+          "id": "c3",
+          "text": "as confirmed in the Q2 financials [q2_financials.xlsx],",
+          "hallucination": false
+        },
+        {
+          "id": "c4",
+          "text": "and signed off by CFO Priya Venkataraman.",
+          "hallucination": false
+        },
+        {
+          "id": "c5",
+          "text": "We recommend holding pricing steady into Q3.",
+          "hallucination": false
+        }
+      ],
+      "explanations": [
+        "Even a frontier model slips occasionally — here just once, and subtly. The reasoning says margin fell from 64% to 61% — a 3-point decline — yet the answer claims a 3-point improvement. The only clue was buried in the reasoning steps.",
+        "Everything else is sound: the 61% figure, the citation to q2_financials.xlsx, the correctly-spelled CFO Priya Venkataraman, and the pricing recommendation. Flagging any of those would be a false accusation."
+      ]
+    },
+    {
+      "topic": "gross margin",
+      "task": {
+        "senderName": "Oliver Brandt",
+        "senderRole": "Finance Manager",
+        "senderInitials": "OB",
+        "message": "What was our Q2 gross margin and how did it move? Keep it tight for the board note."
+      },
+      "attachments": [
+        "q2_financials.xlsx",
+        "board_template.docx"
+      ],
+      "promptText": "State Q2 gross margin and the quarter-over-quarter movement from the financials.",
+      "reasoningSteps": [
+        "Reading q2_financials.xlsx — gross margin is 61% in Q2, down from 64% in Q1.",
+        "So margin declined 3 points quarter over quarter.",
+        "CFO Priya Venkataraman signed off the figures.",
+        "Drafting the board note line."
+      ],
+      "claims": [
+        {
+          "id": "c1",
+          "text": "Q2 gross margin came in at 61%.",
+          "hallucination": false
+        },
+        {
+          "id": "c2",
+          "text": "That represents a 3-point improvement over Q1,",
+          "hallucination": true
+        },
+        {
+          "id": "c3",
+          "text": "as confirmed in the Q2 financials [q2_financials.xlsx],",
+          "hallucination": false
+        },
+        {
+          "id": "c4",
+          "text": "and signed off by CFO Priya Venkataraman.",
+          "hallucination": false
+        },
+        {
+          "id": "c5",
+          "text": "We recommend holding pricing steady into Q3.",
+          "hallucination": false
+        }
+      ],
+      "explanations": [
+        "Even a frontier model slips occasionally — here just once, and subtly. The reasoning says margin fell from 64% to 61% — a 3-point decline — yet the answer claims a 3-point improvement. The only clue was buried in the reasoning steps.",
+        "Everything else is sound: the 61% figure, the citation to q2_financials.xlsx, the correctly-spelled CFO Priya Venkataraman, and the pricing recommendation. Flagging any of those would be a false accusation."
+      ]
+    }
+  ],
+  "5": [
+    {
+      "topic": "warehouse safety",
+      "task": {
+        "senderName": "Sandrine Dubois",
+        "senderRole": "Director of Operations",
+        "senderInitials": "SD",
+        "message": "Give me the headline from the warehouse incident report and one corrective action."
+      },
+      "attachments": [
+        "incident_report_w34.pdf",
+        "safety_log.csv"
+      ],
+      "promptText": "Summarise the week-34 warehouse incident and propose one corrective action.",
+      "reasoningSteps": [
+        "Reading incident_report_w34.pdf — one forklift near-miss, no injuries.",
+        "Cross-checking safety_log.csv — third near-miss in the loading bay this quarter.",
+        "Proposing a corrective action grounded in the log."
+      ],
+      "claims": [
+        {
+          "id": "c1",
+          "text": "Week 34 saw a forklift near-miss in the loading bay with no injuries reported.",
+          "hallucination": false
+        },
+        {
+          "id": "c2",
+          "text": "It was the third loading-bay near-miss logged this quarter.",
+          "hallucination": false
+        },
+        {
+          "id": "c3",
+          "text": "We recommend adding floor markings and a spotter requirement in that bay.",
+          "hallucination": false
+        }
+      ],
+      "explanations": [
+        "Every claim is supported by the incident report and safety log — there is no fabrication here. At higher levels, not flagging anything is sometimes the correct call."
+      ]
+    },
+    {
+      "topic": "warehouse safety",
+      "task": {
+        "senderName": "Sandrine Dubois",
+        "senderRole": "Director of Operations",
+        "senderInitials": "SD",
+        "message": "Give me the headline from the warehouse incident report and one corrective action."
+      },
+      "attachments": [
+        "incident_report_w34.pdf",
+        "safety_log.csv"
+      ],
+      "promptText": "Summarise the week-34 warehouse incident and propose one corrective action.",
+      "reasoningSteps": [
+        "Reading incident_report_w34.pdf — one forklift near-miss, no injuries.",
+        "Cross-checking safety_log.csv — third near-miss in the loading bay this quarter.",
+        "Proposing a corrective action grounded in the log."
+      ],
+      "claims": [
+        {
+          "id": "c1",
+          "text": "Week 34 saw a forklift near-miss in the loading bay with no injuries reported.",
+          "hallucination": false
+        },
+        {
+          "id": "c2",
+          "text": "It was the third loading-bay near-miss logged this quarter.",
+          "hallucination": false
+        },
+        {
+          "id": "c3",
+          "text": "We recommend adding floor markings and a spotter requirement in that bay.",
+          "hallucination": false
+        }
+      ],
+      "explanations": [
+        "Every claim is supported by the incident report and safety log — there is no fabrication here. At higher levels, not flagging anything is sometimes the correct call."
+      ]
+    },
+    {
+      "topic": "warehouse safety",
+      "task": {
+        "senderName": "Sandrine Dubois",
+        "senderRole": "Director of Operations",
+        "senderInitials": "SD",
+        "message": "Give me the headline from the warehouse incident report and one corrective action."
+      },
+      "attachments": [
+        "incident_report_w34.pdf",
+        "safety_log.csv"
+      ],
+      "promptText": "Summarise the week-34 warehouse incident and propose one corrective action.",
+      "reasoningSteps": [
+        "Reading incident_report_w34.pdf — one forklift near-miss, no injuries.",
+        "Cross-checking safety_log.csv — third near-miss in the loading bay this quarter.",
+        "Proposing a corrective action grounded in the log."
+      ],
+      "claims": [
+        {
+          "id": "c1",
+          "text": "Week 34 saw a forklift near-miss in the loading bay with no injuries reported.",
+          "hallucination": false
+        },
+        {
+          "id": "c2",
+          "text": "It was the third loading-bay near-miss logged this quarter.",
+          "hallucination": false
+        },
+        {
+          "id": "c3",
+          "text": "We recommend adding floor markings and a spotter requirement in that bay.",
+          "hallucination": false
+        }
+      ],
+      "explanations": [
+        "Every claim is supported by the incident report and safety log — there is no fabrication here. At higher levels, not flagging anything is sometimes the correct call."
+      ]
+    },
+    {
+      "topic": "warehouse safety",
+      "task": {
+        "senderName": "Sandrine Dubois",
+        "senderRole": "Director of Operations",
+        "senderInitials": "SD",
+        "message": "Give me the headline from the warehouse incident report and one corrective action."
+      },
+      "attachments": [
+        "incident_report_w34.pdf",
+        "safety_log.csv"
+      ],
+      "promptText": "Summarise the week-34 warehouse incident and propose one corrective action.",
+      "reasoningSteps": [
+        "Reading incident_report_w34.pdf — one forklift near-miss, no injuries.",
+        "Cross-checking safety_log.csv — third near-miss in the loading bay this quarter.",
+        "Proposing a corrective action grounded in the log."
+      ],
+      "claims": [
+        {
+          "id": "c1",
+          "text": "Week 34 saw a forklift near-miss in the loading bay with no injuries reported.",
+          "hallucination": false
+        },
+        {
+          "id": "c2",
+          "text": "It was the third loading-bay near-miss logged this quarter.",
+          "hallucination": false
+        },
+        {
+          "id": "c3",
+          "text": "We recommend adding floor markings and a spotter requirement in that bay.",
+          "hallucination": false
+        }
+      ],
+      "explanations": [
+        "Every claim is supported by the incident report and safety log — there is no fabrication here. At higher levels, not flagging anything is sometimes the correct call."
+      ]
+    },
+    {
+      "topic": "warehouse safety",
+      "task": {
+        "senderName": "Sandrine Dubois",
+        "senderRole": "Director of Operations",
+        "senderInitials": "SD",
+        "message": "Give me the headline from the warehouse incident report and one corrective action."
+      },
+      "attachments": [
+        "incident_report_w34.pdf",
+        "safety_log.csv"
+      ],
+      "promptText": "Summarise the week-34 warehouse incident and propose one corrective action.",
+      "reasoningSteps": [
+        "Reading incident_report_w34.pdf — one forklift near-miss, no injuries.",
+        "Cross-checking safety_log.csv — third near-miss in the loading bay this quarter.",
+        "Proposing a corrective action grounded in the log."
+      ],
+      "claims": [
+        {
+          "id": "c1",
+          "text": "Week 34 saw a forklift near-miss in the loading bay with no injuries reported.",
+          "hallucination": false
+        },
+        {
+          "id": "c2",
+          "text": "It was the third loading-bay near-miss logged this quarter.",
+          "hallucination": false
+        },
+        {
+          "id": "c3",
+          "text": "We recommend adding floor markings and a spotter requirement in that bay.",
+          "hallucination": false
+        }
+      ],
+      "explanations": [
+        "Every claim is supported by the incident report and safety log — there is no fabrication here. At higher levels, not flagging anything is sometimes the correct call."
+      ]
+    }
+  ]
+}

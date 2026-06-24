@@ -1,1 +1,1406 @@
-{}
+{
+  "1": [
+    {
+      "topic": "out-of-office reply",
+      "brief": {
+        "senderName": "Priya Mehta",
+        "senderRole": "Office Manager",
+        "senderInitials": "PM",
+        "message": "Hey! I'm heading off on leave starting Monday. Could you draft a quick out-of-office auto-reply for me? I'll be back on Monday the 6th — and if anything's urgent, people should reach out to Darren."
+      },
+      "goal": "Out-of-office auto-reply",
+      "criteria": [
+        {
+          "id": "k1",
+          "text": "States the sender is out of office and will return on Monday the 6th",
+          "keywords": [
+            "return",
+            "back",
+            "monday",
+            "6th",
+            "away",
+            "unavailable"
+          ]
+        },
+        {
+          "id": "k2",
+          "text": "Directs urgent matters to Darren as an alternative contact",
+          "keywords": [
+            "urgent",
+            "darren",
+            "contact",
+            "alternative",
+            "reach"
+          ]
+        }
+      ],
+      "par": 18,
+      "messyPrompt": "I need you to help me write a professional out-of-office auto-reply email message. Please make sure it says I'm currently away and out of the office, and that I will be returning on Monday the 6th. It should also let people know that for anything urgent they can contact Darren in the meantime."
+    },
+    {
+      "topic": "expense report reminder",
+      "brief": {
+        "senderName": "Priya Mehta",
+        "senderRole": "Office Manager",
+        "senderInitials": "PM",
+        "message": "Hey — month-end lands on Friday and a ton of people still haven't filed their expenses. Could you draft a quick reminder email I can blast out to the team? Just needs to flag the Friday deadline and not come across as too heavy-handed."
+      },
+      "goal": "Expense reminder email",
+      "criteria": [
+        {
+          "id": "k1",
+          "text": "States that the submission deadline is Friday",
+          "keywords": [
+            "friday",
+            "deadline",
+            "due",
+            "by friday",
+            "submit by"
+          ]
+        },
+        {
+          "id": "k2",
+          "text": "Uses a friendly, non-threatening tone",
+          "keywords": [
+            "friendly",
+            "warm",
+            "polite",
+            "kind",
+            "casual"
+          ]
+        }
+      ],
+      "par": 12,
+      "messyPrompt": "Could you please write me a friendly and warm reminder email that I can send out to all of the team members to make sure they know that they really need to go ahead and get their expense reports submitted, and that the deadline for doing this is this coming Friday, thank you so much?"
+    },
+    {
+      "topic": "out-of-office reply",
+      "brief": {
+        "senderName": "Priya Mehta",
+        "senderRole": "Office Manager",
+        "senderInitials": "PM",
+        "message": "Hi — Darren's heading on leave from 25 June to 7 July and I need an auto-reply drafted for his inbox. People should know he's unavailable and who to contact in the meantime. That'd be me — priya.mehta@company.com. Can you put something together?"
+      },
+      "goal": "Out-of-office email draft",
+      "criteria": [
+        {
+          "id": "k1",
+          "text": "States the person is unavailable and returning on 7 July",
+          "keywords": [
+            "unavailable",
+            "away",
+            "return",
+            "july",
+            "7th",
+            "back"
+          ]
+        },
+        {
+          "id": "k2",
+          "text": "Includes priya.mehta@company.com as the alternative contact",
+          "keywords": [
+            "contact",
+            "reach",
+            "alternative",
+            "priya",
+            "email",
+            "priya.mehta@company.com"
+          ]
+        }
+      ],
+      "par": 18,
+      "messyPrompt": "Please write an out-of-office auto-reply email for me. Make sure it tells people the person is currently away and out of the office and won't be back until the 7th of July so they know not to expect a reply from him. Also please include a note letting them know they can reach out to Priya Mehta at priya.mehta@company.com if they need any assistance in the meantime."
+    },
+    {
+      "topic": "shift handover",
+      "brief": {
+        "senderName": "Marcus Webb",
+        "senderRole": "Retail Shift Supervisor",
+        "senderInitials": "MW",
+        "message": "Hey, I need a quick end-of-shift handover note for the floor team. Just needs to cover what we got done today and flag anything that still needs picking up next shift."
+      },
+      "goal": "End-of-shift handover note",
+      "criteria": [
+        {
+          "id": "k1",
+          "text": "Lists tasks completed during the shift",
+          "keywords": [
+            "completed",
+            "done",
+            "finished",
+            "accomplished"
+          ]
+        },
+        {
+          "id": "k2",
+          "text": "Lists tasks still outstanding for the next shift",
+          "keywords": [
+            "outstanding",
+            "remaining",
+            "pending",
+            "next shift"
+          ]
+        }
+      ],
+      "par": 14,
+      "messyPrompt": "Could you please write a quick end-of-shift handover note for the retail floor team? Make sure it covers which tasks have been completed during this shift, and also lists any tasks that are still outstanding and need to be picked up by the next shift."
+    },
+    {
+      "topic": "out-of-office email",
+      "brief": {
+        "senderName": "Marcus Webb",
+        "senderRole": "Office Manager",
+        "senderInitials": "MW",
+        "message": "Hey — heading off on annual leave from Monday and need an out-of-office message set up in Outlook. I'll be back on the 7th of July. Keep it simple, nothing fancy. Oh, and if anything's urgent while I'm away, people should know to go to Diane in admin."
+      },
+      "goal": "Out-of-office auto-reply",
+      "criteria": [
+        {
+          "id": "k1",
+          "text": "States the sender is out of the office and will return on July 7th",
+          "keywords": [
+            "return",
+            "returning",
+            "back",
+            "july 7",
+            "7th"
+          ]
+        },
+        {
+          "id": "k2",
+          "text": "Directs urgent queries to Diane in admin",
+          "keywords": [
+            "urgent",
+            "diane",
+            "admin",
+            "contact",
+            "direct"
+          ]
+        }
+      ],
+      "par": 14,
+      "messyPrompt": "Could you help me draft an out-of-office auto-reply message that I can use? It should let people know that I'm currently away from the office right now and that I'll be returning on July 7th. And if anything comes up that's really urgent, people should know to reach out to Diane over in admin."
+    }
+  ],
+  "2": [
+    {
+      "topic": "out-of-office reply",
+      "brief": {
+        "senderName": "Priya Mehta",
+        "senderRole": "Operations Coordinator",
+        "senderInitials": "PM",
+        "message": "Hey! Going on annual leave soon and need an auto-reply set up. It should let people know I'm back on 8 July, and point anyone with something urgent to Marcus Webb. Can you keep it short and professional — 3 sentences max?"
+      },
+      "goal": "Out-of-office auto-reply",
+      "criteria": [
+        {
+          "id": "k1",
+          "text": "States the return date as 8 July",
+          "keywords": [
+            "return",
+            "july",
+            "back",
+            "date"
+          ]
+        },
+        {
+          "id": "k2",
+          "text": "Names Marcus Webb as the contact for urgent matters",
+          "keywords": [
+            "marcus",
+            "webb",
+            "urgent",
+            "contact",
+            "redirect"
+          ]
+        },
+        {
+          "id": "k3",
+          "text": "Contains no more than 3 sentences",
+          "keywords": [
+            "sentences",
+            "short",
+            "brief",
+            "concise",
+            "three"
+          ]
+        }
+      ],
+      "par": 18,
+      "messyPrompt": "Could you please write an out-of-office auto-reply email for me? I need it to clearly mention that I'll be returning on 8 July so people know when to expect to hear from me again. It should also make sure to let anyone know that if they have something urgent they really can't wait on, they should reach out to Marcus Webb instead of waiting for me. I'd really appreciate it if you could keep the whole thing to no more than 3 sentences and make sure the tone comes across as professional."
+    },
+    {
+      "topic": "meeting agenda",
+      "brief": {
+        "senderName": "Marcus Webb",
+        "senderRole": "Operations Manager",
+        "senderInitials": "MW",
+        "message": "Hi, can you draft the agenda for Thursday's team efficiency review? It's a 60-minute session — I need it properly structured so everyone knows what we're covering and how the time breaks down across the meeting."
+      },
+      "goal": "Team meeting agenda",
+      "criteria": [
+        {
+          "id": "k1",
+          "text": "Begins with a single sentence stating the meeting's purpose or objective",
+          "keywords": [
+            "objective",
+            "purpose",
+            "goal",
+            "sentence",
+            "open",
+            "intro"
+          ]
+        },
+        {
+          "id": "k2",
+          "text": "Contains exactly 5 agenda items",
+          "keywords": [
+            "5",
+            "five",
+            "items",
+            "list",
+            "agenda"
+          ]
+        },
+        {
+          "id": "k3",
+          "text": "Each agenda item includes a time allocation in minutes",
+          "keywords": [
+            "minutes",
+            "time",
+            "duration",
+            "allocation",
+            "each",
+            "min"
+          ]
+        }
+      ],
+      "par": 20,
+      "messyPrompt": "Please write a meeting agenda for a 60-minute team efficiency review. I'd like it to begin with a single sentence explaining the purpose or objective of the whole meeting, just so attendees understand why we're all getting together. After that, could you list exactly 5 agenda items for the session, and for each individual item please make sure to include a note on how many minutes should be spent on that particular topic."
+    },
+    {
+      "topic": "password reset guide",
+      "brief": {
+        "senderName": "Marcus Webb",
+        "senderRole": "IT Support Lead",
+        "senderInitials": "MW",
+        "message": "Hey — I need a short password-reset guide I can drop into our help portal. It's aimed at non-technical staff, so nothing jargon-heavy. Numbered steps only, and please keep the whole thing to 80 words max."
+      },
+      "goal": "Staff password reset guide",
+      "criteria": [
+        {
+          "id": "k1",
+          "text": "Uses numbered steps (not prose or bullet points)",
+          "keywords": [
+            "numbered",
+            "steps",
+            "number",
+            "list"
+          ]
+        },
+        {
+          "id": "k2",
+          "text": "Written in plain language suitable for non-technical readers",
+          "keywords": [
+            "plain",
+            "simple",
+            "non-technical",
+            "clear",
+            "easy",
+            "language"
+          ]
+        },
+        {
+          "id": "k3",
+          "text": "Total word count is 80 words or fewer",
+          "keywords": [
+            "80 words",
+            "under 80",
+            "max",
+            "concise",
+            "short",
+            "brief"
+          ]
+        }
+      ],
+      "par": 18,
+      "messyPrompt": "I need you to write a short guide that will help our staff members who might not be very technical at all understand how they should go about resetting their company email password. Please make sure it uses numbered steps rather than just paragraphs of text, so it's really clear and easy to follow. Write it in plain, simple language that absolutely anyone can understand, even if they have no technical background. Also, please make sure the entire thing comes in at 80 words or fewer."
+    },
+    {
+      "topic": "new hire announcement",
+      "brief": {
+        "senderName": "Priya Mehta",
+        "senderRole": "HR Coordinator",
+        "senderInitials": "PM",
+        "message": "Hey — our new backend dev Liam Torres starts Monday. Can you draft a quick all-staff email to welcome him? Just needs to mention his title, make clear when he's joining, and feel warm and friendly."
+      },
+      "goal": "Staff welcome email",
+      "criteria": [
+        {
+          "id": "k1",
+          "text": "Names the new hire and states their job title",
+          "keywords": [
+            "name",
+            "role",
+            "title",
+            "position",
+            "engineer"
+          ]
+        },
+        {
+          "id": "k2",
+          "text": "Mentions the start date or day",
+          "keywords": [
+            "start",
+            "monday",
+            "date",
+            "joining",
+            "when"
+          ]
+        },
+        {
+          "id": "k3",
+          "text": "Uses a warm, welcoming tone throughout",
+          "keywords": [
+            "warm",
+            "welcome",
+            "friendly",
+            "tone",
+            "excited"
+          ]
+        }
+      ],
+      "par": 16,
+      "messyPrompt": "Could you please write a friendly and welcoming all-staff email to announce a new team member who is joining the company? His name is Liam Torres and he will be working in the role of Backend Engineer. He is starting this coming Monday, so please make sure to include that information somewhere in the email. Also please make sure the overall tone of the email comes across as warm and welcoming throughout."
+    },
+    {
+      "topic": "fire drill reminder",
+      "brief": {
+        "senderName": "Chloe Barnes",
+        "senderRole": "Health & Safety Coordinator",
+        "senderInitials": "CB",
+        "message": "We've got a fire drill booked for Thursday 14 July at 11am. Can you draft a short all-staff email reminder? Assembly point is Car Park B. Oh, and make sure to tell people not to use the lifts."
+      },
+      "goal": "All-staff fire drill email",
+      "criteria": [
+        {
+          "id": "k1",
+          "text": "States the drill is on Thursday 14 July at 11am",
+          "keywords": [
+            "thursday",
+            "14 july",
+            "11am",
+            "date",
+            "time"
+          ]
+        },
+        {
+          "id": "k2",
+          "text": "Identifies Car Park B as the assembly point",
+          "keywords": [
+            "car park b",
+            "assembly",
+            "muster",
+            "point"
+          ]
+        },
+        {
+          "id": "k3",
+          "text": "Instructs staff not to use the lifts",
+          "keywords": [
+            "lift",
+            "lifts",
+            "elevator",
+            "stairs"
+          ]
+        }
+      ],
+      "par": 18,
+      "messyPrompt": "Could you write a brief all-staff email reminder about the fire drill? It's happening on Thursday 14 July at 11am. I'd like you to mention that the assembly point is Car Park B. Please also make sure to remind staff that they shouldn't use the lifts during the evacuation."
+    }
+  ],
+  "3": [
+    {
+      "topic": "refund policy update",
+      "brief": {
+        "senderName": "Yuki Tanaka",
+        "senderRole": "Customer Experience Lead",
+        "senderInitials": "YT",
+        "message": "Hey, we've updated our refund window from 30 to 60 days — takes effect the first of next month. Can you draft a short notice for the website and newsletter? Customers should feel good about this, not like they're reading legal copy."
+      },
+      "goal": "Customer policy notice",
+      "criteria": [
+        {
+          "id": "k1",
+          "text": "Explicitly states both the old refund window (30 days) and the new refund window (60 days).",
+          "keywords": [
+            "30",
+            "60",
+            "days",
+            "old",
+            "new",
+            "extends"
+          ]
+        },
+        {
+          "id": "k2",
+          "text": "Specifies that the change takes effect from the first of next month.",
+          "keywords": [
+            "effective",
+            "first",
+            "month",
+            "date"
+          ]
+        },
+        {
+          "id": "k3",
+          "text": "Uses a friendly, non-legalistic tone — not formal or legal-sounding.",
+          "keywords": [
+            "friendly",
+            "approachable",
+            "warm",
+            "informal",
+            "non-legal"
+          ]
+        },
+        {
+          "id": "k4",
+          "text": "Total length is 100 words or fewer.",
+          "keywords": [
+            "100",
+            "words",
+            "short",
+            "brief",
+            "concise"
+          ]
+        }
+      ],
+      "par": 22,
+      "messyPrompt": "Please write a notice for our website and newsletter to let customers know we're updating our refund policy. The old policy was 30 days and it's now changing to 60 days. This change takes effect from the first of next month. Make sure the tone feels friendly and approachable — definitely not like legal copy or a formal terms document. And please keep the whole thing to 100 words or fewer."
+    },
+    {
+      "topic": "app release notes",
+      "brief": {
+        "senderName": "Marcus Webb",
+        "senderRole": "Product Manager",
+        "senderInitials": "MW",
+        "message": "Hey, we're shipping v2.4 tomorrow and I need release notes for the in-app update screen. Our users are mostly non-technical so keep the language friendly and plain. Needs to cover our three big new features: dark mode, offline sync, and the improved search bar. Bullet points please — and keep the whole thing under 150 words."
+      },
+      "goal": "App update release notes",
+      "criteria": [
+        {
+          "id": "k1",
+          "text": "Written in plain, non-technical language accessible to everyday users",
+          "keywords": [
+            "plain",
+            "simple",
+            "non-technical",
+            "accessible",
+            "everyday",
+            "friendly"
+          ]
+        },
+        {
+          "id": "k2",
+          "text": "Formatted as bullet points",
+          "keywords": [
+            "bullet",
+            "bullets",
+            "list",
+            "points"
+          ]
+        },
+        {
+          "id": "k3",
+          "text": "Covers all three new features: dark mode, offline sync, and the new search bar",
+          "keywords": [
+            "dark mode",
+            "offline sync",
+            "search bar",
+            "three",
+            "features"
+          ]
+        },
+        {
+          "id": "k4",
+          "text": "Total word count is under 150 words",
+          "keywords": [
+            "150",
+            "words",
+            "under",
+            "short",
+            "concise",
+            "brief"
+          ]
+        }
+      ],
+      "par": 25,
+      "messyPrompt": "Could you please write some release notes for our app update, v2.4? The language really needs to be simple and plain and easy for non-technical everyday users to understand — nothing too jargony. Please format it with bullet points to make it easy to scan. Make sure all three new features are mentioned: dark mode, offline sync, and the new search bar. Try to keep it under 150 words if possible."
+    },
+    {
+      "topic": "office relocation",
+      "brief": {
+        "senderName": "Marcus Veld",
+        "senderRole": "Facilities Manager",
+        "senderInitials": "MV",
+        "message": "We're moving offices on 14 July — new address is 88 Crane Street, Level 4. I need a short staff announcement for the intranet. Keep it calm and factual, include exactly two things people need to do before moving day, and don't let it run over 120 words."
+      },
+      "goal": "Staff relocation announcement",
+      "criteria": [
+        {
+          "id": "k1",
+          "text": "States the new address (88 Crane Street, Level 4) and move date (14 July)",
+          "keywords": [
+            "address",
+            "crane",
+            "street",
+            "level",
+            "july",
+            "date"
+          ]
+        },
+        {
+          "id": "k2",
+          "text": "Exactly two staff action items listed — no more, no fewer",
+          "keywords": [
+            "two",
+            "action",
+            "items",
+            "tasks",
+            "steps",
+            "exactly"
+          ]
+        },
+        {
+          "id": "k3",
+          "text": "Neutral, informative tone — no hype, urgency, or alarmist language",
+          "keywords": [
+            "neutral",
+            "informative",
+            "calm",
+            "factual",
+            "tone"
+          ]
+        },
+        {
+          "id": "k4",
+          "text": "Total length under 120 words",
+          "keywords": [
+            "short",
+            "concise",
+            "brief",
+            "120",
+            "words"
+          ]
+        }
+      ],
+      "par": 26,
+      "messyPrompt": "I need you to please write a short announcement that we can post on the company intranet to let all of our staff know that the office is going to be relocating to a new address, which is 88 Crane Street, Level 4, and this move is going to be taking place on 14 July. It's really important that the tone of the announcement stays nice and neutral and informative — we don't want anything that sounds too dramatic or over-excited about the whole situation. Could you also make sure that the announcement includes exactly two action items that staff will need to complete before the moving day arrives? And if you could please keep the whole thing under 120 words that would be great."
+    },
+    {
+      "topic": "expense policy memo",
+      "brief": {
+        "senderName": "Diana Chu",
+        "senderRole": "HR Business Partner",
+        "senderInitials": "DC",
+        "message": "Legal finally signed off on the updated expense rules. I need a memo out to all staff covering the new $75 daily meal cap and when it kicks in — 1 July. People will also need to know who to contact with questions. Formal tone, but please keep it readable, not legalese."
+      },
+      "goal": "Policy update memo",
+      "criteria": [
+        {
+          "id": "k1",
+          "text": "Explicitly states the new $75 daily meal cap",
+          "keywords": [
+            "$75",
+            "meal",
+            "cap",
+            "daily",
+            "limit"
+          ]
+        },
+        {
+          "id": "k2",
+          "text": "States 1 July as the effective date",
+          "keywords": [
+            "july",
+            "1 july",
+            "effective",
+            "date",
+            "takes effect"
+          ]
+        },
+        {
+          "id": "k3",
+          "text": "Includes a contact-detail placeholder for employee questions",
+          "keywords": [
+            "contact",
+            "questions",
+            "placeholder",
+            "reach out"
+          ]
+        },
+        {
+          "id": "k4",
+          "text": "Formal but plain-language tone — no legal jargon",
+          "keywords": [
+            "formal",
+            "plain",
+            "language",
+            "jargon",
+            "clear",
+            "accessible"
+          ]
+        }
+      ],
+      "par": 26,
+      "messyPrompt": "Could you write an internal memo to go out to all of our staff members? It needs to announce the new $75 daily meal expense cap that is part of our updated expense policy. Please also make sure it clearly states that this change takes effect on 1 July so nobody is caught off guard. The memo should also include some kind of placeholder for contact information so that employees know who they can reach out to if they have any questions. The tone should be formal but still written in plain, easy-to-understand language rather than coming across as overly legal or full of jargon."
+    },
+    {
+      "topic": "project post-mortem",
+      "brief": {
+        "senderName": "Marcus Webb",
+        "senderRole": "Engineering Lead",
+        "senderInitials": "MW",
+        "message": "Hey — Sprint 14 wrapped three weeks late and the VP wants a post-mortem write-up before Friday's retro. Can you draft something? Keep it tight and constructive — definitely no blame game."
+      },
+      "goal": "Post-mortem summary",
+      "criteria": [
+        {
+          "id": "k1",
+          "text": "Identifies exactly one root cause for the delay",
+          "keywords": [
+            "root cause",
+            "one",
+            "single",
+            "cause",
+            "reason"
+          ]
+        },
+        {
+          "id": "k2",
+          "text": "Includes exactly 3 action items presented in a numbered list",
+          "keywords": [
+            "action items",
+            "3",
+            "three",
+            "numbered",
+            "list",
+            "steps"
+          ]
+        },
+        {
+          "id": "k3",
+          "text": "Total word count is under 150 words",
+          "keywords": [
+            "under 150",
+            "150 words",
+            "brief",
+            "concise",
+            "short"
+          ]
+        },
+        {
+          "id": "k4",
+          "text": "Maintains a blameless tone with no reference to specific individuals",
+          "keywords": [
+            "blameless",
+            "no blame",
+            "factual",
+            "individuals",
+            "tone",
+            "constructive"
+          ]
+        }
+      ],
+      "par": 24,
+      "messyPrompt": "Please write up a post-mortem summary for a software sprint that ended up running about three weeks behind schedule. I need you to identify just one single root cause for why the delay happened. Also please include a numbered list of exactly 3 action items the team can take going forward to prevent this from recurring. Keep the total document under 150 words, and make sure the tone stays blameless throughout — no finger-pointing or any references to specific individuals."
+    }
+  ],
+  "4": [
+    {
+      "topic": "server outage post-mortem",
+      "brief": {
+        "senderName": "Priya Nambiar",
+        "senderRole": "Site Reliability Lead",
+        "senderInitials": "PN",
+        "message": "We had a 3-hour production outage yesterday and I need to send a post-mortem summary to the wider eng team. Can you draft the email? It needs to hit the right tone and cover the key points — I'll review it before it goes out."
+      },
+      "goal": "Post-mortem summary email",
+      "criteria": [
+        {
+          "id": "k1",
+          "text": "Opens with a single sentence stating the root cause",
+          "keywords": [
+            "root cause",
+            "one sentence",
+            "opening",
+            "first sentence"
+          ]
+        },
+        {
+          "id": "k2",
+          "text": "Contains exactly 3 numbered action items",
+          "keywords": [
+            "three",
+            "3",
+            "numbered",
+            "action items"
+          ]
+        },
+        {
+          "id": "k3",
+          "text": "Each action item names a responsible owner or team",
+          "keywords": [
+            "owner",
+            "team",
+            "responsible",
+            "assigned"
+          ]
+        },
+        {
+          "id": "k4",
+          "text": "Maintains a blameless tone, focusing on systems and processes rather than individuals",
+          "keywords": [
+            "blameless",
+            "systems",
+            "processes",
+            "tone",
+            "individuals"
+          ]
+        }
+      ],
+      "par": 28,
+      "messyPrompt": "So I need you to write up a post-incident email summary following our server outage. Could you make sure it begins with just one clear sentence that clearly explains and sums up what the root cause of the outage actually was? After that, I'd really like to see exactly 3 action items listed out and numbered, and each one of those action items needs to have a specific named owner or responsible team attached to it so people reading the email know who is accountable. One more thing — please make sure the overall tone stays blameless throughout the whole email, keeping the focus on systems and processes rather than pointing fingers at or blaming any specific individuals. Thanks so much!"
+    },
+    {
+      "topic": "service outage post-mortem",
+      "brief": {
+        "senderName": "Marcus Oyelaran",
+        "senderRole": "Engineering Director",
+        "senderInitials": "MO",
+        "message": "We had a four-hour database outage yesterday and I need a clean email drafted to go out to all stakeholders — board, sales, customer success. It needs to explain what happened, what went wrong, what we're doing about it with clear owners, and close professionally. Most of these readers aren't technical so keep it accessible."
+      },
+      "goal": "Stakeholder post-mortem email",
+      "criteria": [
+        {
+          "id": "k1",
+          "text": "Opens with exactly one sentence summarising the incident (system affected and duration), with no salutation or greeting.",
+          "keywords": [
+            "open",
+            "summary",
+            "incident",
+            "duration",
+            "no greeting",
+            "salutation"
+          ]
+        },
+        {
+          "id": "k2",
+          "text": "Lists exactly 3 root causes in a numbered list.",
+          "keywords": [
+            "three",
+            "3",
+            "root causes",
+            "numbered",
+            "list"
+          ]
+        },
+        {
+          "id": "k3",
+          "text": "Proposes exactly 2 remediation actions, each specifying a named responsible party.",
+          "keywords": [
+            "two",
+            "2",
+            "remediation",
+            "owner",
+            "responsible",
+            "action"
+          ]
+        },
+        {
+          "id": "k4",
+          "text": "Closes with a sincere apology of no more than 2 sentences — empathetic but not excessive.",
+          "keywords": [
+            "apology",
+            "close",
+            "sincere",
+            "two sentences",
+            "empathetic",
+            "brief"
+          ]
+        },
+        {
+          "id": "k5",
+          "text": "Uses no technical jargon — language must be accessible to non-technical readers throughout.",
+          "keywords": [
+            "plain language",
+            "non-technical",
+            "jargon-free",
+            "accessible",
+            "stakeholders"
+          ]
+        }
+      ],
+      "par": 30,
+      "messyPrompt": "Can you write a professional post-mortem email to be sent to non-technical stakeholders following a four-hour database outage that occurred yesterday? I'd like the email to start with a single summarising sentence covering what went down and for how long — and please skip any salutation or greeting at the top. Then list exactly three root causes in a numbered format. Include two remediation actions, each with a clear owner named. Close with a sincere, brief apology in no more than two sentences — empathetic, not excessive. Avoid all technical jargon throughout."
+    },
+    {
+      "topic": "product safety crisis",
+      "brief": {
+        "senderName": "Camille Oduya",
+        "senderRole": "Head of PR & Communications",
+        "senderInitials": "CO",
+        "message": "We've got reports spreading on social about a safety issue with the BlendPro 3000. Legal says no admissions of fault yet, but silence is making it worse. Need a holding statement we can post today — max three sentences, acknowledges the reports, mentions we're investigating, and gives customers somewhere to turn. Tone should feel human and empathetic, not corporate-defensive. No waffle at the top — just the statement itself."
+      },
+      "goal": "Crisis holding statement",
+      "criteria": [
+        {
+          "id": "k1",
+          "text": "Acknowledges the reported safety incident without admitting liability or fault",
+          "keywords": [
+            "acknowledge",
+            "reports",
+            "without",
+            "liability",
+            "fault",
+            "admit"
+          ]
+        },
+        {
+          "id": "k2",
+          "text": "States that an investigation is currently underway",
+          "keywords": [
+            "investigation",
+            "underway",
+            "looking into",
+            "reviewing",
+            "ongoing"
+          ]
+        },
+        {
+          "id": "k3",
+          "text": "Includes a customer contact channel (e.g. helpline, email, or support link)",
+          "keywords": [
+            "contact",
+            "helpline",
+            "email",
+            "support",
+            "reach"
+          ]
+        },
+        {
+          "id": "k4",
+          "text": "No more than three sentences in total",
+          "keywords": [
+            "three",
+            "3",
+            "sentences",
+            "brief",
+            "short"
+          ]
+        },
+        {
+          "id": "k5",
+          "text": "Empathetic, non-defensive tone with no preamble — statement begins immediately",
+          "keywords": [
+            "empathetic",
+            "tone",
+            "no preamble",
+            "direct",
+            "caring"
+          ]
+        }
+      ],
+      "par": 30,
+      "messyPrompt": "Please write a social media holding statement that acknowledges the reports circulating about our product's safety issue but is very careful not to admit any liability or fault on our part. Also make sure to mention that an investigation is currently underway, and include some way for customers to contact us with their concerns. Keep the whole thing to no more than three sentences total, and make the tone feel empathetic and caring rather than defensive or dismissive. No introduction or preamble — just go straight into the statement."
+    },
+    {
+      "topic": "incident handover note",
+      "brief": {
+        "senderName": "Marcus Oyelaran",
+        "senderRole": "Engineering Director",
+        "senderInitials": "MO",
+        "message": "We had a production outage over the weekend — checkout was down for about 40 minutes. I need a concise handover note I can forward straight to the VP and all department heads. They're non-technical, so plain language only, and I want it action-focused with clear ownership on the fix."
+      },
+      "goal": "Executive incident handover",
+      "criteria": [
+        {
+          "id": "k1",
+          "text": "Opens with a single plain-English sentence summarising the incident — no heading, label, or subject line before it.",
+          "keywords": [
+            "summary",
+            "opening",
+            "sentence",
+            "plain",
+            "intro"
+          ]
+        },
+        {
+          "id": "k2",
+          "text": "Contains exactly three bullet points covering: what happened, customer impact, and next steps — no more, no fewer.",
+          "keywords": [
+            "three",
+            "bullets",
+            "what happened",
+            "impact",
+            "next steps"
+          ]
+        },
+        {
+          "id": "k3",
+          "text": "Uses no technical jargon or acronyms anywhere in the note (e.g. no DB, API, CDN, SLA).",
+          "keywords": [
+            "jargon",
+            "acronyms",
+            "plain",
+            "non-technical",
+            "avoid"
+          ]
+        },
+        {
+          "id": "k4",
+          "text": "The next-steps bullet names a specific responsible owner and a target resolution date.",
+          "keywords": [
+            "owner",
+            "deadline",
+            "date",
+            "responsible",
+            "resolution"
+          ]
+        }
+      ],
+      "par": 28,
+      "messyPrompt": "Could you write a handover note that I can forward to the VP and department heads — they're not technical at all, so please make sure you don't use any technical jargon or acronyms anywhere in the note. I'd like it to open with just a single sentence summarising the incident in plain English, and please don't put any heading or label before that sentence. After that, I need exactly 3 bullet points: one on what happened, one covering the customer impact, and one on next steps. In the next-steps bullet, please make sure you clearly name who is responsible for resolving this and include a specific target date for when it will be fixed."
+    },
+    {
+      "topic": "price increase notice",
+      "brief": {
+        "senderName": "Priya Mehta",
+        "senderRole": "Head of Account Management",
+        "senderInitials": "PM",
+        "message": "Legal's given us the green light to raise subscription prices by 15%, effective 1 September. I need a polished client email ready by Friday — it must explain the 'why' (rising operational costs), flag that customers can lock in their current rate if they renew before the deadline, and not come across as grovelling. Oh, and keep the email itself under 150 words."
+      },
+      "goal": "client price increase email",
+      "criteria": [
+        {
+          "id": "k1",
+          "text": "States the exact 15% increase and an effective date of 1 September",
+          "keywords": [
+            "15%",
+            "fifteen",
+            "september",
+            "effective",
+            "date",
+            "increase"
+          ]
+        },
+        {
+          "id": "k2",
+          "text": "Cites a specific reason for the increase, such as rising operational or infrastructure costs",
+          "keywords": [
+            "costs",
+            "operational",
+            "infrastructure",
+            "inflation",
+            "reason",
+            "rising"
+          ]
+        },
+        {
+          "id": "k3",
+          "text": "Mentions the option to lock in the current rate by renewing before 1 September",
+          "keywords": [
+            "lock",
+            "renew",
+            "current rate",
+            "early",
+            "before",
+            "existing"
+          ]
+        },
+        {
+          "id": "k4",
+          "text": "Maintains a confident, professional tone with no apologetic or hedging language",
+          "keywords": [
+            "professional",
+            "confident",
+            "tone",
+            "direct",
+            "apologetic",
+            "assertive"
+          ]
+        },
+        {
+          "id": "k5",
+          "text": "The generated email body is 150 words or fewer",
+          "keywords": [
+            "150",
+            "words",
+            "short",
+            "concise",
+            "brief",
+            "under"
+          ]
+        }
+      ],
+      "par": 30,
+      "messyPrompt": "Could you please help me to draft a client-facing email letting our existing customers know that we'll be raising our subscription prices by 15%, with the change taking effect from 1 September this year? I'd like it to include some sort of explanation of why we're making this change — rising operational or infrastructure costs would be the right kind of angle to take — and also let customers know that they have the option to lock in their current rate if they choose to renew before the deadline. The tone throughout really needs to be professional and confident rather than apologetic or hesitant. Please also make sure the finished email itself comes in under 150 words."
+    }
+  ],
+  "5": [
+    {
+      "topic": "staff redundancy notice",
+      "brief": {
+        "senderName": "Petra Hollings",
+        "senderRole": "Head of People Operations",
+        "senderInitials": "PH",
+        "message": "Legal have put a hold on us disclosing any severance figures, so nothing about pay-outs in this draft. I need an email to go to the 14 people affected — warm and empathetic please, exactly three paragraphs, must include the effective date (31 July), and let them know they can come straight to me with any questions."
+      },
+      "goal": "Redundancy notification email",
+      "criteria": [
+        {
+          "id": "k1",
+          "text": "Exactly three paragraphs — no more, no fewer.",
+          "keywords": [
+            "three",
+            "3",
+            "paragraphs"
+          ]
+        },
+        {
+          "id": "k2",
+          "text": "Empathetic, human tone — no cold or clinical language.",
+          "keywords": [
+            "empathetic",
+            "human",
+            "warm",
+            "compassionate",
+            "tone"
+          ]
+        },
+        {
+          "id": "k3",
+          "text": "Effective date of 31 July is explicitly stated in the email.",
+          "keywords": [
+            "31 july",
+            "july 31",
+            "effective date",
+            "date"
+          ]
+        },
+        {
+          "id": "k4",
+          "text": "Includes a clear invitation for recipients to contact HR directly with any questions.",
+          "keywords": [
+            "contact",
+            "questions",
+            "reach out",
+            "directly",
+            "hr"
+          ]
+        },
+        {
+          "id": "k5",
+          "text": "Contains no mention of severance, compensation, or any financial pay-out.",
+          "keywords": [
+            "no severance",
+            "no compensation",
+            "omit",
+            "exclude",
+            "without"
+          ]
+        }
+      ],
+      "par": 22,
+      "messyPrompt": "Please write an email for employees who are being informed that they are being made redundant — the tone should feel really empathetic and human, definitely not cold or clinical in any way. Please make sure the email is structured into exactly three paragraphs, not two and not four, exactly three. The effective date, which is the 31st of July, needs to be clearly stated somewhere in the body of the email. Also, please include a line somewhere that invites recipients to get in touch with HR directly if they have any questions or concerns they want to raise. One absolutely critical thing: do not include any mention whatsoever of severance pay, compensation packages, financial settlements, or any kind of pay-out, as we are not legally permitted to share those details yet."
+    },
+    {
+      "topic": "vendor outage escalation",
+      "brief": {
+        "senderName": "Marcus Oyelaran",
+        "senderRole": "Head of IT Operations",
+        "senderInitials": "MO",
+        "message": "Our payment gateway has been down for 6 hours and the vendor's support team isn't moving fast enough. I need something that goes straight to their leadership — makes clear we're serious, spells out the damage we're taking, gives them a hard deadline, but doesn't tip into threats. Can you draft it?"
+      },
+      "goal": "Vendor escalation email",
+      "criteria": [
+        {
+          "id": "k1",
+          "text": "Identifies the affected system and states the outage duration",
+          "keywords": [
+            "system",
+            "gateway",
+            "outage",
+            "hours",
+            "duration",
+            "down"
+          ]
+        },
+        {
+          "id": "k2",
+          "text": "Quantifies the business impact in concrete terms (e.g. blocked transactions, revenue loss, or users affected)",
+          "keywords": [
+            "impact",
+            "transactions",
+            "revenue",
+            "users",
+            "loss",
+            "affected"
+          ]
+        },
+        {
+          "id": "k3",
+          "text": "Addresses the vendor's executive or senior leadership team, not standard support",
+          "keywords": [
+            "executive",
+            "leadership",
+            "senior",
+            "management",
+            "escalate",
+            "director"
+          ]
+        },
+        {
+          "id": "k4",
+          "text": "States a specific resolution deadline",
+          "keywords": [
+            "deadline",
+            "resolve",
+            "by",
+            "require",
+            "hours",
+            "expect"
+          ]
+        },
+        {
+          "id": "k5",
+          "text": "Maintains a firm, professional tone without issuing threats or ultimatums",
+          "keywords": [
+            "firm",
+            "professional",
+            "tone",
+            "formal",
+            "serious",
+            "no threats"
+          ]
+        }
+      ],
+      "par": 30,
+      "messyPrompt": "I need you to write an escalation email to our payment gateway vendor — the system has been down and honestly the regular support team just isn't responding quickly enough for us. Could you make sure to name the system and also mention how long it has actually been offline? Also please include some specific details about the kind of business impact we're experiencing, like blocked transactions or revenue we're losing. The email should be addressed to their executive or senior leadership team directly rather than just standard support people. Oh, and include a firm specific deadline for when we need the issue resolved by. Keep the tone professional and serious throughout — we want them to understand the urgency — but please don't make it sound like we're threatening them in any way."
+    },
+    {
+      "topic": "outage post-mortem email",
+      "brief": {
+        "senderName": "Marcus Delacroix",
+        "senderRole": "VP of Engineering",
+        "senderInitials": "MD",
+        "message": "We had that service outage yesterday — 4 hours and 12 minutes of downtime, running from 09:14 to 13:26 UTC. I need a customer-facing email drafted. Apologise, but only the once — I don't want the whole thing dripping with sorrys. Mention the exact duration. Give exactly 3 bullets on what we're doing to prevent a repeat. Keep the technical bits in plain English, no jargon. And no passive-voice blame-deflecting — none of that 'mistakes were made' stuff. Can you sort it?"
+      },
+      "goal": "Customer outage post-mortem email",
+      "criteria": [
+        {
+          "id": "k1",
+          "text": "Contains exactly one apology — no repetition of sorry or apologetic phrasing anywhere else in the email",
+          "keywords": [
+            "once",
+            "single",
+            "one apology",
+            "apology",
+            "not repeated"
+          ]
+        },
+        {
+          "id": "k2",
+          "text": "States the outage duration as 4 hours 12 minutes or the specific times 09:14–13:26 UTC",
+          "keywords": [
+            "duration",
+            "4 hours",
+            "4h 12m",
+            "09:14",
+            "13:26",
+            "utc"
+          ]
+        },
+        {
+          "id": "k3",
+          "text": "Lists exactly 3 preventive measures in bullet-point format",
+          "keywords": [
+            "three",
+            "3",
+            "bullets",
+            "bullet points",
+            "prevent",
+            "measures"
+          ]
+        },
+        {
+          "id": "k4",
+          "text": "All technical content written in plain English with no jargon",
+          "keywords": [
+            "plain english",
+            "no jargon",
+            "simple",
+            "accessible",
+            "plain language"
+          ]
+        },
+        {
+          "id": "k5",
+          "text": "Written entirely in active voice with no passive constructions or blame-deflecting language",
+          "keywords": [
+            "active voice",
+            "no passive",
+            "direct",
+            "no deflection",
+            "blame"
+          ]
+        }
+      ],
+      "par": 36,
+      "messyPrompt": "I need you to write a customer-facing email about the outage we experienced. Please include an apology somewhere, but I only want you to apologise one single time — don't keep repeating sorry throughout the email or it'll come across as grovelling. The outage lasted 4 hours and 12 minutes in total, running from 09:14 UTC all the way through to 13:26 UTC, so please make sure you mention that somewhere in the email. I'd also like you to include exactly 3 bullet points that explain the three concrete steps we're taking to make sure this kind of thing doesn't happen again. Please keep all of the technical content written in plain, simple English — absolutely no jargon or technical terms that customers won't understand. And finally, please write the whole thing in active voice — I really don't want any of that wishy-washy passive 'mistakes were made' blame-deflecting kind of language anywhere in it."
+    },
+    {
+      "topic": "production outage post-mortem",
+      "brief": {
+        "senderName": "Priya Nair",
+        "senderRole": "Site Reliability Lead",
+        "senderInitials": "PN",
+        "message": "We had a database outage Friday night and I need a clean post-mortem drafted before Monday's engineering review. I've got specific requirements around structure, timeline format, tone, and word choices — can you help pull something together?"
+      },
+      "goal": "Post-mortem incident report",
+      "criteria": [
+        {
+          "id": "k1",
+          "text": "Structured into exactly four sections in this order: Timeline, Root Cause, Impact, Action Items",
+          "keywords": [
+            "sections",
+            "timeline",
+            "root cause",
+            "impact",
+            "action items",
+            "order"
+          ]
+        },
+        {
+          "id": "k2",
+          "text": "Timeline entries are listed chronologically, each prefixed with a timestamp in HH:MM format",
+          "keywords": [
+            "chronological",
+            "timestamp",
+            "hh:mm",
+            "format",
+            "time"
+          ]
+        },
+        {
+          "id": "k3",
+          "text": "Tone is neutral and blameless — no blame attributed to any individual or team",
+          "keywords": [
+            "blameless",
+            "neutral",
+            "blame",
+            "tone",
+            "individuals",
+            "teams"
+          ]
+        },
+        {
+          "id": "k4",
+          "text": "Each action item names a responsible owner and a target deadline",
+          "keywords": [
+            "owner",
+            "deadline",
+            "action item",
+            "responsible",
+            "due"
+          ]
+        },
+        {
+          "id": "k5",
+          "text": "The words 'failure' and 'fault' do not appear anywhere in the document",
+          "keywords": [
+            "failure",
+            "fault",
+            "avoid",
+            "omit",
+            "never",
+            "exclude"
+          ]
+        }
+      ],
+      "par": 30,
+      "messyPrompt": "Could you write a post-mortem report for me? I need it to have exactly four sections, and those sections need to appear in this specific order: Timeline first, then Root Cause, then Impact, and finally Action Items last. For the Timeline section, please make sure all events are listed in chronological order and that each event has a timestamp written in HH:MM format right next to it so it's clear when things happened. It's also really important that the tone throughout the whole document stays completely neutral and blameless — meaning you should not assign blame or fault to any individual person or any team at all. For the Action Items section, every single action item must clearly include the name of the owner who is responsible for it and a specific target deadline. Oh, and one more thing: please don't use the words 'failure' or 'fault' anywhere at all in the document."
+    },
+    {
+      "topic": "earnings call script",
+      "brief": {
+        "senderName": "Priya Mehta",
+        "senderRole": "Investor Relations Director",
+        "senderInitials": "PM",
+        "message": "Hi — CEO needs talking points for Thursday's Q3 earnings call. Legal won't sign off on real figures until tomorrow, so nothing concrete can go in yet — use placeholders wherever a number or percentage would appear. Structure it as three sections: Revenue, Outlook, Q&A Bridge. Each section should be two or three sentences max, written in his voice (first person). Confident and forward-looking throughout — absolutely no hedging. Can you draft this?"
+      },
+      "goal": "CEO earnings call script",
+      "criteria": [
+        {
+          "id": "k1",
+          "text": "Contains exactly three sections with the headings Revenue, Outlook, and Q&A Bridge",
+          "keywords": [
+            "three",
+            "sections",
+            "revenue",
+            "outlook",
+            "q&a",
+            "bridge"
+          ]
+        },
+        {
+          "id": "k2",
+          "text": "Each section is exactly 2–3 sentences long (no more, no fewer)",
+          "keywords": [
+            "2-3",
+            "sentences",
+            "each",
+            "short",
+            "concise"
+          ]
+        },
+        {
+          "id": "k3",
+          "text": "Written throughout in first-person singular as the CEO (uses 'I', not 'we' or third person)",
+          "keywords": [
+            "first person",
+            "i",
+            "ceo",
+            "voice",
+            "singular"
+          ]
+        },
+        {
+          "id": "k4",
+          "text": "All financial figures and percentages are replaced with bracketed placeholders such as [X]% or [figure] — no real numbers appear",
+          "keywords": [
+            "placeholder",
+            "bracket",
+            "figure",
+            "[x]",
+            "percentage",
+            "no numbers"
+          ]
+        },
+        {
+          "id": "k5",
+          "text": "Tone is confident and forward-looking with zero hedging words (no 'might', 'could', 'hopefully', 'may')",
+          "keywords": [
+            "confident",
+            "forward-looking",
+            "no hedging",
+            "tone",
+            "positive"
+          ]
+        }
+      ],
+      "par": 35,
+      "messyPrompt": "I need you to write a script for our CEO to use during the Q3 earnings call happening on Thursday. Please break it into three clearly labelled sections, which should be Revenue, then Outlook, and then a Q&A Bridge section. Each one of those three sections should be exactly two to three sentences long — not one sentence, not four, just two or three sentences per section. The whole thing needs to be written in first person as if the CEO himself is speaking, so please use 'I' throughout and avoid 'we' or any third-person references to the CEO. Since our legal team hasn't cleared any real numbers yet, wherever there would be a specific financial figure or a percentage, please replace it with a placeholder like [X]% or [figure] rather than including any actual numbers. Finally, the tone throughout the whole script should feel confident and forward-looking — please avoid any uncertain or hedging language such as 'might', 'could', 'may', or 'hopefully'."
+    }
+  ]
+}

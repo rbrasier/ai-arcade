@@ -1,1 +1,1287 @@
-{}
+{
+  "1": [
+    {
+      "topic": "CRM data entry",
+      "tier": 1,
+      "brief": {
+        "senderName": "Marcus Feldt",
+        "senderRole": "CRM Operations Lead",
+        "senderInitials": "MF",
+        "message": "Quick one — every new signup gets typed into the CRM by hand and it's eating the team's morning. What's the right way to handle this? I don't want to gold-plate it."
+      },
+      "goal": "Choose the best-value way to handle this step.",
+      "stepTitle": "Copy new-customer details into the CRM",
+      "stepDetail": "Someone reads each completed signup form and re-types the fields into the CRM record.",
+      "characteristics": {
+        "volumePerYear": 12000,
+        "manualMinutesPerRun": 4,
+        "riskCostPerFailure": 20,
+        "variability": "identical",
+        "structure": "structured"
+      },
+      "options": [
+        {
+          "intervention": "manual",
+          "buildCost": 0,
+          "annualMaintenance": 0,
+          "errorRate": 0.02,
+          "residualMinutesPerRun": 4
+        },
+        {
+          "intervention": "rules",
+          "buildCost": 6000,
+          "annualMaintenance": 800,
+          "errorRate": 0.005,
+          "residualMinutesPerRun": 0.2
+        },
+        {
+          "intervention": "llm",
+          "buildCost": 4000,
+          "annualMaintenance": 3000,
+          "errorRate": 0.01,
+          "residualMinutesPerRun": 0.3
+        },
+        {
+          "intervention": "custom-app",
+          "buildCost": 60000,
+          "annualMaintenance": 6000,
+          "errorRate": 0.003,
+          "residualMinutesPerRun": 0.1
+        }
+      ],
+      "explanation": "The fields are identical and clean, so a simple rules-based automation maps them straight across for a tiny build and almost no upkeep — the cheapest option by far. Leaving it manual keeps paying 800 hours a year; an LLM is harmless but needless; and a £60k custom app is the classic over-build — at this volume the amortised build alone dwarfs the labour it saves."
+    },
+    {
+      "topic": "CRM data entry",
+      "tier": 1,
+      "brief": {
+        "senderName": "Marcus Feldt",
+        "senderRole": "CRM Operations Lead",
+        "senderInitials": "MF",
+        "message": "Quick one — every new signup gets typed into the CRM by hand and it's eating the team's morning. What's the right way to handle this? I don't want to gold-plate it."
+      },
+      "goal": "Choose the best-value way to handle this step.",
+      "stepTitle": "Copy new-customer details into the CRM",
+      "stepDetail": "Someone reads each completed signup form and re-types the fields into the CRM record.",
+      "characteristics": {
+        "volumePerYear": 12000,
+        "manualMinutesPerRun": 4,
+        "riskCostPerFailure": 20,
+        "variability": "identical",
+        "structure": "structured"
+      },
+      "options": [
+        {
+          "intervention": "manual",
+          "buildCost": 0,
+          "annualMaintenance": 0,
+          "errorRate": 0.02,
+          "residualMinutesPerRun": 4
+        },
+        {
+          "intervention": "rules",
+          "buildCost": 6000,
+          "annualMaintenance": 800,
+          "errorRate": 0.005,
+          "residualMinutesPerRun": 0.2
+        },
+        {
+          "intervention": "llm",
+          "buildCost": 4000,
+          "annualMaintenance": 3000,
+          "errorRate": 0.01,
+          "residualMinutesPerRun": 0.3
+        },
+        {
+          "intervention": "custom-app",
+          "buildCost": 60000,
+          "annualMaintenance": 6000,
+          "errorRate": 0.003,
+          "residualMinutesPerRun": 0.1
+        }
+      ],
+      "explanation": "The fields are identical and clean, so a simple rules-based automation maps them straight across for a tiny build and almost no upkeep — the cheapest option by far. Leaving it manual keeps paying 800 hours a year; an LLM is harmless but needless; and a £60k custom app is the classic over-build — at this volume the amortised build alone dwarfs the labour it saves."
+    },
+    {
+      "topic": "CRM data entry",
+      "tier": 1,
+      "brief": {
+        "senderName": "Marcus Feldt",
+        "senderRole": "CRM Operations Lead",
+        "senderInitials": "MF",
+        "message": "Quick one — every new signup gets typed into the CRM by hand and it's eating the team's morning. What's the right way to handle this? I don't want to gold-plate it."
+      },
+      "goal": "Choose the best-value way to handle this step.",
+      "stepTitle": "Copy new-customer details into the CRM",
+      "stepDetail": "Someone reads each completed signup form and re-types the fields into the CRM record.",
+      "characteristics": {
+        "volumePerYear": 12000,
+        "manualMinutesPerRun": 4,
+        "riskCostPerFailure": 20,
+        "variability": "identical",
+        "structure": "structured"
+      },
+      "options": [
+        {
+          "intervention": "manual",
+          "buildCost": 0,
+          "annualMaintenance": 0,
+          "errorRate": 0.02,
+          "residualMinutesPerRun": 4
+        },
+        {
+          "intervention": "rules",
+          "buildCost": 6000,
+          "annualMaintenance": 800,
+          "errorRate": 0.005,
+          "residualMinutesPerRun": 0.2
+        },
+        {
+          "intervention": "llm",
+          "buildCost": 4000,
+          "annualMaintenance": 3000,
+          "errorRate": 0.01,
+          "residualMinutesPerRun": 0.3
+        },
+        {
+          "intervention": "custom-app",
+          "buildCost": 60000,
+          "annualMaintenance": 6000,
+          "errorRate": 0.003,
+          "residualMinutesPerRun": 0.1
+        }
+      ],
+      "explanation": "The fields are identical and clean, so a simple rules-based automation maps them straight across for a tiny build and almost no upkeep — the cheapest option by far. Leaving it manual keeps paying 800 hours a year; an LLM is harmless but needless; and a £60k custom app is the classic over-build — at this volume the amortised build alone dwarfs the labour it saves."
+    },
+    {
+      "topic": "CRM data entry",
+      "tier": 1,
+      "brief": {
+        "senderName": "Marcus Feldt",
+        "senderRole": "CRM Operations Lead",
+        "senderInitials": "MF",
+        "message": "Quick one — every new signup gets typed into the CRM by hand and it's eating the team's morning. What's the right way to handle this? I don't want to gold-plate it."
+      },
+      "goal": "Choose the best-value way to handle this step.",
+      "stepTitle": "Copy new-customer details into the CRM",
+      "stepDetail": "Someone reads each completed signup form and re-types the fields into the CRM record.",
+      "characteristics": {
+        "volumePerYear": 12000,
+        "manualMinutesPerRun": 4,
+        "riskCostPerFailure": 20,
+        "variability": "identical",
+        "structure": "structured"
+      },
+      "options": [
+        {
+          "intervention": "manual",
+          "buildCost": 0,
+          "annualMaintenance": 0,
+          "errorRate": 0.02,
+          "residualMinutesPerRun": 4
+        },
+        {
+          "intervention": "rules",
+          "buildCost": 6000,
+          "annualMaintenance": 800,
+          "errorRate": 0.005,
+          "residualMinutesPerRun": 0.2
+        },
+        {
+          "intervention": "llm",
+          "buildCost": 4000,
+          "annualMaintenance": 3000,
+          "errorRate": 0.01,
+          "residualMinutesPerRun": 0.3
+        },
+        {
+          "intervention": "custom-app",
+          "buildCost": 60000,
+          "annualMaintenance": 6000,
+          "errorRate": 0.003,
+          "residualMinutesPerRun": 0.1
+        }
+      ],
+      "explanation": "The fields are identical and clean, so a simple rules-based automation maps them straight across for a tiny build and almost no upkeep — the cheapest option by far. Leaving it manual keeps paying 800 hours a year; an LLM is harmless but needless; and a £60k custom app is the classic over-build — at this volume the amortised build alone dwarfs the labour it saves."
+    },
+    {
+      "topic": "CRM data entry",
+      "tier": 1,
+      "brief": {
+        "senderName": "Marcus Feldt",
+        "senderRole": "CRM Operations Lead",
+        "senderInitials": "MF",
+        "message": "Quick one — every new signup gets typed into the CRM by hand and it's eating the team's morning. What's the right way to handle this? I don't want to gold-plate it."
+      },
+      "goal": "Choose the best-value way to handle this step.",
+      "stepTitle": "Copy new-customer details into the CRM",
+      "stepDetail": "Someone reads each completed signup form and re-types the fields into the CRM record.",
+      "characteristics": {
+        "volumePerYear": 12000,
+        "manualMinutesPerRun": 4,
+        "riskCostPerFailure": 20,
+        "variability": "identical",
+        "structure": "structured"
+      },
+      "options": [
+        {
+          "intervention": "manual",
+          "buildCost": 0,
+          "annualMaintenance": 0,
+          "errorRate": 0.02,
+          "residualMinutesPerRun": 4
+        },
+        {
+          "intervention": "rules",
+          "buildCost": 6000,
+          "annualMaintenance": 800,
+          "errorRate": 0.005,
+          "residualMinutesPerRun": 0.2
+        },
+        {
+          "intervention": "llm",
+          "buildCost": 4000,
+          "annualMaintenance": 3000,
+          "errorRate": 0.01,
+          "residualMinutesPerRun": 0.3
+        },
+        {
+          "intervention": "custom-app",
+          "buildCost": 60000,
+          "annualMaintenance": 6000,
+          "errorRate": 0.003,
+          "residualMinutesPerRun": 0.1
+        }
+      ],
+      "explanation": "The fields are identical and clean, so a simple rules-based automation maps them straight across for a tiny build and almost no upkeep — the cheapest option by far. Leaving it manual keeps paying 800 hours a year; an LLM is harmless but needless; and a £60k custom app is the classic over-build — at this volume the amortised build alone dwarfs the labour it saves."
+    }
+  ],
+  "2": [
+    {
+      "topic": "email routing",
+      "tier": 2,
+      "brief": {
+        "senderName": "Priya Raghunathan",
+        "senderRole": "Customer Support Manager",
+        "senderInitials": "PR",
+        "message": "Our shared inbox is chaos — agents spend ages sorting emails to the right team. I've heard keyword rules are cheap. Would they actually work here, or do we need something cleverer?"
+      },
+      "goal": "Choose the best-value way to handle this step.",
+      "stepTitle": "Sort inbound emails to the right team",
+      "stepDetail": "Each incoming customer email is read and routed to the department best placed to answer it.",
+      "characteristics": {
+        "volumePerYear": 60000,
+        "manualMinutesPerRun": 3,
+        "riskCostPerFailure": 15,
+        "variability": "some",
+        "structure": "free"
+      },
+      "options": [
+        {
+          "intervention": "manual",
+          "buildCost": 0,
+          "annualMaintenance": 0,
+          "errorRate": 0.03,
+          "residualMinutesPerRun": 3
+        },
+        {
+          "intervention": "rules",
+          "buildCost": 5000,
+          "annualMaintenance": 1500,
+          "errorRate": 0.15,
+          "residualMinutesPerRun": 0.5
+        },
+        {
+          "intervention": "llm",
+          "buildCost": 7000,
+          "annualMaintenance": 12000,
+          "errorRate": 0.03,
+          "residualMinutesPerRun": 0.3
+        },
+        {
+          "intervention": "custom-app",
+          "buildCost": 75000,
+          "annualMaintenance": 9000,
+          "errorRate": 0.02,
+          "residualMinutesPerRun": 0.2
+        }
+      ],
+      "explanation": "The input is free-text email, so keyword rules misroute it constantly — their build looks cheap but the misroutes cost so much they barely beat doing nothing. An LLM reads intent and routes accurately for a modest run cost — the best value. A custom app also works but costs more to build for little extra gain; leaving it manual is too slow at 60,000 a year."
+    },
+    {
+      "topic": "email routing",
+      "tier": 2,
+      "brief": {
+        "senderName": "Priya Raghunathan",
+        "senderRole": "Customer Support Manager",
+        "senderInitials": "PR",
+        "message": "Our shared inbox is chaos — agents spend ages sorting emails to the right team. I've heard keyword rules are cheap. Would they actually work here, or do we need something cleverer?"
+      },
+      "goal": "Choose the best-value way to handle this step.",
+      "stepTitle": "Sort inbound emails to the right team",
+      "stepDetail": "Each incoming customer email is read and routed to the department best placed to answer it.",
+      "characteristics": {
+        "volumePerYear": 60000,
+        "manualMinutesPerRun": 3,
+        "riskCostPerFailure": 15,
+        "variability": "some",
+        "structure": "free"
+      },
+      "options": [
+        {
+          "intervention": "manual",
+          "buildCost": 0,
+          "annualMaintenance": 0,
+          "errorRate": 0.03,
+          "residualMinutesPerRun": 3
+        },
+        {
+          "intervention": "rules",
+          "buildCost": 5000,
+          "annualMaintenance": 1500,
+          "errorRate": 0.15,
+          "residualMinutesPerRun": 0.5
+        },
+        {
+          "intervention": "llm",
+          "buildCost": 7000,
+          "annualMaintenance": 12000,
+          "errorRate": 0.03,
+          "residualMinutesPerRun": 0.3
+        },
+        {
+          "intervention": "custom-app",
+          "buildCost": 75000,
+          "annualMaintenance": 9000,
+          "errorRate": 0.02,
+          "residualMinutesPerRun": 0.2
+        }
+      ],
+      "explanation": "The input is free-text email, so keyword rules misroute it constantly — their build looks cheap but the misroutes cost so much they barely beat doing nothing. An LLM reads intent and routes accurately for a modest run cost — the best value. A custom app also works but costs more to build for little extra gain; leaving it manual is too slow at 60,000 a year."
+    },
+    {
+      "topic": "email routing",
+      "tier": 2,
+      "brief": {
+        "senderName": "Priya Raghunathan",
+        "senderRole": "Customer Support Manager",
+        "senderInitials": "PR",
+        "message": "Our shared inbox is chaos — agents spend ages sorting emails to the right team. I've heard keyword rules are cheap. Would they actually work here, or do we need something cleverer?"
+      },
+      "goal": "Choose the best-value way to handle this step.",
+      "stepTitle": "Sort inbound emails to the right team",
+      "stepDetail": "Each incoming customer email is read and routed to the department best placed to answer it.",
+      "characteristics": {
+        "volumePerYear": 60000,
+        "manualMinutesPerRun": 3,
+        "riskCostPerFailure": 15,
+        "variability": "some",
+        "structure": "free"
+      },
+      "options": [
+        {
+          "intervention": "manual",
+          "buildCost": 0,
+          "annualMaintenance": 0,
+          "errorRate": 0.03,
+          "residualMinutesPerRun": 3
+        },
+        {
+          "intervention": "rules",
+          "buildCost": 5000,
+          "annualMaintenance": 1500,
+          "errorRate": 0.15,
+          "residualMinutesPerRun": 0.5
+        },
+        {
+          "intervention": "llm",
+          "buildCost": 7000,
+          "annualMaintenance": 12000,
+          "errorRate": 0.03,
+          "residualMinutesPerRun": 0.3
+        },
+        {
+          "intervention": "custom-app",
+          "buildCost": 75000,
+          "annualMaintenance": 9000,
+          "errorRate": 0.02,
+          "residualMinutesPerRun": 0.2
+        }
+      ],
+      "explanation": "The input is free-text email, so keyword rules misroute it constantly — their build looks cheap but the misroutes cost so much they barely beat doing nothing. An LLM reads intent and routes accurately for a modest run cost — the best value. A custom app also works but costs more to build for little extra gain; leaving it manual is too slow at 60,000 a year."
+    },
+    {
+      "topic": "email routing",
+      "tier": 2,
+      "brief": {
+        "senderName": "Priya Raghunathan",
+        "senderRole": "Customer Support Manager",
+        "senderInitials": "PR",
+        "message": "Our shared inbox is chaos — agents spend ages sorting emails to the right team. I've heard keyword rules are cheap. Would they actually work here, or do we need something cleverer?"
+      },
+      "goal": "Choose the best-value way to handle this step.",
+      "stepTitle": "Sort inbound emails to the right team",
+      "stepDetail": "Each incoming customer email is read and routed to the department best placed to answer it.",
+      "characteristics": {
+        "volumePerYear": 60000,
+        "manualMinutesPerRun": 3,
+        "riskCostPerFailure": 15,
+        "variability": "some",
+        "structure": "free"
+      },
+      "options": [
+        {
+          "intervention": "manual",
+          "buildCost": 0,
+          "annualMaintenance": 0,
+          "errorRate": 0.03,
+          "residualMinutesPerRun": 3
+        },
+        {
+          "intervention": "rules",
+          "buildCost": 5000,
+          "annualMaintenance": 1500,
+          "errorRate": 0.15,
+          "residualMinutesPerRun": 0.5
+        },
+        {
+          "intervention": "llm",
+          "buildCost": 7000,
+          "annualMaintenance": 12000,
+          "errorRate": 0.03,
+          "residualMinutesPerRun": 0.3
+        },
+        {
+          "intervention": "custom-app",
+          "buildCost": 75000,
+          "annualMaintenance": 9000,
+          "errorRate": 0.02,
+          "residualMinutesPerRun": 0.2
+        }
+      ],
+      "explanation": "The input is free-text email, so keyword rules misroute it constantly — their build looks cheap but the misroutes cost so much they barely beat doing nothing. An LLM reads intent and routes accurately for a modest run cost — the best value. A custom app also works but costs more to build for little extra gain; leaving it manual is too slow at 60,000 a year."
+    },
+    {
+      "topic": "email routing",
+      "tier": 2,
+      "brief": {
+        "senderName": "Priya Raghunathan",
+        "senderRole": "Customer Support Manager",
+        "senderInitials": "PR",
+        "message": "Our shared inbox is chaos — agents spend ages sorting emails to the right team. I've heard keyword rules are cheap. Would they actually work here, or do we need something cleverer?"
+      },
+      "goal": "Choose the best-value way to handle this step.",
+      "stepTitle": "Sort inbound emails to the right team",
+      "stepDetail": "Each incoming customer email is read and routed to the department best placed to answer it.",
+      "characteristics": {
+        "volumePerYear": 60000,
+        "manualMinutesPerRun": 3,
+        "riskCostPerFailure": 15,
+        "variability": "some",
+        "structure": "free"
+      },
+      "options": [
+        {
+          "intervention": "manual",
+          "buildCost": 0,
+          "annualMaintenance": 0,
+          "errorRate": 0.03,
+          "residualMinutesPerRun": 3
+        },
+        {
+          "intervention": "rules",
+          "buildCost": 5000,
+          "annualMaintenance": 1500,
+          "errorRate": 0.15,
+          "residualMinutesPerRun": 0.5
+        },
+        {
+          "intervention": "llm",
+          "buildCost": 7000,
+          "annualMaintenance": 12000,
+          "errorRate": 0.03,
+          "residualMinutesPerRun": 0.3
+        },
+        {
+          "intervention": "custom-app",
+          "buildCost": 75000,
+          "annualMaintenance": 9000,
+          "errorRate": 0.02,
+          "residualMinutesPerRun": 0.2
+        }
+      ],
+      "explanation": "The input is free-text email, so keyword rules misroute it constantly — their build looks cheap but the misroutes cost so much they barely beat doing nothing. An LLM reads intent and routes accurately for a modest run cost — the best value. A custom app also works but costs more to build for little extra gain; leaving it manual is too slow at 60,000 a year."
+    }
+  ],
+  "3": [
+    {
+      "topic": "regional report",
+      "tier": 3,
+      "brief": {
+        "senderName": "Eleanor Whitmore",
+        "senderRole": "Regional Finance Analyst",
+        "senderInitials": "EW",
+        "message": "I pull the monthly regional summary into our standard deck by hand. Someone suggested we commission a bespoke app to automate it — that sounds exciting, but is it worth it for something I do once a month?"
+      },
+      "goal": "Choose the best-value way to handle this step.",
+      "stepTitle": "Compile the monthly regional summary",
+      "stepDetail": "Once a month, figures and commentary are gathered and laid into the standard summary deck.",
+      "characteristics": {
+        "volumePerYear": 120,
+        "manualMinutesPerRun": 12,
+        "riskCostPerFailure": 25,
+        "variability": "some",
+        "structure": "semi"
+      },
+      "options": [
+        {
+          "intervention": "manual",
+          "buildCost": 0,
+          "annualMaintenance": 0,
+          "errorRate": 0.04,
+          "residualMinutesPerRun": 12
+        },
+        {
+          "intervention": "rules",
+          "buildCost": 6000,
+          "annualMaintenance": 800,
+          "errorRate": 0.05,
+          "residualMinutesPerRun": 3
+        },
+        {
+          "intervention": "llm",
+          "buildCost": 5000,
+          "annualMaintenance": 1500,
+          "errorRate": 0.03,
+          "residualMinutesPerRun": 2
+        },
+        {
+          "intervention": "custom-app",
+          "buildCost": 40000,
+          "annualMaintenance": 3500,
+          "errorRate": 0.02,
+          "residualMinutesPerRun": 1
+        }
+      ],
+      "explanation": "This runs only ~120 times a year, so the labour it could save is small — and every build option's amortised cost and upkeep exceed that saving, so they all lose money versus the status quo. The bespoke app is the shiny trap: a £40k build to shave a few hours a year. The right-sized answer is to leave it manual and spend the budget where volume actually repays it."
+    },
+    {
+      "topic": "regional report",
+      "tier": 3,
+      "brief": {
+        "senderName": "Eleanor Whitmore",
+        "senderRole": "Regional Finance Analyst",
+        "senderInitials": "EW",
+        "message": "I pull the monthly regional summary into our standard deck by hand. Someone suggested we commission a bespoke app to automate it — that sounds exciting, but is it worth it for something I do once a month?"
+      },
+      "goal": "Choose the best-value way to handle this step.",
+      "stepTitle": "Compile the monthly regional summary",
+      "stepDetail": "Once a month, figures and commentary are gathered and laid into the standard summary deck.",
+      "characteristics": {
+        "volumePerYear": 120,
+        "manualMinutesPerRun": 12,
+        "riskCostPerFailure": 25,
+        "variability": "some",
+        "structure": "semi"
+      },
+      "options": [
+        {
+          "intervention": "manual",
+          "buildCost": 0,
+          "annualMaintenance": 0,
+          "errorRate": 0.04,
+          "residualMinutesPerRun": 12
+        },
+        {
+          "intervention": "rules",
+          "buildCost": 6000,
+          "annualMaintenance": 800,
+          "errorRate": 0.05,
+          "residualMinutesPerRun": 3
+        },
+        {
+          "intervention": "llm",
+          "buildCost": 5000,
+          "annualMaintenance": 1500,
+          "errorRate": 0.03,
+          "residualMinutesPerRun": 2
+        },
+        {
+          "intervention": "custom-app",
+          "buildCost": 40000,
+          "annualMaintenance": 3500,
+          "errorRate": 0.02,
+          "residualMinutesPerRun": 1
+        }
+      ],
+      "explanation": "This runs only ~120 times a year, so the labour it could save is small — and every build option's amortised cost and upkeep exceed that saving, so they all lose money versus the status quo. The bespoke app is the shiny trap: a £40k build to shave a few hours a year. The right-sized answer is to leave it manual and spend the budget where volume actually repays it."
+    },
+    {
+      "topic": "regional report",
+      "tier": 3,
+      "brief": {
+        "senderName": "Eleanor Whitmore",
+        "senderRole": "Regional Finance Analyst",
+        "senderInitials": "EW",
+        "message": "I pull the monthly regional summary into our standard deck by hand. Someone suggested we commission a bespoke app to automate it — that sounds exciting, but is it worth it for something I do once a month?"
+      },
+      "goal": "Choose the best-value way to handle this step.",
+      "stepTitle": "Compile the monthly regional summary",
+      "stepDetail": "Once a month, figures and commentary are gathered and laid into the standard summary deck.",
+      "characteristics": {
+        "volumePerYear": 120,
+        "manualMinutesPerRun": 12,
+        "riskCostPerFailure": 25,
+        "variability": "some",
+        "structure": "semi"
+      },
+      "options": [
+        {
+          "intervention": "manual",
+          "buildCost": 0,
+          "annualMaintenance": 0,
+          "errorRate": 0.04,
+          "residualMinutesPerRun": 12
+        },
+        {
+          "intervention": "rules",
+          "buildCost": 6000,
+          "annualMaintenance": 800,
+          "errorRate": 0.05,
+          "residualMinutesPerRun": 3
+        },
+        {
+          "intervention": "llm",
+          "buildCost": 5000,
+          "annualMaintenance": 1500,
+          "errorRate": 0.03,
+          "residualMinutesPerRun": 2
+        },
+        {
+          "intervention": "custom-app",
+          "buildCost": 40000,
+          "annualMaintenance": 3500,
+          "errorRate": 0.02,
+          "residualMinutesPerRun": 1
+        }
+      ],
+      "explanation": "This runs only ~120 times a year, so the labour it could save is small — and every build option's amortised cost and upkeep exceed that saving, so they all lose money versus the status quo. The bespoke app is the shiny trap: a £40k build to shave a few hours a year. The right-sized answer is to leave it manual and spend the budget where volume actually repays it."
+    },
+    {
+      "topic": "regional report",
+      "tier": 3,
+      "brief": {
+        "senderName": "Eleanor Whitmore",
+        "senderRole": "Regional Finance Analyst",
+        "senderInitials": "EW",
+        "message": "I pull the monthly regional summary into our standard deck by hand. Someone suggested we commission a bespoke app to automate it — that sounds exciting, but is it worth it for something I do once a month?"
+      },
+      "goal": "Choose the best-value way to handle this step.",
+      "stepTitle": "Compile the monthly regional summary",
+      "stepDetail": "Once a month, figures and commentary are gathered and laid into the standard summary deck.",
+      "characteristics": {
+        "volumePerYear": 120,
+        "manualMinutesPerRun": 12,
+        "riskCostPerFailure": 25,
+        "variability": "some",
+        "structure": "semi"
+      },
+      "options": [
+        {
+          "intervention": "manual",
+          "buildCost": 0,
+          "annualMaintenance": 0,
+          "errorRate": 0.04,
+          "residualMinutesPerRun": 12
+        },
+        {
+          "intervention": "rules",
+          "buildCost": 6000,
+          "annualMaintenance": 800,
+          "errorRate": 0.05,
+          "residualMinutesPerRun": 3
+        },
+        {
+          "intervention": "llm",
+          "buildCost": 5000,
+          "annualMaintenance": 1500,
+          "errorRate": 0.03,
+          "residualMinutesPerRun": 2
+        },
+        {
+          "intervention": "custom-app",
+          "buildCost": 40000,
+          "annualMaintenance": 3500,
+          "errorRate": 0.02,
+          "residualMinutesPerRun": 1
+        }
+      ],
+      "explanation": "This runs only ~120 times a year, so the labour it could save is small — and every build option's amortised cost and upkeep exceed that saving, so they all lose money versus the status quo. The bespoke app is the shiny trap: a £40k build to shave a few hours a year. The right-sized answer is to leave it manual and spend the budget where volume actually repays it."
+    },
+    {
+      "topic": "regional report",
+      "tier": 3,
+      "brief": {
+        "senderName": "Eleanor Whitmore",
+        "senderRole": "Regional Finance Analyst",
+        "senderInitials": "EW",
+        "message": "I pull the monthly regional summary into our standard deck by hand. Someone suggested we commission a bespoke app to automate it — that sounds exciting, but is it worth it for something I do once a month?"
+      },
+      "goal": "Choose the best-value way to handle this step.",
+      "stepTitle": "Compile the monthly regional summary",
+      "stepDetail": "Once a month, figures and commentary are gathered and laid into the standard summary deck.",
+      "characteristics": {
+        "volumePerYear": 120,
+        "manualMinutesPerRun": 12,
+        "riskCostPerFailure": 25,
+        "variability": "some",
+        "structure": "semi"
+      },
+      "options": [
+        {
+          "intervention": "manual",
+          "buildCost": 0,
+          "annualMaintenance": 0,
+          "errorRate": 0.04,
+          "residualMinutesPerRun": 12
+        },
+        {
+          "intervention": "rules",
+          "buildCost": 6000,
+          "annualMaintenance": 800,
+          "errorRate": 0.05,
+          "residualMinutesPerRun": 3
+        },
+        {
+          "intervention": "llm",
+          "buildCost": 5000,
+          "annualMaintenance": 1500,
+          "errorRate": 0.03,
+          "residualMinutesPerRun": 2
+        },
+        {
+          "intervention": "custom-app",
+          "buildCost": 40000,
+          "annualMaintenance": 3500,
+          "errorRate": 0.02,
+          "residualMinutesPerRun": 1
+        }
+      ],
+      "explanation": "This runs only ~120 times a year, so the labour it could save is small — and every build option's amortised cost and upkeep exceed that saving, so they all lose money versus the status quo. The bespoke app is the shiny trap: a £40k build to shave a few hours a year. The right-sized answer is to leave it manual and spend the budget where volume actually repays it."
+    }
+  ],
+  "4": [
+    {
+      "topic": "docket re-keying",
+      "tier": 4,
+      "brief": {
+        "senderName": "Tomas Becker",
+        "senderRole": "Warehouse Systems Manager",
+        "senderInitials": "TB",
+        "message": "We still re-key scanned delivery dockets into the logistics system by hand — thousands a day. It feels too boring to be worth a project, so we've never touched it. Am I wrong to leave it alone?"
+      },
+      "goal": "Choose the best-value way to handle this step.",
+      "stepTitle": "Re-key scanned dockets into logistics",
+      "stepDetail": "Each scanned delivery docket is read and its fields typed into the logistics system.",
+      "characteristics": {
+        "volumePerYear": 250000,
+        "manualMinutesPerRun": 3,
+        "riskCostPerFailure": 8,
+        "variability": "identical",
+        "structure": "structured"
+      },
+      "options": [
+        {
+          "intervention": "manual",
+          "buildCost": 0,
+          "annualMaintenance": 0,
+          "errorRate": 0.03,
+          "residualMinutesPerRun": 3
+        },
+        {
+          "intervention": "rules",
+          "buildCost": 12000,
+          "annualMaintenance": 2000,
+          "errorRate": 0.008,
+          "residualMinutesPerRun": 0.1
+        },
+        {
+          "intervention": "llm",
+          "buildCost": 10000,
+          "annualMaintenance": 40000,
+          "errorRate": 0.01,
+          "residualMinutesPerRun": 0.1
+        },
+        {
+          "intervention": "custom-app",
+          "buildCost": 80000,
+          "annualMaintenance": 10000,
+          "errorRate": 0.005,
+          "residualMinutesPerRun": 0.05
+        }
+      ],
+      "explanation": "At a quarter of a million runs a year, leaving it manual quietly burns a fortune in time — by far the worst option. The dockets are structured and identical, so a rules-based extractor clears them for a small build that repays itself almost immediately — the best value. A custom app also pays back handsomely; an LLM works but its per-call cost adds up to the priciest automation at this volume. Under-building was the real mistake."
+    },
+    {
+      "topic": "docket re-keying",
+      "tier": 4,
+      "brief": {
+        "senderName": "Tomas Becker",
+        "senderRole": "Warehouse Systems Manager",
+        "senderInitials": "TB",
+        "message": "We still re-key scanned delivery dockets into the logistics system by hand — thousands a day. It feels too boring to be worth a project, so we've never touched it. Am I wrong to leave it alone?"
+      },
+      "goal": "Choose the best-value way to handle this step.",
+      "stepTitle": "Re-key scanned dockets into logistics",
+      "stepDetail": "Each scanned delivery docket is read and its fields typed into the logistics system.",
+      "characteristics": {
+        "volumePerYear": 250000,
+        "manualMinutesPerRun": 3,
+        "riskCostPerFailure": 8,
+        "variability": "identical",
+        "structure": "structured"
+      },
+      "options": [
+        {
+          "intervention": "manual",
+          "buildCost": 0,
+          "annualMaintenance": 0,
+          "errorRate": 0.03,
+          "residualMinutesPerRun": 3
+        },
+        {
+          "intervention": "rules",
+          "buildCost": 12000,
+          "annualMaintenance": 2000,
+          "errorRate": 0.008,
+          "residualMinutesPerRun": 0.1
+        },
+        {
+          "intervention": "llm",
+          "buildCost": 10000,
+          "annualMaintenance": 40000,
+          "errorRate": 0.01,
+          "residualMinutesPerRun": 0.1
+        },
+        {
+          "intervention": "custom-app",
+          "buildCost": 80000,
+          "annualMaintenance": 10000,
+          "errorRate": 0.005,
+          "residualMinutesPerRun": 0.05
+        }
+      ],
+      "explanation": "At a quarter of a million runs a year, leaving it manual quietly burns a fortune in time — by far the worst option. The dockets are structured and identical, so a rules-based extractor clears them for a small build that repays itself almost immediately — the best value. A custom app also pays back handsomely; an LLM works but its per-call cost adds up to the priciest automation at this volume. Under-building was the real mistake."
+    },
+    {
+      "topic": "docket re-keying",
+      "tier": 4,
+      "brief": {
+        "senderName": "Tomas Becker",
+        "senderRole": "Warehouse Systems Manager",
+        "senderInitials": "TB",
+        "message": "We still re-key scanned delivery dockets into the logistics system by hand — thousands a day. It feels too boring to be worth a project, so we've never touched it. Am I wrong to leave it alone?"
+      },
+      "goal": "Choose the best-value way to handle this step.",
+      "stepTitle": "Re-key scanned dockets into logistics",
+      "stepDetail": "Each scanned delivery docket is read and its fields typed into the logistics system.",
+      "characteristics": {
+        "volumePerYear": 250000,
+        "manualMinutesPerRun": 3,
+        "riskCostPerFailure": 8,
+        "variability": "identical",
+        "structure": "structured"
+      },
+      "options": [
+        {
+          "intervention": "manual",
+          "buildCost": 0,
+          "annualMaintenance": 0,
+          "errorRate": 0.03,
+          "residualMinutesPerRun": 3
+        },
+        {
+          "intervention": "rules",
+          "buildCost": 12000,
+          "annualMaintenance": 2000,
+          "errorRate": 0.008,
+          "residualMinutesPerRun": 0.1
+        },
+        {
+          "intervention": "llm",
+          "buildCost": 10000,
+          "annualMaintenance": 40000,
+          "errorRate": 0.01,
+          "residualMinutesPerRun": 0.1
+        },
+        {
+          "intervention": "custom-app",
+          "buildCost": 80000,
+          "annualMaintenance": 10000,
+          "errorRate": 0.005,
+          "residualMinutesPerRun": 0.05
+        }
+      ],
+      "explanation": "At a quarter of a million runs a year, leaving it manual quietly burns a fortune in time — by far the worst option. The dockets are structured and identical, so a rules-based extractor clears them for a small build that repays itself almost immediately — the best value. A custom app also pays back handsomely; an LLM works but its per-call cost adds up to the priciest automation at this volume. Under-building was the real mistake."
+    },
+    {
+      "topic": "docket re-keying",
+      "tier": 4,
+      "brief": {
+        "senderName": "Tomas Becker",
+        "senderRole": "Warehouse Systems Manager",
+        "senderInitials": "TB",
+        "message": "We still re-key scanned delivery dockets into the logistics system by hand — thousands a day. It feels too boring to be worth a project, so we've never touched it. Am I wrong to leave it alone?"
+      },
+      "goal": "Choose the best-value way to handle this step.",
+      "stepTitle": "Re-key scanned dockets into logistics",
+      "stepDetail": "Each scanned delivery docket is read and its fields typed into the logistics system.",
+      "characteristics": {
+        "volumePerYear": 250000,
+        "manualMinutesPerRun": 3,
+        "riskCostPerFailure": 8,
+        "variability": "identical",
+        "structure": "structured"
+      },
+      "options": [
+        {
+          "intervention": "manual",
+          "buildCost": 0,
+          "annualMaintenance": 0,
+          "errorRate": 0.03,
+          "residualMinutesPerRun": 3
+        },
+        {
+          "intervention": "rules",
+          "buildCost": 12000,
+          "annualMaintenance": 2000,
+          "errorRate": 0.008,
+          "residualMinutesPerRun": 0.1
+        },
+        {
+          "intervention": "llm",
+          "buildCost": 10000,
+          "annualMaintenance": 40000,
+          "errorRate": 0.01,
+          "residualMinutesPerRun": 0.1
+        },
+        {
+          "intervention": "custom-app",
+          "buildCost": 80000,
+          "annualMaintenance": 10000,
+          "errorRate": 0.005,
+          "residualMinutesPerRun": 0.05
+        }
+      ],
+      "explanation": "At a quarter of a million runs a year, leaving it manual quietly burns a fortune in time — by far the worst option. The dockets are structured and identical, so a rules-based extractor clears them for a small build that repays itself almost immediately — the best value. A custom app also pays back handsomely; an LLM works but its per-call cost adds up to the priciest automation at this volume. Under-building was the real mistake."
+    },
+    {
+      "topic": "docket re-keying",
+      "tier": 4,
+      "brief": {
+        "senderName": "Tomas Becker",
+        "senderRole": "Warehouse Systems Manager",
+        "senderInitials": "TB",
+        "message": "We still re-key scanned delivery dockets into the logistics system by hand — thousands a day. It feels too boring to be worth a project, so we've never touched it. Am I wrong to leave it alone?"
+      },
+      "goal": "Choose the best-value way to handle this step.",
+      "stepTitle": "Re-key scanned dockets into logistics",
+      "stepDetail": "Each scanned delivery docket is read and its fields typed into the logistics system.",
+      "characteristics": {
+        "volumePerYear": 250000,
+        "manualMinutesPerRun": 3,
+        "riskCostPerFailure": 8,
+        "variability": "identical",
+        "structure": "structured"
+      },
+      "options": [
+        {
+          "intervention": "manual",
+          "buildCost": 0,
+          "annualMaintenance": 0,
+          "errorRate": 0.03,
+          "residualMinutesPerRun": 3
+        },
+        {
+          "intervention": "rules",
+          "buildCost": 12000,
+          "annualMaintenance": 2000,
+          "errorRate": 0.008,
+          "residualMinutesPerRun": 0.1
+        },
+        {
+          "intervention": "llm",
+          "buildCost": 10000,
+          "annualMaintenance": 40000,
+          "errorRate": 0.01,
+          "residualMinutesPerRun": 0.1
+        },
+        {
+          "intervention": "custom-app",
+          "buildCost": 80000,
+          "annualMaintenance": 10000,
+          "errorRate": 0.005,
+          "residualMinutesPerRun": 0.05
+        }
+      ],
+      "explanation": "At a quarter of a million runs a year, leaving it manual quietly burns a fortune in time — by far the worst option. The dockets are structured and identical, so a rules-based extractor clears them for a small build that repays itself almost immediately — the best value. A custom app also pays back handsomely; an LLM works but its per-call cost adds up to the priciest automation at this volume. Under-building was the real mistake."
+    }
+  ],
+  "5": [
+    {
+      "topic": "fraud screening",
+      "tier": 5,
+      "brief": {
+        "senderName": "Nadia Hassan",
+        "senderRole": "Claims Risk Director",
+        "senderInitials": "NH",
+        "message": "We screen every claim for fraud signals before routing it. Volume is high, the write-ups are messy free text, and a wrong call is expensive. I need the option that actually holds up — not the cheapest sticking-plaster."
+      },
+      "goal": "Choose the best-value way to handle this step.",
+      "stepTitle": "Screen claims for fraud signals",
+      "stepDetail": "Each claim's free-text write-up is reviewed for fraud indicators and routed accordingly.",
+      "characteristics": {
+        "volumePerYear": 80000,
+        "manualMinutesPerRun": 20,
+        "riskCostPerFailure": 400,
+        "variability": "high",
+        "structure": "free"
+      },
+      "options": [
+        {
+          "intervention": "manual",
+          "buildCost": 0,
+          "annualMaintenance": 0,
+          "errorRate": 0.06,
+          "residualMinutesPerRun": 20
+        },
+        {
+          "intervention": "rules",
+          "buildCost": 15000,
+          "annualMaintenance": 3000,
+          "errorRate": 0.2,
+          "residualMinutesPerRun": 4
+        },
+        {
+          "intervention": "llm",
+          "buildCost": 20000,
+          "annualMaintenance": 30000,
+          "errorRate": 0.05,
+          "residualMinutesPerRun": 3
+        },
+        {
+          "intervention": "custom-app",
+          "buildCost": 120000,
+          "annualMaintenance": 25000,
+          "errorRate": 0.02,
+          "residualMinutesPerRun": 2
+        }
+      ],
+      "explanation": "Volume is high, the text is messy and varied, and each mistake costs £400 — so failure cost dominates everything. Brittle keyword rules misjudge so many claims they cost more than doing nothing; manual is slow and error-prone; a plain LLM is a defensible second but still lets enough errors through to leave real money on the table. A purpose-built application drives the error rate low enough that, even with its big build, it is the cheapest overall. When stakes and volume are both high, the real build pays for itself."
+    },
+    {
+      "topic": "fraud screening",
+      "tier": 5,
+      "brief": {
+        "senderName": "Nadia Hassan",
+        "senderRole": "Claims Risk Director",
+        "senderInitials": "NH",
+        "message": "We screen every claim for fraud signals before routing it. Volume is high, the write-ups are messy free text, and a wrong call is expensive. I need the option that actually holds up — not the cheapest sticking-plaster."
+      },
+      "goal": "Choose the best-value way to handle this step.",
+      "stepTitle": "Screen claims for fraud signals",
+      "stepDetail": "Each claim's free-text write-up is reviewed for fraud indicators and routed accordingly.",
+      "characteristics": {
+        "volumePerYear": 80000,
+        "manualMinutesPerRun": 20,
+        "riskCostPerFailure": 400,
+        "variability": "high",
+        "structure": "free"
+      },
+      "options": [
+        {
+          "intervention": "manual",
+          "buildCost": 0,
+          "annualMaintenance": 0,
+          "errorRate": 0.06,
+          "residualMinutesPerRun": 20
+        },
+        {
+          "intervention": "rules",
+          "buildCost": 15000,
+          "annualMaintenance": 3000,
+          "errorRate": 0.2,
+          "residualMinutesPerRun": 4
+        },
+        {
+          "intervention": "llm",
+          "buildCost": 20000,
+          "annualMaintenance": 30000,
+          "errorRate": 0.05,
+          "residualMinutesPerRun": 3
+        },
+        {
+          "intervention": "custom-app",
+          "buildCost": 120000,
+          "annualMaintenance": 25000,
+          "errorRate": 0.02,
+          "residualMinutesPerRun": 2
+        }
+      ],
+      "explanation": "Volume is high, the text is messy and varied, and each mistake costs £400 — so failure cost dominates everything. Brittle keyword rules misjudge so many claims they cost more than doing nothing; manual is slow and error-prone; a plain LLM is a defensible second but still lets enough errors through to leave real money on the table. A purpose-built application drives the error rate low enough that, even with its big build, it is the cheapest overall. When stakes and volume are both high, the real build pays for itself."
+    },
+    {
+      "topic": "fraud screening",
+      "tier": 5,
+      "brief": {
+        "senderName": "Nadia Hassan",
+        "senderRole": "Claims Risk Director",
+        "senderInitials": "NH",
+        "message": "We screen every claim for fraud signals before routing it. Volume is high, the write-ups are messy free text, and a wrong call is expensive. I need the option that actually holds up — not the cheapest sticking-plaster."
+      },
+      "goal": "Choose the best-value way to handle this step.",
+      "stepTitle": "Screen claims for fraud signals",
+      "stepDetail": "Each claim's free-text write-up is reviewed for fraud indicators and routed accordingly.",
+      "characteristics": {
+        "volumePerYear": 80000,
+        "manualMinutesPerRun": 20,
+        "riskCostPerFailure": 400,
+        "variability": "high",
+        "structure": "free"
+      },
+      "options": [
+        {
+          "intervention": "manual",
+          "buildCost": 0,
+          "annualMaintenance": 0,
+          "errorRate": 0.06,
+          "residualMinutesPerRun": 20
+        },
+        {
+          "intervention": "rules",
+          "buildCost": 15000,
+          "annualMaintenance": 3000,
+          "errorRate": 0.2,
+          "residualMinutesPerRun": 4
+        },
+        {
+          "intervention": "llm",
+          "buildCost": 20000,
+          "annualMaintenance": 30000,
+          "errorRate": 0.05,
+          "residualMinutesPerRun": 3
+        },
+        {
+          "intervention": "custom-app",
+          "buildCost": 120000,
+          "annualMaintenance": 25000,
+          "errorRate": 0.02,
+          "residualMinutesPerRun": 2
+        }
+      ],
+      "explanation": "Volume is high, the text is messy and varied, and each mistake costs £400 — so failure cost dominates everything. Brittle keyword rules misjudge so many claims they cost more than doing nothing; manual is slow and error-prone; a plain LLM is a defensible second but still lets enough errors through to leave real money on the table. A purpose-built application drives the error rate low enough that, even with its big build, it is the cheapest overall. When stakes and volume are both high, the real build pays for itself."
+    },
+    {
+      "topic": "fraud screening",
+      "tier": 5,
+      "brief": {
+        "senderName": "Nadia Hassan",
+        "senderRole": "Claims Risk Director",
+        "senderInitials": "NH",
+        "message": "We screen every claim for fraud signals before routing it. Volume is high, the write-ups are messy free text, and a wrong call is expensive. I need the option that actually holds up — not the cheapest sticking-plaster."
+      },
+      "goal": "Choose the best-value way to handle this step.",
+      "stepTitle": "Screen claims for fraud signals",
+      "stepDetail": "Each claim's free-text write-up is reviewed for fraud indicators and routed accordingly.",
+      "characteristics": {
+        "volumePerYear": 80000,
+        "manualMinutesPerRun": 20,
+        "riskCostPerFailure": 400,
+        "variability": "high",
+        "structure": "free"
+      },
+      "options": [
+        {
+          "intervention": "manual",
+          "buildCost": 0,
+          "annualMaintenance": 0,
+          "errorRate": 0.06,
+          "residualMinutesPerRun": 20
+        },
+        {
+          "intervention": "rules",
+          "buildCost": 15000,
+          "annualMaintenance": 3000,
+          "errorRate": 0.2,
+          "residualMinutesPerRun": 4
+        },
+        {
+          "intervention": "llm",
+          "buildCost": 20000,
+          "annualMaintenance": 30000,
+          "errorRate": 0.05,
+          "residualMinutesPerRun": 3
+        },
+        {
+          "intervention": "custom-app",
+          "buildCost": 120000,
+          "annualMaintenance": 25000,
+          "errorRate": 0.02,
+          "residualMinutesPerRun": 2
+        }
+      ],
+      "explanation": "Volume is high, the text is messy and varied, and each mistake costs £400 — so failure cost dominates everything. Brittle keyword rules misjudge so many claims they cost more than doing nothing; manual is slow and error-prone; a plain LLM is a defensible second but still lets enough errors through to leave real money on the table. A purpose-built application drives the error rate low enough that, even with its big build, it is the cheapest overall. When stakes and volume are both high, the real build pays for itself."
+    },
+    {
+      "topic": "fraud screening",
+      "tier": 5,
+      "brief": {
+        "senderName": "Nadia Hassan",
+        "senderRole": "Claims Risk Director",
+        "senderInitials": "NH",
+        "message": "We screen every claim for fraud signals before routing it. Volume is high, the write-ups are messy free text, and a wrong call is expensive. I need the option that actually holds up — not the cheapest sticking-plaster."
+      },
+      "goal": "Choose the best-value way to handle this step.",
+      "stepTitle": "Screen claims for fraud signals",
+      "stepDetail": "Each claim's free-text write-up is reviewed for fraud indicators and routed accordingly.",
+      "characteristics": {
+        "volumePerYear": 80000,
+        "manualMinutesPerRun": 20,
+        "riskCostPerFailure": 400,
+        "variability": "high",
+        "structure": "free"
+      },
+      "options": [
+        {
+          "intervention": "manual",
+          "buildCost": 0,
+          "annualMaintenance": 0,
+          "errorRate": 0.06,
+          "residualMinutesPerRun": 20
+        },
+        {
+          "intervention": "rules",
+          "buildCost": 15000,
+          "annualMaintenance": 3000,
+          "errorRate": 0.2,
+          "residualMinutesPerRun": 4
+        },
+        {
+          "intervention": "llm",
+          "buildCost": 20000,
+          "annualMaintenance": 30000,
+          "errorRate": 0.05,
+          "residualMinutesPerRun": 3
+        },
+        {
+          "intervention": "custom-app",
+          "buildCost": 120000,
+          "annualMaintenance": 25000,
+          "errorRate": 0.02,
+          "residualMinutesPerRun": 2
+        }
+      ],
+      "explanation": "Volume is high, the text is messy and varied, and each mistake costs £400 — so failure cost dominates everything. Brittle keyword rules misjudge so many claims they cost more than doing nothing; manual is slow and error-prone; a plain LLM is a defensible second but still lets enough errors through to leave real money on the table. A purpose-built application drives the error rate low enough that, even with its big build, it is the cheapest overall. When stakes and volume are both high, the real build pays for itself."
+    }
+  ]
+}

@@ -1,1 +1,937 @@
-{}
+{
+  "1": [
+    {
+      "topic": "expense policy",
+      "task": {
+        "senderName": "Hugo Bennett",
+        "senderRole": "Team Lead",
+        "senderInitials": "HB",
+        "message": "Quick one: our policy says any expense over £50 needs a receipt attached. Priya submitted a £42 taxi fare. Does she need to attach a receipt?"
+      },
+      "question": "Does the £42 taxi fare need a receipt?",
+      "options": [
+        {
+          "id": "o1",
+          "text": "No — no receipt needed"
+        },
+        {
+          "id": "o2",
+          "text": "Yes — a receipt is required"
+        },
+        {
+          "id": "o3",
+          "text": "Only if it's a taxi"
+        }
+      ],
+      "snapAnswerId": "o1",
+      "snapAnswerText": "No — she doesn't need a receipt.",
+      "reasoning": [
+        "The rule: a receipt is required only when an expense is over £50.",
+        "The taxi fare is £42.",
+        "£42 is below the £50 threshold, so the rule doesn't trigger."
+      ],
+      "reasonedAnswerId": "o1",
+      "correctOptionId": "o1",
+      "snapCorrect": true,
+      "explanation": "Correct answer: No. This is a single-step rule check — £42 is under the £50 threshold — so the quick answer was right and didn't need deep working."
+    },
+    {
+      "topic": "expense policy",
+      "task": {
+        "senderName": "Hugo Bennett",
+        "senderRole": "Team Lead",
+        "senderInitials": "HB",
+        "message": "Quick one: our policy says any expense over £50 needs a receipt attached. Priya submitted a £42 taxi fare. Does she need to attach a receipt?"
+      },
+      "question": "Does the £42 taxi fare need a receipt?",
+      "options": [
+        {
+          "id": "o1",
+          "text": "No — no receipt needed"
+        },
+        {
+          "id": "o2",
+          "text": "Yes — a receipt is required"
+        },
+        {
+          "id": "o3",
+          "text": "Only if it's a taxi"
+        }
+      ],
+      "snapAnswerId": "o1",
+      "snapAnswerText": "No — she doesn't need a receipt.",
+      "reasoning": [
+        "The rule: a receipt is required only when an expense is over £50.",
+        "The taxi fare is £42.",
+        "£42 is below the £50 threshold, so the rule doesn't trigger."
+      ],
+      "reasonedAnswerId": "o1",
+      "correctOptionId": "o1",
+      "snapCorrect": true,
+      "explanation": "Correct answer: No. This is a single-step rule check — £42 is under the £50 threshold — so the quick answer was right and didn't need deep working."
+    },
+    {
+      "topic": "expense policy",
+      "task": {
+        "senderName": "Hugo Bennett",
+        "senderRole": "Team Lead",
+        "senderInitials": "HB",
+        "message": "Quick one: our policy says any expense over £50 needs a receipt attached. Priya submitted a £42 taxi fare. Does she need to attach a receipt?"
+      },
+      "question": "Does the £42 taxi fare need a receipt?",
+      "options": [
+        {
+          "id": "o1",
+          "text": "No — no receipt needed"
+        },
+        {
+          "id": "o2",
+          "text": "Yes — a receipt is required"
+        },
+        {
+          "id": "o3",
+          "text": "Only if it's a taxi"
+        }
+      ],
+      "snapAnswerId": "o1",
+      "snapAnswerText": "No — she doesn't need a receipt.",
+      "reasoning": [
+        "The rule: a receipt is required only when an expense is over £50.",
+        "The taxi fare is £42.",
+        "£42 is below the £50 threshold, so the rule doesn't trigger."
+      ],
+      "reasonedAnswerId": "o1",
+      "correctOptionId": "o1",
+      "snapCorrect": true,
+      "explanation": "Correct answer: No. This is a single-step rule check — £42 is under the £50 threshold — so the quick answer was right and didn't need deep working."
+    },
+    {
+      "topic": "expense policy",
+      "task": {
+        "senderName": "Hugo Bennett",
+        "senderRole": "Team Lead",
+        "senderInitials": "HB",
+        "message": "Quick one: our policy says any expense over £50 needs a receipt attached. Priya submitted a £42 taxi fare. Does she need to attach a receipt?"
+      },
+      "question": "Does the £42 taxi fare need a receipt?",
+      "options": [
+        {
+          "id": "o1",
+          "text": "No — no receipt needed"
+        },
+        {
+          "id": "o2",
+          "text": "Yes — a receipt is required"
+        },
+        {
+          "id": "o3",
+          "text": "Only if it's a taxi"
+        }
+      ],
+      "snapAnswerId": "o1",
+      "snapAnswerText": "No — she doesn't need a receipt.",
+      "reasoning": [
+        "The rule: a receipt is required only when an expense is over £50.",
+        "The taxi fare is £42.",
+        "£42 is below the £50 threshold, so the rule doesn't trigger."
+      ],
+      "reasonedAnswerId": "o1",
+      "correctOptionId": "o1",
+      "snapCorrect": true,
+      "explanation": "Correct answer: No. This is a single-step rule check — £42 is under the £50 threshold — so the quick answer was right and didn't need deep working."
+    },
+    {
+      "topic": "expense policy",
+      "task": {
+        "senderName": "Hugo Bennett",
+        "senderRole": "Team Lead",
+        "senderInitials": "HB",
+        "message": "Quick one: our policy says any expense over £50 needs a receipt attached. Priya submitted a £42 taxi fare. Does she need to attach a receipt?"
+      },
+      "question": "Does the £42 taxi fare need a receipt?",
+      "options": [
+        {
+          "id": "o1",
+          "text": "No — no receipt needed"
+        },
+        {
+          "id": "o2",
+          "text": "Yes — a receipt is required"
+        },
+        {
+          "id": "o3",
+          "text": "Only if it's a taxi"
+        }
+      ],
+      "snapAnswerId": "o1",
+      "snapAnswerText": "No — she doesn't need a receipt.",
+      "reasoning": [
+        "The rule: a receipt is required only when an expense is over £50.",
+        "The taxi fare is £42.",
+        "£42 is below the £50 threshold, so the rule doesn't trigger."
+      ],
+      "reasonedAnswerId": "o1",
+      "correctOptionId": "o1",
+      "snapCorrect": true,
+      "explanation": "Correct answer: No. This is a single-step rule check — £42 is under the £50 threshold — so the quick answer was right and didn't need deep working."
+    }
+  ],
+  "2": [
+    {
+      "topic": "delivery date",
+      "task": {
+        "senderName": "Lucia Romano",
+        "senderRole": "Operations Coordinator",
+        "senderInitials": "LR",
+        "message": "An order ships today, Monday, and the courier quotes 2 business days for delivery (business days are Mon-Fri). Which day should the customer expect it?"
+      },
+      "question": "Which day will the order arrive?",
+      "options": [
+        {
+          "id": "o1",
+          "text": "Tuesday"
+        },
+        {
+          "id": "o2",
+          "text": "Wednesday"
+        },
+        {
+          "id": "o3",
+          "text": "Thursday"
+        }
+      ],
+      "snapAnswerId": "o2",
+      "snapAnswerText": "Wednesday.",
+      "reasoning": [
+        "Ships Monday; count 2 business days forward.",
+        "Business day 1 after Monday is Tuesday.",
+        "Business day 2 is Wednesday — no weekend falls in between."
+      ],
+      "reasonedAnswerId": "o2",
+      "correctOptionId": "o2",
+      "snapCorrect": true,
+      "explanation": "Correct answer: Wednesday. Two business days from Monday lands mid-week with no weekend to skip, so the quick answer held up."
+    },
+    {
+      "topic": "delivery date",
+      "task": {
+        "senderName": "Lucia Romano",
+        "senderRole": "Operations Coordinator",
+        "senderInitials": "LR",
+        "message": "An order ships today, Monday, and the courier quotes 2 business days for delivery (business days are Mon-Fri). Which day should the customer expect it?"
+      },
+      "question": "Which day will the order arrive?",
+      "options": [
+        {
+          "id": "o1",
+          "text": "Tuesday"
+        },
+        {
+          "id": "o2",
+          "text": "Wednesday"
+        },
+        {
+          "id": "o3",
+          "text": "Thursday"
+        }
+      ],
+      "snapAnswerId": "o2",
+      "snapAnswerText": "Wednesday.",
+      "reasoning": [
+        "Ships Monday; count 2 business days forward.",
+        "Business day 1 after Monday is Tuesday.",
+        "Business day 2 is Wednesday — no weekend falls in between."
+      ],
+      "reasonedAnswerId": "o2",
+      "correctOptionId": "o2",
+      "snapCorrect": true,
+      "explanation": "Correct answer: Wednesday. Two business days from Monday lands mid-week with no weekend to skip, so the quick answer held up."
+    },
+    {
+      "topic": "delivery date",
+      "task": {
+        "senderName": "Lucia Romano",
+        "senderRole": "Operations Coordinator",
+        "senderInitials": "LR",
+        "message": "An order ships today, Monday, and the courier quotes 2 business days for delivery (business days are Mon-Fri). Which day should the customer expect it?"
+      },
+      "question": "Which day will the order arrive?",
+      "options": [
+        {
+          "id": "o1",
+          "text": "Tuesday"
+        },
+        {
+          "id": "o2",
+          "text": "Wednesday"
+        },
+        {
+          "id": "o3",
+          "text": "Thursday"
+        }
+      ],
+      "snapAnswerId": "o2",
+      "snapAnswerText": "Wednesday.",
+      "reasoning": [
+        "Ships Monday; count 2 business days forward.",
+        "Business day 1 after Monday is Tuesday.",
+        "Business day 2 is Wednesday — no weekend falls in between."
+      ],
+      "reasonedAnswerId": "o2",
+      "correctOptionId": "o2",
+      "snapCorrect": true,
+      "explanation": "Correct answer: Wednesday. Two business days from Monday lands mid-week with no weekend to skip, so the quick answer held up."
+    },
+    {
+      "topic": "delivery date",
+      "task": {
+        "senderName": "Lucia Romano",
+        "senderRole": "Operations Coordinator",
+        "senderInitials": "LR",
+        "message": "An order ships today, Monday, and the courier quotes 2 business days for delivery (business days are Mon-Fri). Which day should the customer expect it?"
+      },
+      "question": "Which day will the order arrive?",
+      "options": [
+        {
+          "id": "o1",
+          "text": "Tuesday"
+        },
+        {
+          "id": "o2",
+          "text": "Wednesday"
+        },
+        {
+          "id": "o3",
+          "text": "Thursday"
+        }
+      ],
+      "snapAnswerId": "o2",
+      "snapAnswerText": "Wednesday.",
+      "reasoning": [
+        "Ships Monday; count 2 business days forward.",
+        "Business day 1 after Monday is Tuesday.",
+        "Business day 2 is Wednesday — no weekend falls in between."
+      ],
+      "reasonedAnswerId": "o2",
+      "correctOptionId": "o2",
+      "snapCorrect": true,
+      "explanation": "Correct answer: Wednesday. Two business days from Monday lands mid-week with no weekend to skip, so the quick answer held up."
+    },
+    {
+      "topic": "delivery date",
+      "task": {
+        "senderName": "Lucia Romano",
+        "senderRole": "Operations Coordinator",
+        "senderInitials": "LR",
+        "message": "An order ships today, Monday, and the courier quotes 2 business days for delivery (business days are Mon-Fri). Which day should the customer expect it?"
+      },
+      "question": "Which day will the order arrive?",
+      "options": [
+        {
+          "id": "o1",
+          "text": "Tuesday"
+        },
+        {
+          "id": "o2",
+          "text": "Wednesday"
+        },
+        {
+          "id": "o3",
+          "text": "Thursday"
+        }
+      ],
+      "snapAnswerId": "o2",
+      "snapAnswerText": "Wednesday.",
+      "reasoning": [
+        "Ships Monday; count 2 business days forward.",
+        "Business day 1 after Monday is Tuesday.",
+        "Business day 2 is Wednesday — no weekend falls in between."
+      ],
+      "reasonedAnswerId": "o2",
+      "correctOptionId": "o2",
+      "snapCorrect": true,
+      "explanation": "Correct answer: Wednesday. Two business days from Monday lands mid-week with no weekend to skip, so the quick answer held up."
+    }
+  ],
+  "3": [
+    {
+      "topic": "support SLA",
+      "task": {
+        "senderName": "Derek Owusu",
+        "senderRole": "Support Manager",
+        "senderInitials": "DO",
+        "message": "A ticket was logged on Thursday. Our SLA is to resolve within 3 business days (business days are Mon-Fri; weekends don't count). What's the resolution deadline?"
+      },
+      "question": "What is the resolution deadline?",
+      "options": [
+        {
+          "id": "o1",
+          "text": "Sunday"
+        },
+        {
+          "id": "o2",
+          "text": "Monday"
+        },
+        {
+          "id": "o3",
+          "text": "Tuesday"
+        },
+        {
+          "id": "o4",
+          "text": "Friday"
+        }
+      ],
+      "snapAnswerId": "o1",
+      "snapAnswerText": "Sunday.",
+      "reasoning": [
+        "Start the count the day after Thursday.",
+        "Business day 1 is Friday.",
+        "Saturday and Sunday are weekend days — they don't count.",
+        "Business day 2 is Monday; business day 3 is Tuesday."
+      ],
+      "reasonedAnswerId": "o3",
+      "correctOptionId": "o3",
+      "snapCorrect": false,
+      "explanation": "Correct answer: Tuesday. The snap answer added 3 calendar days (Thu → Sun) and ignored the weekend. Counting business days skips Saturday and Sunday, landing on Tuesday."
+    },
+    {
+      "topic": "support SLA",
+      "task": {
+        "senderName": "Derek Owusu",
+        "senderRole": "Support Manager",
+        "senderInitials": "DO",
+        "message": "A ticket was logged on Thursday. Our SLA is to resolve within 3 business days (business days are Mon-Fri; weekends don't count). What's the resolution deadline?"
+      },
+      "question": "What is the resolution deadline?",
+      "options": [
+        {
+          "id": "o1",
+          "text": "Sunday"
+        },
+        {
+          "id": "o2",
+          "text": "Monday"
+        },
+        {
+          "id": "o3",
+          "text": "Tuesday"
+        },
+        {
+          "id": "o4",
+          "text": "Friday"
+        }
+      ],
+      "snapAnswerId": "o1",
+      "snapAnswerText": "Sunday.",
+      "reasoning": [
+        "Start the count the day after Thursday.",
+        "Business day 1 is Friday.",
+        "Saturday and Sunday are weekend days — they don't count.",
+        "Business day 2 is Monday; business day 3 is Tuesday."
+      ],
+      "reasonedAnswerId": "o3",
+      "correctOptionId": "o3",
+      "snapCorrect": false,
+      "explanation": "Correct answer: Tuesday. The snap answer added 3 calendar days (Thu → Sun) and ignored the weekend. Counting business days skips Saturday and Sunday, landing on Tuesday."
+    },
+    {
+      "topic": "support SLA",
+      "task": {
+        "senderName": "Derek Owusu",
+        "senderRole": "Support Manager",
+        "senderInitials": "DO",
+        "message": "A ticket was logged on Thursday. Our SLA is to resolve within 3 business days (business days are Mon-Fri; weekends don't count). What's the resolution deadline?"
+      },
+      "question": "What is the resolution deadline?",
+      "options": [
+        {
+          "id": "o1",
+          "text": "Sunday"
+        },
+        {
+          "id": "o2",
+          "text": "Monday"
+        },
+        {
+          "id": "o3",
+          "text": "Tuesday"
+        },
+        {
+          "id": "o4",
+          "text": "Friday"
+        }
+      ],
+      "snapAnswerId": "o1",
+      "snapAnswerText": "Sunday.",
+      "reasoning": [
+        "Start the count the day after Thursday.",
+        "Business day 1 is Friday.",
+        "Saturday and Sunday are weekend days — they don't count.",
+        "Business day 2 is Monday; business day 3 is Tuesday."
+      ],
+      "reasonedAnswerId": "o3",
+      "correctOptionId": "o3",
+      "snapCorrect": false,
+      "explanation": "Correct answer: Tuesday. The snap answer added 3 calendar days (Thu → Sun) and ignored the weekend. Counting business days skips Saturday and Sunday, landing on Tuesday."
+    },
+    {
+      "topic": "support SLA",
+      "task": {
+        "senderName": "Derek Owusu",
+        "senderRole": "Support Manager",
+        "senderInitials": "DO",
+        "message": "A ticket was logged on Thursday. Our SLA is to resolve within 3 business days (business days are Mon-Fri; weekends don't count). What's the resolution deadline?"
+      },
+      "question": "What is the resolution deadline?",
+      "options": [
+        {
+          "id": "o1",
+          "text": "Sunday"
+        },
+        {
+          "id": "o2",
+          "text": "Monday"
+        },
+        {
+          "id": "o3",
+          "text": "Tuesday"
+        },
+        {
+          "id": "o4",
+          "text": "Friday"
+        }
+      ],
+      "snapAnswerId": "o1",
+      "snapAnswerText": "Sunday.",
+      "reasoning": [
+        "Start the count the day after Thursday.",
+        "Business day 1 is Friday.",
+        "Saturday and Sunday are weekend days — they don't count.",
+        "Business day 2 is Monday; business day 3 is Tuesday."
+      ],
+      "reasonedAnswerId": "o3",
+      "correctOptionId": "o3",
+      "snapCorrect": false,
+      "explanation": "Correct answer: Tuesday. The snap answer added 3 calendar days (Thu → Sun) and ignored the weekend. Counting business days skips Saturday and Sunday, landing on Tuesday."
+    },
+    {
+      "topic": "support SLA",
+      "task": {
+        "senderName": "Derek Owusu",
+        "senderRole": "Support Manager",
+        "senderInitials": "DO",
+        "message": "A ticket was logged on Thursday. Our SLA is to resolve within 3 business days (business days are Mon-Fri; weekends don't count). What's the resolution deadline?"
+      },
+      "question": "What is the resolution deadline?",
+      "options": [
+        {
+          "id": "o1",
+          "text": "Sunday"
+        },
+        {
+          "id": "o2",
+          "text": "Monday"
+        },
+        {
+          "id": "o3",
+          "text": "Tuesday"
+        },
+        {
+          "id": "o4",
+          "text": "Friday"
+        }
+      ],
+      "snapAnswerId": "o1",
+      "snapAnswerText": "Sunday.",
+      "reasoning": [
+        "Start the count the day after Thursday.",
+        "Business day 1 is Friday.",
+        "Saturday and Sunday are weekend days — they don't count.",
+        "Business day 2 is Monday; business day 3 is Tuesday."
+      ],
+      "reasonedAnswerId": "o3",
+      "correctOptionId": "o3",
+      "snapCorrect": false,
+      "explanation": "Correct answer: Tuesday. The snap answer added 3 calendar days (Thu → Sun) and ignored the weekend. Counting business days skips Saturday and Sunday, landing on Tuesday."
+    }
+  ],
+  "4": [
+    {
+      "topic": "bonus eligibility",
+      "task": {
+        "senderName": "Sasha Kim",
+        "senderRole": "HR Business Partner",
+        "senderInitials": "SK",
+        "message": "Bonus eligibility needs ALL of: employed over 12 months, a performance rating of 4 or higher, and no ACTIVE warning. Sam has been here 14 months, has a rating of 4, and had a warning that was formally cleared last month (so none is active now). Is Sam eligible?"
+      },
+      "question": "Is Sam eligible for the bonus?",
+      "options": [
+        {
+          "id": "o1",
+          "text": "Eligible"
+        },
+        {
+          "id": "o2",
+          "text": "Not eligible"
+        },
+        {
+          "id": "o3",
+          "text": "Needs manager sign-off"
+        }
+      ],
+      "snapAnswerId": "o2",
+      "snapAnswerText": "Not eligible — there's a warning on record.",
+      "reasoning": [
+        "Rule 1: employed over 12 months — Sam is at 14 months. Pass.",
+        "Rule 2: rating of 4 or higher — Sam's rating is 4. Pass.",
+        "Rule 3: no active warning — Sam's warning was cleared last month, so none is active. Pass.",
+        "All three conditions are met."
+      ],
+      "reasonedAnswerId": "o1",
+      "correctOptionId": "o1",
+      "snapCorrect": false,
+      "explanation": "Correct answer: Eligible. The snap answer saw the word 'warning' and stopped. The rule is about an ACTIVE warning — Sam's was cleared, so all three conditions pass."
+    },
+    {
+      "topic": "bonus eligibility",
+      "task": {
+        "senderName": "Sasha Kim",
+        "senderRole": "HR Business Partner",
+        "senderInitials": "SK",
+        "message": "Bonus eligibility needs ALL of: employed over 12 months, a performance rating of 4 or higher, and no ACTIVE warning. Sam has been here 14 months, has a rating of 4, and had a warning that was formally cleared last month (so none is active now). Is Sam eligible?"
+      },
+      "question": "Is Sam eligible for the bonus?",
+      "options": [
+        {
+          "id": "o1",
+          "text": "Eligible"
+        },
+        {
+          "id": "o2",
+          "text": "Not eligible"
+        },
+        {
+          "id": "o3",
+          "text": "Needs manager sign-off"
+        }
+      ],
+      "snapAnswerId": "o2",
+      "snapAnswerText": "Not eligible — there's a warning on record.",
+      "reasoning": [
+        "Rule 1: employed over 12 months — Sam is at 14 months. Pass.",
+        "Rule 2: rating of 4 or higher — Sam's rating is 4. Pass.",
+        "Rule 3: no active warning — Sam's warning was cleared last month, so none is active. Pass.",
+        "All three conditions are met."
+      ],
+      "reasonedAnswerId": "o1",
+      "correctOptionId": "o1",
+      "snapCorrect": false,
+      "explanation": "Correct answer: Eligible. The snap answer saw the word 'warning' and stopped. The rule is about an ACTIVE warning — Sam's was cleared, so all three conditions pass."
+    },
+    {
+      "topic": "bonus eligibility",
+      "task": {
+        "senderName": "Sasha Kim",
+        "senderRole": "HR Business Partner",
+        "senderInitials": "SK",
+        "message": "Bonus eligibility needs ALL of: employed over 12 months, a performance rating of 4 or higher, and no ACTIVE warning. Sam has been here 14 months, has a rating of 4, and had a warning that was formally cleared last month (so none is active now). Is Sam eligible?"
+      },
+      "question": "Is Sam eligible for the bonus?",
+      "options": [
+        {
+          "id": "o1",
+          "text": "Eligible"
+        },
+        {
+          "id": "o2",
+          "text": "Not eligible"
+        },
+        {
+          "id": "o3",
+          "text": "Needs manager sign-off"
+        }
+      ],
+      "snapAnswerId": "o2",
+      "snapAnswerText": "Not eligible — there's a warning on record.",
+      "reasoning": [
+        "Rule 1: employed over 12 months — Sam is at 14 months. Pass.",
+        "Rule 2: rating of 4 or higher — Sam's rating is 4. Pass.",
+        "Rule 3: no active warning — Sam's warning was cleared last month, so none is active. Pass.",
+        "All three conditions are met."
+      ],
+      "reasonedAnswerId": "o1",
+      "correctOptionId": "o1",
+      "snapCorrect": false,
+      "explanation": "Correct answer: Eligible. The snap answer saw the word 'warning' and stopped. The rule is about an ACTIVE warning — Sam's was cleared, so all three conditions pass."
+    },
+    {
+      "topic": "bonus eligibility",
+      "task": {
+        "senderName": "Sasha Kim",
+        "senderRole": "HR Business Partner",
+        "senderInitials": "SK",
+        "message": "Bonus eligibility needs ALL of: employed over 12 months, a performance rating of 4 or higher, and no ACTIVE warning. Sam has been here 14 months, has a rating of 4, and had a warning that was formally cleared last month (so none is active now). Is Sam eligible?"
+      },
+      "question": "Is Sam eligible for the bonus?",
+      "options": [
+        {
+          "id": "o1",
+          "text": "Eligible"
+        },
+        {
+          "id": "o2",
+          "text": "Not eligible"
+        },
+        {
+          "id": "o3",
+          "text": "Needs manager sign-off"
+        }
+      ],
+      "snapAnswerId": "o2",
+      "snapAnswerText": "Not eligible — there's a warning on record.",
+      "reasoning": [
+        "Rule 1: employed over 12 months — Sam is at 14 months. Pass.",
+        "Rule 2: rating of 4 or higher — Sam's rating is 4. Pass.",
+        "Rule 3: no active warning — Sam's warning was cleared last month, so none is active. Pass.",
+        "All three conditions are met."
+      ],
+      "reasonedAnswerId": "o1",
+      "correctOptionId": "o1",
+      "snapCorrect": false,
+      "explanation": "Correct answer: Eligible. The snap answer saw the word 'warning' and stopped. The rule is about an ACTIVE warning — Sam's was cleared, so all three conditions pass."
+    },
+    {
+      "topic": "bonus eligibility",
+      "task": {
+        "senderName": "Sasha Kim",
+        "senderRole": "HR Business Partner",
+        "senderInitials": "SK",
+        "message": "Bonus eligibility needs ALL of: employed over 12 months, a performance rating of 4 or higher, and no ACTIVE warning. Sam has been here 14 months, has a rating of 4, and had a warning that was formally cleared last month (so none is active now). Is Sam eligible?"
+      },
+      "question": "Is Sam eligible for the bonus?",
+      "options": [
+        {
+          "id": "o1",
+          "text": "Eligible"
+        },
+        {
+          "id": "o2",
+          "text": "Not eligible"
+        },
+        {
+          "id": "o3",
+          "text": "Needs manager sign-off"
+        }
+      ],
+      "snapAnswerId": "o2",
+      "snapAnswerText": "Not eligible — there's a warning on record.",
+      "reasoning": [
+        "Rule 1: employed over 12 months — Sam is at 14 months. Pass.",
+        "Rule 2: rating of 4 or higher — Sam's rating is 4. Pass.",
+        "Rule 3: no active warning — Sam's warning was cleared last month, so none is active. Pass.",
+        "All three conditions are met."
+      ],
+      "reasonedAnswerId": "o1",
+      "correctOptionId": "o1",
+      "snapCorrect": false,
+      "explanation": "Correct answer: Eligible. The snap answer saw the word 'warning' and stopped. The rule is about an ACTIVE warning — Sam's was cleared, so all three conditions pass."
+    }
+  ],
+  "5": [
+    {
+      "topic": "order total",
+      "task": {
+        "senderName": "Nadia Petrova",
+        "senderRole": "Finance Analyst",
+        "senderInitials": "NP",
+        "message": "A customer buys 3 items at £40 each. We take 10% off any order over £100, and THEN apply a £15 loyalty voucher. What's the final total they pay?"
+      },
+      "question": "What is the final total?",
+      "options": [
+        {
+          "id": "o1",
+          "text": "£108"
+        },
+        {
+          "id": "o2",
+          "text": "£93"
+        },
+        {
+          "id": "o3",
+          "text": "£105"
+        },
+        {
+          "id": "o4",
+          "text": "£120"
+        }
+      ],
+      "snapAnswerId": "o1",
+      "snapAnswerText": "£108.",
+      "reasoning": [
+        "Subtotal: 3 items × £40 = £120.",
+        "£120 is over £100, so take 10% off: £120 − £12 = £108.",
+        "Then apply the £15 loyalty voucher: £108 − £15 = £93."
+      ],
+      "reasonedAnswerId": "o2",
+      "correctOptionId": "o2",
+      "snapCorrect": false,
+      "explanation": "Correct answer: £93. The snap answer stopped after the 10% discount (£108) and forgot the final £15 voucher step. Working both steps in order gives £93."
+    },
+    {
+      "topic": "order total",
+      "task": {
+        "senderName": "Nadia Petrova",
+        "senderRole": "Finance Analyst",
+        "senderInitials": "NP",
+        "message": "A customer buys 3 items at £40 each. We take 10% off any order over £100, and THEN apply a £15 loyalty voucher. What's the final total they pay?"
+      },
+      "question": "What is the final total?",
+      "options": [
+        {
+          "id": "o1",
+          "text": "£108"
+        },
+        {
+          "id": "o2",
+          "text": "£93"
+        },
+        {
+          "id": "o3",
+          "text": "£105"
+        },
+        {
+          "id": "o4",
+          "text": "£120"
+        }
+      ],
+      "snapAnswerId": "o1",
+      "snapAnswerText": "£108.",
+      "reasoning": [
+        "Subtotal: 3 items × £40 = £120.",
+        "£120 is over £100, so take 10% off: £120 − £12 = £108.",
+        "Then apply the £15 loyalty voucher: £108 − £15 = £93."
+      ],
+      "reasonedAnswerId": "o2",
+      "correctOptionId": "o2",
+      "snapCorrect": false,
+      "explanation": "Correct answer: £93. The snap answer stopped after the 10% discount (£108) and forgot the final £15 voucher step. Working both steps in order gives £93."
+    },
+    {
+      "topic": "order total",
+      "task": {
+        "senderName": "Nadia Petrova",
+        "senderRole": "Finance Analyst",
+        "senderInitials": "NP",
+        "message": "A customer buys 3 items at £40 each. We take 10% off any order over £100, and THEN apply a £15 loyalty voucher. What's the final total they pay?"
+      },
+      "question": "What is the final total?",
+      "options": [
+        {
+          "id": "o1",
+          "text": "£108"
+        },
+        {
+          "id": "o2",
+          "text": "£93"
+        },
+        {
+          "id": "o3",
+          "text": "£105"
+        },
+        {
+          "id": "o4",
+          "text": "£120"
+        }
+      ],
+      "snapAnswerId": "o1",
+      "snapAnswerText": "£108.",
+      "reasoning": [
+        "Subtotal: 3 items × £40 = £120.",
+        "£120 is over £100, so take 10% off: £120 − £12 = £108.",
+        "Then apply the £15 loyalty voucher: £108 − £15 = £93."
+      ],
+      "reasonedAnswerId": "o2",
+      "correctOptionId": "o2",
+      "snapCorrect": false,
+      "explanation": "Correct answer: £93. The snap answer stopped after the 10% discount (£108) and forgot the final £15 voucher step. Working both steps in order gives £93."
+    },
+    {
+      "topic": "order total",
+      "task": {
+        "senderName": "Nadia Petrova",
+        "senderRole": "Finance Analyst",
+        "senderInitials": "NP",
+        "message": "A customer buys 3 items at £40 each. We take 10% off any order over £100, and THEN apply a £15 loyalty voucher. What's the final total they pay?"
+      },
+      "question": "What is the final total?",
+      "options": [
+        {
+          "id": "o1",
+          "text": "£108"
+        },
+        {
+          "id": "o2",
+          "text": "£93"
+        },
+        {
+          "id": "o3",
+          "text": "£105"
+        },
+        {
+          "id": "o4",
+          "text": "£120"
+        }
+      ],
+      "snapAnswerId": "o1",
+      "snapAnswerText": "£108.",
+      "reasoning": [
+        "Subtotal: 3 items × £40 = £120.",
+        "£120 is over £100, so take 10% off: £120 − £12 = £108.",
+        "Then apply the £15 loyalty voucher: £108 − £15 = £93."
+      ],
+      "reasonedAnswerId": "o2",
+      "correctOptionId": "o2",
+      "snapCorrect": false,
+      "explanation": "Correct answer: £93. The snap answer stopped after the 10% discount (£108) and forgot the final £15 voucher step. Working both steps in order gives £93."
+    },
+    {
+      "topic": "order total",
+      "task": {
+        "senderName": "Nadia Petrova",
+        "senderRole": "Finance Analyst",
+        "senderInitials": "NP",
+        "message": "A customer buys 3 items at £40 each. We take 10% off any order over £100, and THEN apply a £15 loyalty voucher. What's the final total they pay?"
+      },
+      "question": "What is the final total?",
+      "options": [
+        {
+          "id": "o1",
+          "text": "£108"
+        },
+        {
+          "id": "o2",
+          "text": "£93"
+        },
+        {
+          "id": "o3",
+          "text": "£105"
+        },
+        {
+          "id": "o4",
+          "text": "£120"
+        }
+      ],
+      "snapAnswerId": "o1",
+      "snapAnswerText": "£108.",
+      "reasoning": [
+        "Subtotal: 3 items × £40 = £120.",
+        "£120 is over £100, so take 10% off: £120 − £12 = £108.",
+        "Then apply the £15 loyalty voucher: £108 − £15 = £93."
+      ],
+      "reasonedAnswerId": "o2",
+      "correctOptionId": "o2",
+      "snapCorrect": false,
+      "explanation": "Correct answer: £93. The snap answer stopped after the 10% discount (£108) and forgot the final £15 voucher step. Working both steps in order gives £93."
+    }
+  ]
+}
