@@ -17,13 +17,11 @@ import { getOrCreatePlayer } from "@/lib/player";
 import {
   computeCleanThePipeImpact,
   gradeCleanThePipe,
-  type RecordAction,
-  type SourceAction,
+  type TriageAction,
 } from "@/lib/clean-the-pipe-scoring";
 import { bonusForScoreRatio, levelForXp } from "@/lib/xp";
 
-const RECORD_ACTIONS = new Set<RecordAction>(["keep", "fix", "drop"]);
-const SOURCE_ACTIONS = new Set<SourceAction>(["leave", "migrate"]);
+const TRIAGE_ACTIONS = new Set<TriageAction>(["pass", "repair", "bin"]);
 
 /** Coerce an untrusted action map into a typed record, dropping anything unknown. */
 function cleanActions<T extends string>(
@@ -52,19 +50,12 @@ function cleanActions<T extends string>(
  * The step is then "run" on the raw vs the triaged data so the scorecard can
  * show the deliverable each produced — illustrative only; never affects the score.
  *
- * Body: { roundId: string, recordActions: {id: action}, sourceActions: {id: action} }
+ * Body: { roundId: string, actions: {id: action} }
  */
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   const roundId = body?.roundId as string | undefined;
-  const recordActions = cleanActions<RecordAction>(
-    body?.recordActions,
-    RECORD_ACTIONS,
-  );
-  const sourceActions = cleanActions<SourceAction>(
-    body?.sourceActions,
-    SOURCE_ACTIONS,
-  );
+  const actions = cleanActions<TriageAction>(body?.actions, TRIAGE_ACTIONS);
 
   if (!roundId) {
     return NextResponse.json({ error: "roundId is required" }, { status: 400 });
@@ -95,50 +86,30 @@ export async function POST(request: Request) {
 
   const scenario = round.scenario as unknown as CleanThePipeScenario;
 
-  const graded = gradeCleanThePipe(
-    scenario.records,
-    scenario.sources,
-    recordActions,
-    sourceActions,
-  );
+  const graded = gradeCleanThePipe(scenario.items, actions);
   const score = Math.round(graded.scoreRatio * challenge.maxScore);
   const xpEarned = Math.round(challenge.xpReward * graded.scoreRatio);
   const bonusXp = bonusForScoreRatio(challenge.xpReward, graded.scoreRatio);
 
   // Run the step on the raw vs the triaged data to show what each produced.
-  const output = await generateCleanThePipeOutcome({
-    scenario,
-    recordActions,
-    sourceActions,
-  });
+  const output = await generateCleanThePipeOutcome({ scenario, actions });
 
   // Plain quality + effort read of the player's triage. Feedback only.
-  const impact = computeCleanThePipeImpact(
-    scenario.records,
-    scenario.sources,
-    recordActions,
-    sourceActions,
-  );
+  const impact = computeCleanThePipeImpact(scenario.items, actions);
 
   // Per-item breakdown for the debrief: the ground truth plus what the player did.
-  const records = scenario.records.map((r) => ({
-    id: r.id,
-    label: r.label,
-    content: r.content,
-    consequential: r.consequential,
-    correctAction: r.correctAction,
-    reason: r.reason,
-    action: recordActions[r.id] ?? "keep",
-  }));
-  const sources = scenario.sources.map((s) => ({
-    id: s.id,
-    name: s.name,
-    mismatch: s.mismatch,
-    migrationEffort: s.migrationEffort,
-    consequential: s.consequential,
-    correctAction: s.correctAction,
-    reason: s.reason,
-    action: sourceActions[s.id] ?? "leave",
+  const items = scenario.items.map((it) => ({
+    id: it.id,
+    kind: it.kind,
+    label: it.label,
+    content: it.content,
+    usedFor: it.usedFor,
+    repairedContent: it.repairedContent,
+    migrationEffort: it.migrationEffort,
+    consequential: it.consequential,
+    correctAction: it.correctAction,
+    reason: it.reason,
+    action: actions[it.id] ?? "pass",
   }));
 
   const feedback = `${graded.cleanCorrect}/${graded.consequentialTotal} consequential items handled right · ${graded.overCleaned} needless clean-up${graded.overCleaned === 1 ? "" : "s"}.`;
@@ -151,7 +122,7 @@ export async function POST(request: Request) {
       score,
       xpEarned,
       bonusXp,
-      response: JSON.stringify({ roundId, recordActions, sourceActions, output }),
+      response: JSON.stringify({ roundId, actions, output }),
       evaluation: {
         score,
         feedback,
@@ -177,8 +148,7 @@ export async function POST(request: Request) {
     cleanCorrect: graded.cleanCorrect,
     missedConsequential: graded.missedConsequential,
     overCleaned: graded.overCleaned,
-    records,
-    sources,
+    items,
     stepName: scenario.stepName,
     datasetName: scenario.datasetName,
     goal: scenario.goal,

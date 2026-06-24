@@ -3,7 +3,7 @@ import { z } from "zod";
 import { generateJson, generatePlainText, isConfigured } from "./connector";
 import { mockCleanThePipeRound } from "./clean-the-pipe-mock";
 import { pipeTierForDifficulty } from "../clean-the-pipe-tiers";
-import type { RecordAction, SourceAction } from "../clean-the-pipe-scoring";
+import type { ItemKind, TriageAction } from "../clean-the-pipe-scoring";
 
 /**
  * "Clean the Pipe" generates a fresh data-triage round for each of the game's
@@ -13,39 +13,38 @@ import type { RecordAction, SourceAction } from "../clean-the-pipe-scoring";
  * the cleaned data. It is the input-side mirror of Spot the Hallucination:
  * output vigilance and input hygiene are the two halves of trusting AI work.
  *
- * The teaching point is that NOT ALL DIRT IS EQUAL — catch the records that
+ * EVERYTHING IS ONE TRIAGE QUEUE. Each input is an `item` with a `kind`:
+ *   - "record": a single data row.
+ *   - "batch":  a whole source whose data TYPE doesn't suit the system (audio
+ *               feeding a text summariser, a different-schema export, scanned
+ *               PDFs). Batches appear only on the harder rounds (4-5).
+ * Both kinds are triaged with the SAME three verbs — pass / repair / bin — so
+ * the player learns one mental model, not two.
+ *
+ * The teaching point is that NOT ALL DIRT IS EQUAL — catch the items that
  * actually poison the output, leave the harmless ones alone, and calibrate
- * cleaning effort to consequence. From round 4, some inputs are whole SOURCES
- * whose data type doesn't suit the system, where the player weighs leaving the
- * data as-is against migrating it for a real effort cost. Difficulty scales the
- * dirt and the source pressure via `clean-the-pipe-tiers.ts`.
+ * cleaning effort to consequence. A batch repair is a migration that costs real
+ * hours, so the harder rounds also teach "migrate only where it pays off".
+ * Difficulty scales the dirt and the batch pressure via `clean-the-pipe-tiers.ts`.
  */
 
-export interface DataRecord {
+export interface PipeItem {
   id: string;
-  /** Short label for the row, e.g. "Row 14 · NW region". */
+  kind: ItemKind;
+  /** Short label, e.g. "Row 14 · NW region" or "Call-centre audio (Q2)". */
   label: string;
-  /** The data row itself, shown verbatim so the player can spot the dirt. */
+  /** The row itself (records) or a plain mismatch line (batches), shown verbatim. */
   content: string;
+  /** Neutral, non-spoiler note on what the step actually uses this item for. */
+  usedFor: string;
+  /** What repairing this item would yield — shown live when "repair" is picked. */
+  repairedContent?: string;
+  /** Hours a repair (migration) would cost — batches only; shown to the player. */
+  migrationEffort?: number;
   /** Ground truth — never sent to the client before scoring. */
   consequential: boolean;
-  correctAction: RecordAction;
-  /** Debrief: why this record needed (or didn't need) cleaning. */
-  reason: string;
-}
-
-export interface MismatchedSource {
-  id: string;
-  /** Name of the source, e.g. "Scanned PDF contracts (2023)". */
-  name: string;
-  /** Plain-language line on why the data TYPE doesn't suit the system. */
-  mismatch: string;
-  /** Hours it would take to migrate the source into a usable shape. */
-  migrationEffort: number;
-  /** Ground truth — never sent to the client before scoring. */
-  consequential: boolean;
-  correctAction: SourceAction;
-  /** Debrief: why migrating was (or wasn't) worth the effort. */
+  correctAction: TriageAction;
+  /** Debrief: why this item needed (or didn't need) cleaning. */
   reason: string;
 }
 
@@ -66,15 +65,25 @@ export interface CleanThePipeScenario {
   };
   /** One precise sentence naming what good triage achieves. */
   goal: string;
-  /** The data rows going into the step. */
-  records: DataRecord[];
-  /** Type-mismatched sources (empty on rounds 1-3). */
-  sources: MismatchedSource[];
+  /** The inputs going into the step — records, plus batches on rounds 4-5. */
+  items: PipeItem[];
   /** Debrief: which dirt mattered, which didn't, and the calibration lesson. */
   explanation: string;
 }
 
 /** Shape the model returns (ids are added server-side). */
+const itemSchema = z.object({
+  kind: z.enum(["record", "batch"]),
+  label: z.string(),
+  content: z.string(),
+  usedFor: z.string(),
+  repairedContent: z.string().optional(),
+  migrationEffort: z.number().positive().optional(),
+  consequential: z.boolean(),
+  correctAction: z.enum(["pass", "repair", "bin"]),
+  reason: z.string(),
+});
+
 const scenarioSchema = z.object({
   topic: z.string(),
   stepName: z.string(),
@@ -86,76 +95,52 @@ const scenarioSchema = z.object({
     message: z.string(),
   }),
   goal: z.string(),
-  records: z
-    .array(
-      z.object({
-        label: z.string(),
-        content: z.string(),
-        consequential: z.boolean(),
-        correctAction: z.enum(["keep", "fix", "drop"]),
-        reason: z.string(),
-      }),
-    )
-    .min(4)
-    .max(8),
-  sources: z
-    .array(
-      z.object({
-        name: z.string(),
-        mismatch: z.string(),
-        migrationEffort: z.number().positive(),
-        consequential: z.boolean(),
-        correctAction: z.enum(["leave", "migrate"]),
-        reason: z.string(),
-      }),
-    )
-    .max(2),
+  items: z.array(itemSchema).min(4).max(9),
   explanation: z.string(),
 });
 
 export type RawCleanThePipeScenario = z.infer<typeof scenarioSchema>;
 
-const SYSTEM_PROMPT = `You generate rounds for "Clean the Pipe", a game that teaches input hygiene — the input-side mirror of spotting hallucinations. The player is about to run an AI step on a batch of data and must TRIAGE the data first: catch the dirt that actually poisons the output, and leave the harmless dirt alone. The hard lesson is that NOT ALL DIRT IS EQUAL — a cosmetic duplicate barely matters, but a wrong-category or stale record poisons the whole result. Over-cleaning (chasing every blemish) is a real failure, not just wasted time.
+const SYSTEM_PROMPT = `You generate rounds for "Clean the Pipe", a game that teaches input hygiene — the input-side mirror of spotting hallucinations. The player is about to run an AI step on a batch of data and must TRIAGE the inputs first: catch the dirt that actually poisons the output, and leave the harmless dirt alone. The hard lesson is that NOT ALL DIRT IS EQUAL — a cosmetic duplicate barely matters, but a wrong-category or stale row poisons the whole result. Over-cleaning (chasing every blemish) is a real failure, not just wasted time.
 
-Each round is a realistic workplace data task (e.g. summarising complaints into themes, tallying survey results, compiling a report). You produce:
-- "topic": a 1-4 word label for the data's subject.
-- "stepName": the AI step about to run, phrased as an imperative (e.g. "Summarise the complaints into themes").
-- "datasetName": a short name for the dataset going in.
-- "brief": the colleague handing over the task — a "senderName", a "senderRole" job title, two-letter "senderInitials", and a short natural "message". The name AND role must FIT THIS data's domain and vary round to round — never a recurring stock person.
-- "goal": one precise sentence naming what good triage achieves.
-- "records": the data rows going into the step. Each has a short "label", the "content" of the row shown verbatim so the dirt is visible, a "consequential" boolean, a "correctAction", and a "reason" for the debrief. Action meanings:
-   * "keep": leave the row as-is. Use for clean rows AND for HARMLESS dirt (an exact duplicate, a blank in a field the step doesn't use, a cosmetic format difference). These are consequential:false — cleaning them only wastes effort.
-   * "fix": the row is consequential but RECOVERABLE — repair it in place (a blank in the field the step needs, a wrong-format value that matters). consequential:true.
-   * "drop": the row is consequential and does NOT belong / is unrecoverable (a wrong-category entry, a stale out-of-date record, a corrupt row). consequential:true.
-- "sources": abstract sources whose data TYPE doesn't suit the system. Each has a "name", a plain "mismatch" line a non-technical reader understands, a "migrationEffort" in hours, a "consequential" boolean, a "correctAction" ("leave" or "migrate"), and a "reason". A consequential source (its mismatch would break/badly degrade the output) has correctAction "migrate" — worth the effort. A tolerable mismatch (the model can cope, or it's low-value) is consequential:false with correctAction "leave" — migrating it burns effort for little gain, especially when its migrationEffort is large.
+EVERYTHING IS ONE QUEUE OF "items". Every item is triaged with the SAME three verbs:
+   * "pass": let it through untouched. Use for clean rows AND for HARMLESS dirt (an exact duplicate, a blank in a field the step doesn't use, a cosmetic format difference), AND for a tolerable batch whose mismatch the system can cope with. These are consequential:false — touching them only wastes effort.
+   * "repair": the item is consequential but RECOVERABLE — fix the row in place, or convert/migrate a batch into a usable shape. consequential:true. The heavier clean-out; a batch repair is a migration that costs real hours.
+   * "bin": the item is consequential and does NOT belong / is unrecoverable — drop a wrong-category or stale row, or exclude an ill-fitting batch. consequential:true. Cheaper than repair, but the data is lost.
+
+Each item has:
+- "kind": "record" (a single data row) or "batch" (a whole source whose data TYPE doesn't suit the system).
+- "label": a short label (e.g. "Row 14 · NW region", or a source name like "Call-centre audio recordings (Q2)").
+- "content": for a record, the row shown verbatim so the dirt is visible; for a batch, a plain one-line description of the type mismatch a non-technical reader understands.
+- "usedFor": one neutral sentence on what the STEP actually uses this item for. This is a reasoning aid shown to the player BEFORE scoring — it must NOT reveal whether the item is good or bad, only what role it plays.
+- "repairedContent": what repairing the item would yield (the patched row value, or "Transcribed to text", "Currencies converted and stages mapped", etc.). Include it for any item where a repair is plausible — especially the recoverable ones.
+- "migrationEffort": for BATCH items only, the whole-number hours a repair (migration) would take (e.g. 6-40).
+- "consequential": boolean ground truth.
+- "correctAction": "pass" | "repair" | "bin".
+- "reason": one debrief sentence on why this was (or wasn't) worth cleaning.
 
 Rules:
-- The right call must be inferable from the record content / mismatch line alone — never require outside knowledge.
-- Do NOT order records by their action; consequential rows must not always be first or last.
+- The right call must be inferable from the item's content / mismatch line alone — never require outside knowledge.
+- Do NOT order items by their action; consequential items must not always be first or last, and batches should sit among the records, not all at the end.
 - Always include some genuinely harmless dirt so the player must RESIST over-cleaning.
-- Keep tasks grounded, professional and varied across rounds (different industries/subjects), each with its own fitting sender.`;
+- Keep tasks grounded, professional and varied across rounds (different industries/subjects), each with its own fitting sender whose name AND role fit the data's domain and vary round to round (never a recurring stock person).`;
 
-/** Attach stable ids to records (r1..) and sources (m1..). */
+/** Attach stable ids to items (i1..). */
 export function withItemIds(
   raw: RawCleanThePipeScenario,
   difficulty: number,
 ): CleanThePipeScenario {
-  const records: DataRecord[] = raw.records.map((r, i) => ({
-    id: `r${i + 1}`,
-    label: r.label,
-    content: r.content,
-    consequential: r.consequential,
-    correctAction: r.correctAction,
-    reason: r.reason,
-  }));
-  const sources: MismatchedSource[] = raw.sources.map((s, i) => ({
-    id: `m${i + 1}`,
-    name: s.name,
-    mismatch: s.mismatch,
-    migrationEffort: s.migrationEffort,
-    consequential: s.consequential,
-    correctAction: s.correctAction,
-    reason: s.reason,
+  const items: PipeItem[] = raw.items.map((it, i) => ({
+    id: `i${i + 1}`,
+    kind: it.kind,
+    label: it.label,
+    content: it.content,
+    usedFor: it.usedFor,
+    repairedContent: it.repairedContent,
+    migrationEffort: it.kind === "batch" ? it.migrationEffort : undefined,
+    consequential: it.consequential,
+    correctAction: it.correctAction,
+    reason: it.reason,
   }));
   return {
     topic: raw.topic,
@@ -164,8 +149,7 @@ export function withItemIds(
     datasetName: raw.datasetName,
     brief: raw.brief,
     goal: raw.goal,
-    records,
-    sources,
+    items,
     explanation: raw.explanation,
   };
 }
@@ -194,12 +178,12 @@ export async function generateCleanThePipeRound(
   try {
     const raw = await generateJson(scenarioSchema, {
       system: SYSTEM_PROMPT,
-      prompt: `Generate one "Clean the Pipe" round at difficulty ${d} of 5. ${tier.guidance} Pick a fresh, recognisable data task and set "topic" to a short label for it.${avoidNote} Make sure the right call for every record and source is inferable from what is shown, and that the harmless dirt is genuinely tempting to clean.`,
-      maxOutputTokens: 1800,
+      prompt: `Generate one "Clean the Pipe" round at difficulty ${d} of 5. ${tier.guidance} Pick a fresh, recognisable data task and set "topic" to a short label for it.${avoidNote} Make sure the right call for every item is inferable from what is shown, and that the harmless dirt is genuinely tempting to clean.`,
+      maxOutputTokens: 1900,
     });
 
-    // Keep the source count honest to the tier even if the model strays.
-    if (!tier.hasSources) raw.sources = [];
+    // Keep the batch count honest to the tier even if the model strays.
+    if (!tier.hasBatches) raw.items = raw.items.filter((it) => it.kind !== "batch");
     return withItemIds(raw, d);
   } catch {
     return mockCleanThePipeRound(d);
@@ -214,70 +198,57 @@ export async function generateCleanThePipeRound(
  */
 export async function generateCleanThePipeOutcome(args: {
   scenario: CleanThePipeScenario;
-  recordActions: Record<string, RecordAction>;
-  sourceActions: Record<string, SourceAction>;
+  actions: Record<string, TriageAction>;
 }): Promise<{ raw: string; cleaned: string }> {
-  const { scenario, recordActions, sourceActions } = args;
+  const { scenario, actions } = args;
 
   if (!isConfigured()) {
-    return mockCleanThePipeOutcome(scenario, recordActions, sourceActions);
+    return mockCleanThePipeOutcome(scenario, actions);
   }
 
-  const recordLines = scenario.records
-    .map((r) => {
-      const action = recordActions[r.id] ?? "keep";
-      return `- [${r.label}] ${r.content} (you: ${action})`;
-    })
-    .join("\n");
-  const sourceLines = scenario.sources
-    .map((s) => {
-      const action = sourceActions[s.id] ?? "leave";
-      return `- [${s.name}] ${s.mismatch} (you: ${action})`;
+  const itemLines = scenario.items
+    .map((it) => {
+      const action = actions[it.id] ?? "pass";
+      return `- [${it.kind}: ${it.label}] ${it.content} (you: ${action})`;
     })
     .join("\n");
 
   try {
     const text = await generatePlainText({
       system:
-        "You show the consequence of input hygiene by writing the SAME AI deliverable two ways. Output EXACTLY two short paragraphs separated by a line containing only '---'. The first paragraph is the deliverable produced from the RAW, untouched data — let the consequential bad records and any ill-fitting source visibly distort it (wrong themes, skewed totals, garbled entries). The second is the deliverable from the player's triaged data — cleaner to the extent they removed/fixed/migrated what mattered; if they left a consequential item in, it is still distorted. Be concrete and grounded, 2-3 sentences each. Do not lecture or mention scores.",
-      prompt: `Step: ${scenario.stepName}\nGoal: ${scenario.goal}\n\nRecords:\n${recordLines}\n\nSources:\n${sourceLines || "(none)"}`,
+        "You show the consequence of input hygiene by writing the SAME AI deliverable two ways. Output EXACTLY two short paragraphs separated by a line containing only '---'. The first paragraph is the deliverable produced from the RAW, untouched data — let the consequential bad records and any ill-fitting batch visibly distort it (wrong themes, skewed totals, garbled or missing entries). The second is the deliverable from the player's triaged data — cleaner to the extent they binned/repaired what mattered; if they let a consequential item pass, it is still distorted. Be concrete and grounded, 2-3 sentences each. Do not lecture or mention scores.",
+      prompt: `Step: ${scenario.stepName}\nGoal: ${scenario.goal}\n\nItems:\n${itemLines}`,
       maxOutputTokens: 400,
     });
     const [raw, cleaned] = text.split(/\n?---\n?/);
     if (raw && cleaned) return { raw: raw.trim(), cleaned: cleaned.trim() };
-    return mockCleanThePipeOutcome(scenario, recordActions, sourceActions);
+    return mockCleanThePipeOutcome(scenario, actions);
   } catch {
-    return mockCleanThePipeOutcome(scenario, recordActions, sourceActions);
+    return mockCleanThePipeOutcome(scenario, actions);
   }
 }
 
 /** Deterministic stand-in raw-vs-cleaned narration for the offline / mock path. */
 function mockCleanThePipeOutcome(
   scenario: CleanThePipeScenario,
-  recordActions: Record<string, RecordAction>,
-  sourceActions: Record<string, SourceAction>,
+  actions: Record<string, TriageAction>,
 ): { raw: string; cleaned: string } {
-  const badRecords = scenario.records.filter((r) => r.consequential);
-  const badSources = scenario.sources.filter((s) => s.consequential);
-  const leftIn = [
-    ...badRecords.filter((r) => (recordActions[r.id] ?? "keep") === "keep"),
-    ...badSources.filter((s) => (sourceActions[s.id] ?? "leave") === "leave"),
-  ];
+  const bad = scenario.items.filter((it) => it.consequential);
+  const leftIn = bad.filter((it) => (actions[it.id] ?? "pass") === "pass");
 
   const raw =
-    badRecords.length || badSources.length
-      ? `Run on the raw data, "${scenario.stepName}" came out distorted: ${[
-          ...badRecords.map((r) => r.label),
-          ...badSources.map((s) => s.name),
-        ].join(", ")} dragged the result off course, so the deliverable can't be trusted.`
+    bad.length > 0
+      ? `Run on the raw data, "${scenario.stepName}" came out distorted: ${bad
+          .map((it) => it.label)
+          .join(", ")} dragged the result off course, so the deliverable can't be trusted.`
       : `The raw data was already clean, so "${scenario.stepName}" produced a sound result.`;
 
   const cleaned =
     leftIn.length > 0
       ? `Your version is still off: ${leftIn
-          .map((x) => ("label" in x ? x.label : x.name))
+          .map((it) => it.label)
           .join(", ")} stayed in and kept poisoning the output. The dirt that mattered slipped through.`
-      : `Your triaged data produced a clean, trustworthy deliverable — the records and sources that would have skewed "${scenario.stepName}" were dealt with, and the harmless dirt was rightly left alone.`;
+      : `Your triaged data produced a clean, trustworthy deliverable — the items that would have skewed "${scenario.stepName}" were dealt with, and the harmless dirt was rightly left alone.`;
 
   return { raw, cleaned };
 }

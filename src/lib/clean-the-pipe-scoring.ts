@@ -5,11 +5,23 @@
  * shared by BOTH the scoring route (server) and the game component (client) —
  * the official score and any preview use the same maths.
  *
+ * THE MODEL IS A SINGLE TRIAGE QUEUE. Every input the AI is about to ingest —
+ * whether a data `record` (a row) or a whole `batch` (a source whose data TYPE
+ * doesn't suit the system) — is triaged with the SAME three verbs:
+ *
+ *   pass    – let it through untouched   (correct for clean rows / harmless dirt
+ *                                          / a tolerable batch mismatch)
+ *   repair  – fix the row in place, or convert the batch into a usable shape
+ *             (recover the data; the heavier clean-out — a batch repair is a
+ *             migration that costs real effort)
+ *   bin     – leave it out of the run (drop a wrong-category/unrecoverable row,
+ *             or exclude an ill-fitting batch; cheaper than repair, but the data
+ *             is lost)
+ *
  * Scoring model (see docs/GAME-RULES.md): two axes per round, graded against the
- * stored ground truth of every input item (data records, plus — on the harder
- * rounds — abstract sources whose data TYPE doesn't suit the system). The game
- * is the input-side mirror of Spot the Hallucination, so accuracy is a per-item
- * gradient just like that game's per-claim credit.
+ * stored ground truth of every item. The game is the input-side mirror of Spot
+ * the Hallucination, so accuracy is a per-item gradient just like that game's
+ * per-claim credit.
  *
  *   accuracy = creditSum / consequentialTotal        (the GATE)
  *   effort   = 1 - wastedEffort / maxWaste           (the mastery axis)
@@ -19,65 +31,66 @@
  * the output is "consequential". Per consequential item:
  *   - handled with the right action            → 1.0
  *   - addressed, but with the other clean-out  → 0.5  (poison neutralised, but
- *     handled suboptimally — e.g. dropped data that was recoverable)
- *   - left untouched (keep / leave)            → 0    (the poison slips through)
- * If ANY consequential item is left untouched, the round is capped at GATE_CAP
+ *     handled suboptimally — binned a row that was recoverable, or excluded a
+ *     batch that was worth converting, so you lost data you could have kept)
+ *   - left to pass through                      → 0    (the poison slips through)
+ * If ANY consequential item is left to pass, the round is capped at GATE_CAP
  * (0.5) — below the 65% clear — because the output is poisoned.
  *
  * EFFORT (spend effort only where it pays off — calibrate cleaning to
- * consequence, not tidiness). Each action carries an effort weight
- * (keep/leave 0, drop 1, fix 2, migrate 4 — migration is deliberately the heavy
- * one). Waste = effort spent on harmless items (over-cleaning a fine record,
- * needlessly migrating a tolerable source) plus EXCESS effort on consequential
- * items (e.g. fixing where a cheap drop suffices). Normalised against the waste
- * of an aggressive "fix-everything / migrate-everything" strategy, so that
- * strategy lands near 0 and the ideal triage scores 1. Migration's weight makes
- * a needless migration dominate the penalty.
+ * consequence, not tidiness). Each action carries an effort weight that depends
+ * on the item kind — a `batch` repair is a migration, the heavy one. Waste =
+ * effort spent on harmless items (over-cleaning a fine row, needlessly migrating
+ * a tolerable batch) plus EXCESS effort on consequential items (e.g. repairing
+ * where a cheap bin suffices). Normalised against the waste of an aggressive
+ * "repair-everything" strategy, so that strategy lands near 0 and the ideal
+ * triage scores 1. A batch repair's weight makes a needless migration dominate.
  *
  * Worked outcomes that pin the two lessons:
  *  - perfect triage                       → 1.0  (exceptional)
- *  - leave a consequential record/source  → capped 0.5 (fails — output poisoned)
- *  - fix/drop everything (or migrate a    → effort → 0, drops out of the bonus
- *    tolerable source)                       tiers (fails the "not all dirt is
+ *  - let a consequential item pass        → capped 0.5 (fails — output poisoned)
+ *  - repair/bin everything (or migrate a  → effort → 0, drops out of the bonus
+ *    tolerable batch)                        tiers (fails the "not all dirt is
  *                                            equal" lesson)
  */
 
-/** What the player can do with a data record. */
-export type RecordAction = "keep" | "fix" | "drop";
-/** What the player can do with a type-mismatched source. */
-export type SourceAction = "leave" | "migrate";
+/** What the player can do with any item in the queue. */
+export type TriageAction = "pass" | "repair" | "bin";
+/** The two kinds of input the queue can hold. */
+export type ItemKind = "record" | "batch";
+
+/** The do-nothing default action. */
+export const DEFAULT_ACTION: TriageAction = "pass";
 
 export const ACCURACY_WEIGHT = 0.5;
 export const EFFORT_WEIGHT = 0.5;
-/** Leaving any consequential item untouched caps the round here — below the 65% clear. */
+/** Leaving any consequential item to pass caps the round here — below the 65% clear. */
 export const GATE_CAP = 0.5;
-/** Credit for neutralising a consequential record with the wrong clean-out method. */
+/** Credit for neutralising a consequential item with the wrong clean-out. */
 export const PARTIAL_CREDIT = 0.5;
 
-/** Effort weight of each action — migration is the expensive one. */
-export const ACTION_EFFORT: Record<RecordAction | SourceAction, number> = {
-  keep: 0,
-  leave: 0,
-  drop: 1,
-  fix: 2,
-  migrate: 4,
-};
+/**
+ * Effort weight of each action, by item kind. A `repair` recovers the data and
+ * is the heavier clean-out; a `batch` repair is a migration, heavier still.
+ */
+const RECORD_EFFORT: Record<TriageAction, number> = { pass: 0, bin: 1, repair: 2 };
+const BATCH_EFFORT: Record<TriageAction, number> = { pass: 0, bin: 2, repair: 4 };
 
-/** The most effort any single record can cost (an aggressive "fix it" call). */
-const MAX_RECORD_EFFORT = ACTION_EFFORT.fix;
-/** The most effort any single source can cost (an aggressive "migrate it" call). */
-const MAX_SOURCE_EFFORT = ACTION_EFFORT.migrate;
-
-export interface GradeRecord {
-  id: string;
-  consequential: boolean;
-  correctAction: RecordAction;
+/** Effort weight for an action on a given item kind. */
+export function actionEffort(kind: ItemKind, action: TriageAction): number {
+  return (kind === "batch" ? BATCH_EFFORT : RECORD_EFFORT)[action];
 }
 
-export interface GradeSource {
+/** The most effort any single item of this kind can cost (an aggressive repair). */
+function maxItemEffort(kind: ItemKind): number {
+  return actionEffort(kind, "repair");
+}
+
+export interface GradeItem {
   id: string;
+  kind: ItemKind;
   consequential: boolean;
-  correctAction: SourceAction;
+  correctAction: TriageAction;
 }
 
 export interface GradedClean {
@@ -85,7 +98,7 @@ export interface GradedClean {
   effort: number;
   scoreRatio: number;
   exceptional: boolean;
-  /** Consequential items that were left fully untouched (the gate trip). */
+  /** Consequential items that were left to pass through (the gate trip). */
   missedConsequential: number;
   consequentialTotal: number;
   /** Items handled with the right action (full credit). */
@@ -99,14 +112,11 @@ const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
 /**
  * Grade a round's triage against the labelled items. Pure: the route and any
  * client preview both call this so the displayed maths matches the score.
- * Missing actions default to the do-nothing choice (record `keep`, source
- * `leave`).
+ * Missing actions default to `pass` (do nothing).
  */
 export function gradeCleanThePipe(
-  records: GradeRecord[],
-  sources: GradeSource[],
-  recordActions: Record<string, RecordAction>,
-  sourceActions: Record<string, SourceAction>,
+  items: GradeItem[],
+  actions: Record<string, TriageAction>,
 ): GradedClean {
   let consequentialTotal = 0;
   let creditSum = 0;
@@ -116,51 +126,31 @@ export function gradeCleanThePipe(
   let maxWaste = 0;
   let overCleaned = 0;
 
-  for (const r of records) {
-    const action = recordActions[r.id] ?? "keep";
-    const eff = ACTION_EFFORT[action];
-    if (r.consequential) {
+  for (const item of items) {
+    const action = actions[item.id] ?? DEFAULT_ACTION;
+    const eff = actionEffort(item.kind, action);
+    if (item.consequential) {
       consequentialTotal += 1;
-      const correctEff = ACTION_EFFORT[r.correctAction];
-      if (action === r.correctAction) {
+      const correctEff = actionEffort(item.kind, item.correctAction);
+      if (action === item.correctAction) {
         creditSum += 1;
         cleanCorrect += 1;
-      } else if (action === "keep") {
+      } else if (action === "pass") {
         missedConsequential += 1;
       } else {
         // Neutralised the poison, but with the other clean-out method.
         creditSum += PARTIAL_CREDIT;
       }
-      // Over-investing on a consequential record (e.g. fix where drop suffices).
+      // Over-investing on a consequential item (e.g. repair where a bin suffices).
       const excess = Math.max(0, eff - correctEff);
       wasted += excess;
       if (excess > 0) overCleaned += 1;
-      maxWaste += Math.max(0, MAX_RECORD_EFFORT - correctEff);
+      maxWaste += Math.max(0, maxItemEffort(item.kind) - correctEff);
     } else {
-      // Harmless: leaving it is correct, so any effort spent is pure waste.
+      // Harmless: passing it is correct, so any effort spent is pure waste.
       wasted += eff;
       if (eff > 0) overCleaned += 1;
-      maxWaste += MAX_RECORD_EFFORT;
-    }
-  }
-
-  for (const s of sources) {
-    const action = sourceActions[s.id] ?? "leave";
-    const eff = ACTION_EFFORT[action];
-    if (s.consequential) {
-      consequentialTotal += 1;
-      if (action === "migrate") {
-        creditSum += 1;
-        cleanCorrect += 1;
-      } else {
-        missedConsequential += 1;
-      }
-      // migrate is the correct (and only) clean-out, so no over-effort is possible.
-    } else {
-      // A tolerable mismatch: leaving it is correct; migrating it burns effort.
-      wasted += eff;
-      if (eff > 0) overCleaned += 1;
-      maxWaste += MAX_SOURCE_EFFORT;
+      maxWaste += maxItemEffort(item.kind);
     }
   }
 
@@ -189,26 +179,24 @@ export function gradeCleanThePipe(
 /** How good the AI's output is once the data has (or hasn't) been triaged. */
 export type QualityBand = "sound" | "degraded" | "poisoned";
 
-/** Nominal human minutes a record clean-up costs, for the effort read. */
-const RECORD_MINUTES: Record<RecordAction, number> = { keep: 0, drop: 1, fix: 5 };
+/** Nominal human minutes a record-level action costs, for the effort read. */
+const RECORD_MINUTES: Record<TriageAction, number> = { pass: 0, bin: 1, repair: 5 };
+/** Nominal hours a batch-level action costs (repair uses the item's migrationEffort). */
+const BATCH_BIN_HOURS = 0.5;
 
-export interface ImpactRecord {
+export interface ImpactItem {
   id: string;
+  kind: ItemKind;
   consequential: boolean;
-  correctAction: RecordAction;
-}
-export interface ImpactSource {
-  id: string;
-  consequential: boolean;
-  correctAction: SourceAction;
-  /** Hours it takes to migrate this source — shown to the player. */
-  migrationEffort: number;
+  correctAction: TriageAction;
+  /** Hours it takes to repair (migrate) this item — batches only; shown to the player. */
+  migrationEffort?: number;
 }
 
 export interface CleanThePipeImpact {
   /** Output quality if the step were run on the raw data, untouched. */
   rawQuality: QualityBand;
-  /** Output quality from the player's triaged + migrated data. */
+  /** Output quality from the player's triaged data. */
   yourQuality: QualityBand;
   /** Hours the player spent cleaning + migrating. */
   effortHours: number;
@@ -227,43 +215,36 @@ const round1 = (n: number) => Math.round(n * 10) / 10;
  * produced" idea as Prompt Golf). Feedback only; never affects the score.
  */
 export function computeCleanThePipeImpact(
-  records: ImpactRecord[],
-  sources: ImpactSource[],
-  recordActions: Record<string, RecordAction>,
-  sourceActions: Record<string, SourceAction>,
+  items: ImpactItem[],
+  actions: Record<string, TriageAction>,
 ): CleanThePipeImpact {
   let consequentialTotal = 0;
   let consequentialAddressed = 0;
   let anyDegraded = false;
   let gateTripped = false;
-  let effortMinutes = 0;
-  let idealMinutes = 0;
+  let effortHours = 0;
+  let idealHours = 0;
 
-  for (const r of records) {
-    const action = recordActions[r.id] ?? "keep";
-    effortMinutes += RECORD_MINUTES[action];
-    if (r.consequential) {
+  const actionHours = (item: ImpactItem, action: TriageAction): number => {
+    if (item.kind === "batch") {
+      if (action === "repair") return item.migrationEffort ?? 0;
+      if (action === "bin") return BATCH_BIN_HOURS;
+      return 0;
+    }
+    return RECORD_MINUTES[action] / 60;
+  };
+
+  for (const item of items) {
+    const action = actions[item.id] ?? DEFAULT_ACTION;
+    effortHours += actionHours(item, action);
+    if (item.consequential) {
       consequentialTotal += 1;
-      idealMinutes += RECORD_MINUTES[r.correctAction];
-      if (action === "keep") gateTripped = true;
+      idealHours += actionHours(item, item.correctAction);
+      if (action === "pass") gateTripped = true;
       else {
         consequentialAddressed += 1;
-        if (action !== r.correctAction) anyDegraded = true;
+        if (action !== item.correctAction) anyDegraded = true;
       }
-    }
-  }
-
-  let effortHours = effortMinutes / 60;
-  let idealHours = idealMinutes / 60;
-
-  for (const s of sources) {
-    const action = sourceActions[s.id] ?? "leave";
-    if (action === "migrate") effortHours += s.migrationEffort;
-    if (s.consequential) {
-      consequentialTotal += 1;
-      idealHours += s.migrationEffort;
-      if (action === "migrate") consequentialAddressed += 1;
-      else gateTripped = true;
     }
   }
 
@@ -283,7 +264,7 @@ export function computeCleanThePipeImpact(
       "Bad data still flowed into the step, so the output is poisoned — the effort you saved isn't worth a broken result.";
   } else if (yourQuality === "degraded") {
     verdict =
-      "The output holds up, though you discarded data you could have repaired — cheaper isn't always better.";
+      "The output holds up, though you discarded data you could have recovered — cheaper isn't always better.";
   } else if (effortHoursR > idealHoursR + 0.1) {
     verdict =
       "Clean output — but you spent more effort than the result needed. Not all dirt is worth chasing.";
