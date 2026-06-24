@@ -61,16 +61,19 @@ export const EXPLAINER_SCRIPTS: Record<string, string> = {
     "their order, and where a link is broken. Let's see what that looks like in " +
     "practice.",
 
-  // Clean the Pipe — Data hygiene / garbage-in, garbage-out
+  // Clean the Pipe — Data-integration design / feeding the step
   "clean-the-pipe":
-    "An AI is only ever as good as what you feed it — give it messy input and you " +
-    "get a confident, useless answer out. That's because the model can't tell a " +
-    "stale record or a wrong-category entry from a good one; it treats whatever you " +
-    "hand it as true and builds on it, so a single poisoned row can skew the whole " +
-    "result. But not all mess matters equally — a harmless duplicate changes " +
-    "nothing, while one bad value derails everything. The skill is triage: spot the " +
-    "dirt that actually changes the output, and don't waste effort scrubbing what " +
-    "doesn't. Let's see what that looks like in practice.",
+    "An AI step is only ever as good as the data you pipe into it — and that data " +
+    "usually comes from several places at once: a database, an inbox, a few " +
+    "spreadsheets, maybe a stack of scans. Each arrives in a different shape, and " +
+    "the way it flows in is what makes or breaks the output. Sometimes the fix is " +
+    "to redirect a messy channel so new data comes in structured, without " +
+    "re-processing the old; sometimes you have to migrate historical data into a " +
+    "usable form; and sometimes a source just isn't worth the effort. The catch is " +
+    "that migration is real work that introduces its own human errors, so building " +
+    "too much is as wrong as building too little. The skill is designing how each " +
+    "source feeds the step to get the fewest errors out. Let's see what that looks " +
+    "like in practice.",
 
   // Fit for Purpose — Matching the tool to the work
   "right-tool-for-the-job":

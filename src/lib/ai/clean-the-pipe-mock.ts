@@ -1,428 +1,530 @@
 import {
-  withItemIds,
+  withSourceIds,
   type CleanThePipeScenario,
   type RawCleanThePipeScenario,
 } from "./clean-the-pipe";
 
 /**
  * Deterministic offline rounds — one per difficulty (1-5) — so "Clean the Pipe"
- * is fully playable with no AI provider configured. Difficulty scales the dirt:
- * warm-up has one obvious bad row; the middle rounds bury a consequential row
- * among tempting-but-harmless dirt; rounds 4-5 add "batch" items — whole sources
- * whose data type doesn't suit the system, where a repair is a migration that
- * costs real hours (one worth-it batch in round 4, a worth-it and a tolerable
- * one in round 5).
+ * is fully playable with no AI provider configured. Difficulty escalates the
+ * integration design: round 1 is a single "redirect the channel" call; the
+ * middle rounds add the first migration and a four-way sort; round 4 is a desk
+ * full of historical sources (two spreadsheets, a key-fields-missing database, an
+ * inbox) each needing a migration decision; round 5 (boss) plants a tempting but
+ * not-worth-it migration so the player must spend conversion effort only where it
+ * pays off.
  *
- * Items are NOT ordered by their action, so position carries no signal — the
- * player has to read each one. The roster of senders is unique to this game.
+ * Sources are NOT ordered by their answer, so position carries no signal. The
+ * roster of senders is unique to this game.
  */
 const BANK: Record<number, RawCleanThePipeScenario> = {
-  // D1 (warm-up) — one wrong-category row among clean survey responses.
+  // D1 — fix the channel: redirect a messy live inbox, keep the clean DB, drop noise.
   1: {
-    topic: "training feedback",
-    stepName: "Summarise the course feedback into themes",
-    datasetName: "Workshop feedback responses",
+    topic: "support requests",
+    stepName: "Route incoming IT support requests to the right team",
     brief: {
       senderName: "Priya Nadkarni",
-      senderRole: "Learning & Development Lead",
+      senderRole: "IT Service Desk Lead",
       senderInitials: "PN",
       message:
-        "Here are the responses from last week's workshop. Before I have the AI theme them, can you cast an eye over the rows and clear anything that would throw the summary off? Don't fuss over little stuff.",
+        "We want the AI to auto-route support requests, but it keeps mis-filing them. Have a look at where the requests actually come from and decide how each source should feed the router. Don't over-engineer it.",
     },
-    goal: "Remove what would skew the themes, and leave the genuinely fine responses untouched.",
-    items: [
+    goal: "Feed the router clean, structured requests going forward — without burning time on data that doesn't matter.",
+    sources: [
       {
-        kind: "record",
-        label: "Row 1 · attendee A",
-        content: '"The hands-on exercises were the most useful part."',
-        usedFor: "Becomes one data point in the themed summary of feedback.",
-        consequential: false,
-        correctAction: "pass",
-        reason: "A clean, on-topic response — exactly what the summary needs.",
-      },
-      {
-        kind: "record",
-        label: "Row 2 · attendee B",
-        content: '"Pace was a little fast but the examples landed well."',
-        usedFor: "Feeds the themes about pace and delivery.",
-        consequential: false,
-        correctAction: "pass",
-        reason: "On-topic feedback; nothing to fix.",
-      },
-      {
-        kind: "record",
-        label: "Row 3 · facilities ticket",
-        content: '"The projector in Room 4 needs a new bulb — logged with IT."',
-        usedFor: "Would be read as a feedback response and grouped into a theme.",
-        consequential: true,
-        correctAction: "bin",
+        type: "email",
+        label: "support@ shared inbox",
+        summary: "Free-text emails where staff describe IT problems in their own words.",
+        preview: {
+          messages: [
+            {
+              from: "marketing@firm.com",
+              subject: "laptop thing",
+              body: "Hiya — my laptop won't connect to the printer on 3rd floor, also Outlook is slow. Can someone help? Ta",
+            },
+            {
+              from: "j.okafor@firm.com",
+              subject: "URGENT!!!",
+              body: "cant log in to the VPN at all, tried twice. need it for a client call at 2",
+            },
+            {
+              from: "reception@firm.com",
+              body: "The meeting room screen is frozen again 🙁",
+            },
+          ],
+        },
+        usedFor: "Each message becomes a ticket the router assigns to a team.",
+        volume: 1800,
+        ongoing: true,
+        migrationEffortHours: 12,
+        kind: "messy-ongoing-no-history",
         reason:
-          "This isn't course feedback at all — a facilities note slipped into the export. Left in, it invents a fake 'equipment' theme.",
+          "Free-text email is why the router misfires — there's no category, priority or system field to route on. The fix is to REDIRECT new requests through a structured form (dropdowns for category/priority); old resolved emails don't need re-routing.",
       },
       {
-        kind: "record",
-        label: "Row 4 · attendee C",
-        content: '"More time for Q&A next time, please."',
-        usedFor: "Contributes to themes about session structure.",
-        consequential: false,
-        correctAction: "pass",
-        reason: "Genuine feedback; keep it.",
+        type: "database",
+        label: "Asset register (CMDB)",
+        summary: "The configuration database of every device, owner and location.",
+        preview: {
+          columns: ["Asset ID", "Type", "Owner", "Location", "Status"],
+          rows: [
+            ["LT-4821", "Laptop", "J. Okafor", "Floor 2", "Active"],
+            ["PR-0093", "Printer", "Shared", "Floor 3", "Active"],
+            ["MR-0012", "Display", "Reception", "Ground", "Active"],
+          ],
+        },
+        usedFor: "The router looks up the device an issue refers to.",
+        volume: 3200,
+        ongoing: true,
+        migrationEffortHours: 20,
+        kind: "clean-structured",
+        reason:
+          "Already a clean, structured system the router reads fine — keep feeding it in as-is. Touching it would be pure busywork.",
       },
       {
-        kind: "record",
-        label: "Row 5 · attendee D",
-        content: '"Loved the templates we got to take away."',
-        usedFor: "Feeds themes about materials and takeaways.",
-        consequential: false,
-        correctAction: "pass",
-        reason: "On-topic; keep it.",
+        type: "spreadsheet",
+        label: "2019 desk-move plan (xlsx)",
+        summary: "A one-off seating spreadsheet from a 2019 office move.",
+        preview: {
+          columns: ["Name", "Old desk", "New desk"],
+          rows: [
+            ["A. Smith", "2-14", "3-02"],
+            ["B. Lee", "2-15", "3-03"],
+          ],
+        },
+        usedFor: "Was attached to the project; nothing routes off it.",
+        volume: 120,
+        ongoing: false,
+        migrationEffortHours: 6,
+        kind: "irrelevant",
+        reason:
+          "A stale 2019 seating plan that has nothing to do with routing support tickets — exclude it; feeding it in just adds noise.",
       },
     ],
     explanation:
-      "Only the facilities ticket needed clearing — it isn't feedback, so it would have spawned a bogus theme. Everything else is clean, on-topic feedback; touching it would just be busywork. Not all rows that look 'odd' are worth acting on — only the ones that change the result.",
+      "The router misfires because requests arrive as free-text email with no fields to route on — redirect that channel to a structured form and new tickets come in clean (no need to re-process old mail). The asset database is already structured, so keep it. The 2019 desk-move sheet is irrelevant, so drop it. Fixing the intake beats trying to clean every past message.",
   },
 
-  // D2 (duplicates & blanks) — lots of cosmetic dirt, one blank that matters.
+  // D2 — first migration: keep the clean DB, migrate the messy needed sheet, redirect the inbox.
   2: {
-    topic: "expense claims",
-    stepName: "Total this month's reimbursable expenses by category",
-    datasetName: "March expense export",
+    topic: "expense reporting",
+    stepName: "Total reimbursable expenses by category for the quarter",
     brief: {
       senderName: "Tomás Beckett",
       senderRole: "Finance Operations Analyst",
       senderInitials: "TB",
       message:
-        "Month-end expense export, straight from the portal. Tidy up anything that would throw the category totals before I run the tally. It's a bit messy — but not all of it matters.",
+        "The category totals never tie out. The numbers come from three places — tell me how each should feed the tally so we can trust the figure. Some of it needs real work; some doesn't.",
     },
-    goal: "Fix what corrupts the totals, and resist cleaning the cosmetic mess that doesn't.",
-    items: [
+    goal: "Get every needed source into a shape the tally can total reliably, and don't reshape what's already fine.",
+    sources: [
       {
-        kind: "record",
-        label: "Row 7 · Travel",
-        content: "£142.00 — train, client visit (Travel)",
-        usedFor: "Adds £142 to the Travel category total.",
-        consequential: false,
-        correctAction: "pass",
-        reason: "Clean, categorised, has an amount. Keep it.",
-      },
-      {
-        kind: "record",
-        label: "Row 8 · Travel (dup)",
-        content: "£142.00 — train, client visit (Travel)  [exact duplicate of Row 7]",
-        usedFor: "Would add a second £142 to the Travel total.",
-        consequential: true,
-        correctAction: "bin",
+        type: "database",
+        label: "Corporate card feed (API)",
+        summary: "A live feed of card transactions with merchant, amount and category.",
+        preview: {
+          columns: ["Date", "Merchant", "Amount", "Category"],
+          rows: [
+            ["02 Apr", "Trainline", "£142.00", "Travel"],
+            ["05 Apr", "Pret", "£8.10", "Meals"],
+            ["09 Apr", "Staples", "£54.99", "Office"],
+          ],
+        },
+        usedFor: "The main stream of categorised spend the tally sums.",
+        volume: 2600,
+        ongoing: true,
+        migrationEffortHours: 16,
+        kind: "clean-structured",
         reason:
-          "An exact duplicate of a real claim — left in, it double-counts £142 in the Travel total. This duplicate actually matters.",
+          "Clean, categorised, has amounts — exactly what the tally needs. Keep it as-is.",
       },
       {
-        kind: "record",
-        label: "Row 11 · Meals",
-        content: "£23.40 — team lunch (Meals)   note: receipt photo blurry",
-        usedFor: "Adds £23.40 to the Meals total.",
-        consequential: false,
-        correctAction: "pass",
+        type: "spreadsheet",
+        label: "Out-of-pocket claims (xlsx)",
+        summary: "A manually-kept sheet of cash expenses staff file by hand.",
+        preview: {
+          columns: ["Who", "What", "Amount", "Category"],
+          rows: [
+            ["R. Patel", "Taxi to client", "23.40", ""],
+            ["S. Ng", "Conference ticket", "£310", "training"],
+            ["M. Cole", "lunch w/ supplier", "£18", ""],
+          ],
+        },
+        usedFor: "Cash expenses that also belong in the category totals.",
+        volume: 480,
+        ongoing: true,
+        migrationEffortHours: 10,
+        kind: "messy-historical-needed",
         reason:
-          "The 'blurry receipt' note is cosmetic — the amount and category are present, so the tally is fine. Leave it.",
+          "Real spend the tally needs, but blank/inconsistent categories and mixed amount formats mean it can't be totalled as-is — migrate it: normalise the amounts and fill the missing categories.",
       },
       {
-        kind: "record",
-        label: "Row 12 · (blank category)",
-        content: "£310.00 — conference ticket, category: ____",
-        usedFor: "The tally groups by category — this £310 needs one to land anywhere.",
-        repairedContent: "£310.00 — conference ticket (Training)",
-        consequential: true,
-        correctAction: "repair",
+        type: "email",
+        label: "Receipts forwarded by email",
+        summary: "Staff forward photos of receipts to an inbox as they go.",
+        preview: {
+          messages: [
+            {
+              from: "k.adeyemi@firm.com",
+              subject: "Fwd: receipt",
+              body: "Here's the taxi one from Tuesday [photo attached]",
+            },
+            {
+              from: "l.zhang@firm.com",
+              body: "another one, sorry the photo's blurry",
+            },
+          ],
+        },
+        usedFor: "An ad-hoc way expenses arrive that the tally can't read.",
+        volume: 900,
+        ongoing: true,
+        migrationEffortHours: 14,
+        kind: "messy-ongoing-no-history",
         reason:
-          "A real £310 claim with no category — the tally needs the category, so this is a recoverable gap: repair it (it's clearly a conference/Training cost).",
-      },
-      {
-        kind: "record",
-        label: "Row 15 · Meals",
-        content: "£8.10 — coffee (meals)",
-        usedFor: "Adds £8.10 to the Meals total.",
-        consequential: false,
-        correctAction: "pass",
-        reason:
-          "Lower-case 'meals' vs 'Meals' is a cosmetic inconsistency the tally ignores. Don't bother.",
-      },
-      {
-        kind: "record",
-        label: "Row 16 · Office",
-        content: "£54.99 — printer paper (Office)",
-        usedFor: "Adds £54.99 to the Office total.",
-        consequential: false,
-        correctAction: "pass",
-        reason: "Clean and categorised. Keep it.",
+          "Emailed photos can't be totalled and there's no structure to them — redirect to a structured expense-submission form going forward; the old forwarded photos aren't worth re-keying.",
       },
     ],
     explanation:
-      "Two rows actually move the totals: the exact duplicate (bin it, or you double-count) and the £310 claim with no category (repair it, or it falls out of every category). The blurry-receipt note and the lower-case 'meals' look untidy but the tally doesn't care — chasing them is wasted effort. Match the cleaning to what changes the number.",
+      "Three sources, three different calls. The card feed is already clean — keep it. The out-of-pocket sheet is spend you genuinely need but it's too messy to total, so migrate it. The emailed receipts are an unstructured channel best fixed by redirecting submissions to a form, not by re-keying old photos. Match the work to what each source actually needs.",
   },
 
-  // D3 (stale record) — an out-of-date row flips the result; tempting dirt around it.
+  // D3 — sort the desk: one of each kind, four different right answers.
   3: {
-    topic: "supplier pricing",
-    stepName: "Find the current lowest price for each part",
-    datasetName: "Supplier quote sheet",
+    topic: "supplier management",
+    stepName: "Build a current preferred-supplier list with up-to-date pricing",
     brief: {
       senderName: "Helena Vorster",
       senderRole: "Procurement Manager",
       senderInitials: "HV",
       message:
-        "Quotes for the reorder. Have a look before the AI picks the cheapest per part — something in here will give us a wrong answer if it stays. Some of it's just untidy, mind.",
+        "Four places hold supplier info and the AI's list is a mess. Decide how each should feed the build — keep, redesign, convert, or leave out. Read them before you choose.",
     },
-    goal: "Bin the entry that would produce a wrong 'lowest price', without over-pruning the rest.",
-    items: [
+    goal: "Compile the list from the sources that belong, each in a shape the build can use.",
+    sources: [
       {
-        kind: "record",
-        label: "Part A · Supplier North",
-        content: "Bolt M8 — £0.42/unit — quoted 2 May 2026",
-        usedFor: "A candidate price when picking the cheapest Bolt M8.",
-        consequential: false,
-        correctAction: "pass",
-        reason: "Current quote, in date. Keep it.",
-      },
-      {
-        kind: "record",
-        label: "Part A · Supplier West",
-        content: "Bolt M8 — £0.19/unit — quoted 12 Nov 2019  [expired]",
-        usedFor: "Would compete to be the lowest Bolt M8 price.",
-        consequential: true,
-        correctAction: "bin",
+        type: "database",
+        label: "Supplier master (ERP)",
+        summary: "The system of record for approved suppliers and terms.",
+        preview: {
+          columns: ["Supplier", "Status", "Payment terms", "Category"],
+          rows: [
+            ["Northwind Ltd", "Approved", "30 days", "Packaging"],
+            ["Acme Corp", "Approved", "45 days", "Raw materials"],
+          ],
+        },
+        usedFor: "The backbone of approved suppliers and their terms.",
+        volume: 1400,
+        ongoing: true,
+        migrationEffortHours: 18,
+        kind: "clean-structured",
         reason:
-          "A 2019 price that's no longer honoured — but it's the lowest number on the sheet, so left in it wins as 'cheapest' and gives a wrong answer. Bin it.",
+          "The clean system of record — keep it; it's the spine of the list.",
       },
       {
-        kind: "record",
-        label: "Part A · Supplier East",
-        content: "bolt m8 — £0.45/unit — quoted 28 Apr 2026",
-        usedFor: "A candidate price for the cheapest Bolt M8.",
-        consequential: false,
-        correctAction: "pass",
+        type: "spreadsheet",
+        label: "Buyer price tracker (xlsx)",
+        summary: "A spreadsheet buyers keep current prices in, by hand.",
+        preview: {
+          columns: ["Part", "Supplier", "Price", "Quoted"],
+          rows: [
+            ["Bolt M8", "North", "£0.42", "May 2026"],
+            ["Washer", "", "0.08", ""],
+            ["bolt m8", "East", "£0.45/unit", "28/04/26"],
+          ],
+        },
+        usedFor: "The only place current per-part pricing lives.",
+        volume: 650,
+        ongoing: true,
+        migrationEffortHours: 12,
+        kind: "messy-historical-needed",
         reason:
-          "Lower-case spelling is cosmetic; the price is current and valid. Leave it.",
+          "Pricing the list needs, but with blank suppliers, mixed price formats and inconsistent dates — migrate it into a consistent shape so prices can be matched.",
       },
       {
-        kind: "record",
-        label: "Part B · Supplier North",
-        content: "Washer — £0.08/unit — quoted 2 May 2026",
-        usedFor: "A candidate price for the cheapest Washer.",
-        consequential: false,
-        correctAction: "pass",
-        reason: "Clean, current quote. Keep it.",
-      },
-      {
-        kind: "record",
-        label: "Part B · Supplier West",
-        content: "Washer — £0.08/unit — quoted 2 May 2026   (re-sent email)",
-        usedFor: "A candidate price for the cheapest Washer.",
-        consequential: false,
-        correctAction: "pass",
+        type: "email",
+        label: "Quotes arriving by email",
+        summary: "Suppliers email fresh quotes in free-text as they come.",
+        preview: {
+          messages: [
+            {
+              from: "sales@northwind.com",
+              subject: "Re: bolt pricing",
+              body: "Hi Helena, can do the M8 bolts at 0.41 each for orders over 10k. Cheers",
+            },
+            {
+              from: "quotes@acme.com",
+              body: "New washer price attached — 0.075/unit, valid 30 days.",
+            },
+          ],
+        },
+        usedFor: "How new prices reach the team.",
+        volume: 520,
+        ongoing: true,
+        migrationEffortHours: 10,
+        kind: "messy-ongoing-no-history",
         reason:
-          "The '(re-sent email)' aside is noise — same valid price. Don't act on it.",
+          "New quotes in free-text email can't be matched to parts reliably — redirect suppliers to a structured quote form; old emailed quotes are already captured in the tracker.",
       },
       {
-        kind: "record",
-        label: "Part B · Supplier South",
-        content: "Washer — £0.11/unit — quoted 30 Apr 2026",
-        usedFor: "A candidate price for the cheapest Washer.",
-        consequential: false,
-        correctAction: "pass",
-        reason: "A current, valid quote. Keep it.",
+        type: "spreadsheet",
+        label: "2021 tender archive (xlsx)",
+        summary: "Closed pricing from a one-off 2021 tender exercise.",
+        preview: {
+          columns: ["Supplier", "Bid", "Outcome"],
+          rows: [
+            ["Cedar Group", "£40,000", "Not selected"],
+            ["Lumen Co", "£44,000", "Not selected"],
+          ],
+        },
+        usedFor: "A historical record of a past tender.",
+        volume: 90,
+        ongoing: false,
+        migrationEffortHours: 8,
+        kind: "irrelevant",
+        reason:
+          "Stale, not-selected bids from a 2021 tender — they'd put wrong, outdated prices on a CURRENT list. Exclude.",
       },
     ],
     explanation:
-      "The 2019 expired quote is the one that matters: it's the lowest figure on the sheet, so it would be picked as 'cheapest' even though no one will honour it — bin it. The lower-case spelling and the 're-sent email' aside are cosmetic; they don't change which price is lowest, so leave them. The skill is spotting the dirt that flips the answer, not tidying everything.",
+      "Each source wants a different call: keep the ERP master (clean system of record), migrate the buyer price tracker (needed pricing, but messy), redirect the emailed quotes (fix the channel, don't re-key old mail), and exclude the 2021 tender archive (stale and out of scope). Reading what each one is — and what the build uses it for — is the whole skill.",
   },
 
-  // D4 (a batch that doesn't fit) — records + ONE worth-migrating batch.
+  // D4 — migration day: two spreadsheets, a key-fields-missing DB, an inbox, plus the clean system.
   4: {
-    topic: "customer complaints",
-    stepName: "Summarise this quarter's complaints into themes",
-    datasetName: "Q2 complaint records",
+    topic: "customer onboarding",
+    stepName: "Build one unified customer record for each client",
     brief: {
       senderName: "Marcus Ifeanyi",
-      senderRole: "Customer Insights Manager",
+      senderRole: "Head of Customer Operations",
       senderInitials: "MI",
       message:
-        "Two things going into the theme summary: the complaint log, and the call-centre's recordings. Sort out the log rows that would skew it — and decide what to do about the recordings, because they're not in a shape the summariser can read.",
+        "We're consolidating customer data into one record per client. It's scattered across five sources in different shapes. Choose a migration path for each so the AI can build clean unified records — and be honest about what's actually needed.",
     },
-    goal: "Clean the rows that matter and bring the ill-fitting source into a usable shape — only if it's worth the effort.",
-    items: [
+    goal: "Bring every needed source into a consistent shape the build can merge, and don't reshape what's already clean.",
+    sources: [
       {
-        kind: "record",
-        label: "Row 3",
-        content: '"Delivery was three days late and no one updated me."',
-        usedFor: "A complaint that feeds the delivery theme.",
-        consequential: false,
-        correctAction: "pass",
-        reason: "A clear, on-topic complaint. Keep it.",
-      },
-      {
-        kind: "record",
-        label: "Row 4 · praise",
-        content: '"Honestly great service, just wanted to say thanks!"',
-        usedFor: "Would be read as a complaint and grouped into a theme.",
-        consequential: true,
-        correctAction: "bin",
+        type: "spreadsheet",
+        label: "Sales contacts (xlsx)",
+        summary: "The sales team's own spreadsheet of client contacts.",
+        preview: {
+          columns: ["Company", "Contact", "Email", "Phone"],
+          rows: [
+            ["Beacon Health", "Dana W", "dana@beacon", "—"],
+            ["Orbit Media", "", "info@orbit.co", "0207..."],
+            ["beacon health ltd", "D. White", "", "+44 20 7..."],
+          ],
+        },
+        usedFor: "Contact details that feed each unified record.",
+        volume: 1200,
+        ongoing: true,
+        migrationEffortHours: 14,
+        kind: "messy-historical-needed",
         reason:
-          "This is praise, not a complaint — left in the complaint themes, it invents a positive 'theme' that misrepresents the quarter. Bin it.",
+          "Needed contact data, but with duplicate company spellings, blank fields and inconsistent phone formats — migrate it: de-duplicate and normalise before merging.",
       },
       {
-        kind: "record",
-        label: "Row 9",
-        content: '"App kept crashing at checkout."   (duplicate wording, diff. timestamp)',
-        usedFor: "Adds weight to the checkout-crash theme.",
-        consequential: false,
-        correctAction: "pass",
+        type: "spreadsheet",
+        label: "Billing accounts (csv)",
+        summary: "An export of billing accounts in mixed currencies.",
+        preview: {
+          columns: ["Account", "Plan", "MRR", "Currency"],
+          rows: [
+            ["Beacon Health", "Pro", "1,200", "GBP"],
+            ["Orbit Media", "Team", "1.500,00", "EUR"],
+            ["Northstar", "Pro", "$2000", ""],
+          ],
+        },
+        usedFor: "The revenue figures attached to each unified record.",
+        volume: 1100,
+        ongoing: true,
+        migrationEffortHours: 16,
+        kind: "messy-historical-needed",
         reason:
-          "Two customers reporting the same crash is real signal, not a dirty duplicate. Keep it.",
+          "Revenue the record needs, but mixed currencies, decimal formats and a blank currency mean totals would be nonsense as-is — migrate it: convert to one currency and a single number format.",
       },
       {
-        kind: "record",
-        label: "Row 12 · garbled",
-        content: '"#REF! — billing — ‚Äî charged twice"',
-        usedFor: "Would feed the billing theme — if it can be read.",
-        repairedContent: '"Billing — charged twice for one order."',
-        consequential: true,
-        correctAction: "repair",
+        type: "database",
+        label: "Legacy CRM (key fields blank)",
+        summary: "An old CRM where the account-owner and tier fields were rarely filled.",
+        preview: {
+          columns: ["Company", "Account owner", "Tier", "Since"],
+          rows: [
+            ["Beacon Health", "", "", "2019"],
+            ["Orbit Media", "K. Adeyemi", "", "2021"],
+            ["Northstar", "", "", "2018"],
+          ],
+        },
+        usedFor: "Account ownership and tier for each unified record.",
+        volume: 1600,
+        ongoing: false,
+        migrationEffortHours: 24,
+        kind: "unusable-type-needed",
         reason:
-          "A genuine 'charged twice' billing complaint mangled by an encoding error — recoverable, and billing is a real theme, so repair it rather than lose it.",
+          "The record needs owner and tier, but those key fields are mostly blank — the data has to be backfilled (from sign-up history and assignments) before it's usable. Migrate it.",
       },
       {
-        kind: "record",
-        label: "Row 14",
-        content: '"Staff member on the phone was very rude."',
-        usedFor: "A complaint that feeds the service theme.",
-        consequential: false,
-        correctAction: "pass",
-        reason: "A clean complaint about service. Keep it.",
-      },
-      {
-        kind: "batch",
-        label: "Call-centre audio recordings (Q2)",
-        content:
-          "Hundreds of .mp3 voice recordings — the summariser only reads text, so as-is the entire phone channel is invisible to the themes.",
-        usedFor: "Would add the whole phone channel to the themed summary.",
-        repairedContent: "Recordings transcribed to text the summariser can read.",
-        migrationEffort: 10,
-        consequential: true,
-        correctAction: "repair",
+        type: "email",
+        label: "New-client intake emails",
+        summary: "Account managers email new client details in free-text.",
+        preview: {
+          messages: [
+            {
+              from: "am1@firm.com",
+              subject: "new client",
+              body: "Just signed Vertex Labs — main contact is Sam (sam@vertex.io), they're on the Team plan I think",
+            },
+            {
+              from: "am2@firm.com",
+              body: "Onboarded Cyan Group, will send billing later",
+            },
+          ],
+        },
+        usedFor: "How brand-new clients first get captured.",
+        volume: 400,
+        ongoing: true,
+        migrationEffortHours: 8,
+        kind: "messy-ongoing-no-history",
         reason:
-          "Phone is a major complaint channel; leaving the audio out would miss a whole slice of the quarter. Transcribing it to text (≈10 hrs) is worth it — the themes are badly skewed without it.",
+          "New clients captured as free-text email arrive incomplete and inconsistent — redirect intake to a structured new-client form so future records start clean; the few old emails aren't worth re-keying.",
+      },
+      {
+        type: "api",
+        label: "Support desk (Zendesk API)",
+        summary: "A live, well-structured feed of support tickets per account.",
+        preview: {
+          columns: ["Account", "Open tickets", "CSAT", "Last contact"],
+          rows: [
+            ["Beacon Health", "2", "4.6", "12 Jun"],
+            ["Orbit Media", "0", "4.9", "03 Jun"],
+          ],
+        },
+        usedFor: "Support health attached to each unified record.",
+        volume: 2000,
+        ongoing: true,
+        migrationEffortHours: 20,
+        kind: "clean-structured",
+        reason:
+          "A clean, structured API the build can read directly — keep it; migrating it would waste effort for no gain.",
       },
     ],
     explanation:
-      "Two rows matter — the praise (bin: it isn't a complaint) and the garbled billing entry (repair: recoverable real signal). The duplicate-looking crash reports are genuine repeat signal, so keep them. The audio recordings don't fit the text summariser at all, and phone is a big channel — so repairing them (transcribe to text) is effort well spent. A batch repair costs real hours, but here the output is broken without it.",
+      "Four of the five sources need work and one doesn't. Migrate the two messy spreadsheets (de-dupe contacts; normalise currencies) and the legacy CRM (backfill the blank owner/tier fields) — they're all needed and unusable as-is. Redirect the free-text intake emails to a structured form rather than re-keying them. Keep the clean support API untouched. Choosing the migration path per source is the job.",
   },
 
-  // D5 (boss) — records + TWO batches: one worth migrating, one tolerable to leave.
+  // D5 — boss: a needed migration, a needed conversion, the not-worth-it trap, a redirect, a keep.
   5: {
-    topic: "sales pipeline",
-    stepName: "Compile a Q3 revenue-forecast brief from these sources",
-    datasetName: "Q3 forecasting inputs",
+    topic: "regulatory reporting",
+    stepName: "Compile the annual compliance report from source records",
     brief: {
       senderName: "Dana Whitlock",
-      senderRole: "Revenue Operations Director",
+      senderRole: "Head of Compliance",
       senderInitials: "DW",
       message:
-        "Pulling the Q3 forecast brief together. There are a few deal rows to sanity-check, plus two extra sources that don't slot neatly into the model. Be careful what you spend time migrating — not everything earns its keep.",
+        "Annual report time. Five sources feed it and they're all in different states. Be careful what you migrate — one of these is a huge job for almost no benefit. Spend the effort where it actually changes the report.",
     },
-    goal: "Clean the rows that distort the forecast and migrate only the source whose effort actually pays off.",
-    items: [
+    goal: "Get the sources the report depends on into shape, and leave the migration that doesn't earn its cost.",
+    sources: [
       {
-        kind: "record",
-        label: "Deal 102 · Closed-Won",
-        content: "Acme Corp — £48,000 — Closed-Won — Q3",
-        usedFor: "Counts toward the Q3 closed-revenue forecast.",
-        consequential: false,
-        correctAction: "pass",
-        reason: "A clean, in-period, closed deal. Keep it.",
-      },
-      {
-        kind: "record",
-        label: "Deal 104 · test",
-        content: "TEST ACCOUNT — £999,999 — Closed-Won — Q3",
-        usedFor: "Would be summed into the Q3 forecast total.",
-        consequential: true,
-        correctAction: "bin",
+        type: "spreadsheet",
+        label: "Incident log (xlsx)",
+        summary: "The log of reportable incidents, kept by hand across the year.",
+        preview: {
+          columns: ["Date", "Type", "Severity", "Resolved"],
+          rows: [
+            ["14/03", "Data", "High", "Y"],
+            ["2 May", "access", "", "yes"],
+            ["07-08-26", "Data Breach", "high", ""],
+          ],
+        },
+        usedFor: "The core list of incidents the report must account for.",
+        volume: 320,
+        ongoing: true,
+        migrationEffortHours: 12,
+        kind: "messy-historical-needed",
         reason:
-          "A test record with a junk £999,999 value — left in, it blows the forecast wide open. Bin it.",
+          "The report's backbone, but with inconsistent dates, blank severities and varied wording — migrate it into a consistent schema or the incident counts will be wrong.",
       },
       {
-        kind: "record",
-        label: "Deal 108",
-        content: "Northwind Ltd — £31,500 — Closed-Won — Q3   (note: contact left company)",
-        usedFor: "Counts toward the Q3 closed-revenue forecast.",
-        consequential: false,
-        correctAction: "pass",
+        type: "scans",
+        label: "Signed attestation forms (PDF scans)",
+        summary: "Scanned, signed manager attestations the report must evidence.",
+        preview: {
+          note: "≈900 scanned PDFs of signed paper forms. No text layer — the AI can't read names, dates or the attestation field without OCR and extraction. The report has to cite these.",
+        },
+        usedFor: "Evidence that each manager signed off, cited in the report.",
+        volume: 900,
+        ongoing: false,
+        migrationEffortHours: 30,
+        kind: "unusable-type-needed",
         reason:
-          "The 'contact left' aside doesn't change the closed value — cosmetic. Keep the deal.",
+          "The report is legally required to evidence these sign-offs, but as image-only scans they're unreadable — migrate them: OCR and extract the key fields. Costly, but the report can't be filed without them.",
       },
       {
-        kind: "record",
-        label: "Deal 111 · stage blank",
-        content: "Beacon Health — £62,000 — stage: ____ — Q3",
-        usedFor: "The forecast weights deals by pipeline stage.",
-        repairedContent: "Beacon Health — £62,000 — Closed-Won — Q3",
-        consequential: true,
-        correctAction: "repair",
+        type: "scans",
+        label: "Historic training certificates (2015–2019)",
+        summary: "Scanned PDFs of old staff training certificates.",
+        preview: {
+          note: "Thousands of scanned certificates from 2015–2019. This year's report only covers the current period, and current training is already tracked in the LMS below. Digitising these would be a large OCR project.",
+        },
+        usedFor: "Old training evidence from prior periods.",
+        volume: 4000,
+        ongoing: false,
+        migrationEffortHours: 60,
+        kind: "unusable-not-worth",
         reason:
-          "A real £62k deal with no pipeline stage — the forecast weights by stage, so this is a recoverable gap to repair, not bin.",
+          "A tempting 60-hour OCR migration — but these are out-of-period and current training is already in the LMS, so the report doesn't need them. Exclude; migrating them burns effort and introduces errors for no benefit. This is the trap.",
       },
       {
-        kind: "record",
-        label: "Deal 117 · last year",
-        content: "Cedar Group — £40,000 — Closed-Won — Q3 LAST YEAR",
-        usedFor: "Would be summed into this quarter's forecast.",
-        consequential: true,
-        correctAction: "bin",
+        type: "email",
+        label: "Breach notifications by email",
+        summary: "Teams email breach notifications in free-text as they happen.",
+        preview: {
+          messages: [
+            {
+              from: "secops@firm.com",
+              subject: "possible breach",
+              body: "Saw unusual access on the finance share around 3pm, looking into it now",
+            },
+            {
+              from: "it@firm.com",
+              body: "false alarm on yesterday's one, was a sync job",
+            },
+          ],
+        },
+        usedFor: "How breaches first get reported internally.",
+        volume: 260,
+        ongoing: true,
+        migrationEffortHours: 8,
+        kind: "messy-ongoing-no-history",
         reason:
-          "A prior-year deal that's wandered into the Q3 set — it inflates this quarter's forecast. Bin it.",
+          "Free-text breach emails are inconsistent and hard to count — redirect to a structured incident-report form so future notifications are captured cleanly; old threads are already reflected in the incident log.",
       },
       {
-        kind: "record",
-        label: "Deal 120 · Closed-Won",
-        content: "Lumen Co — £27,250 — Closed-Won — Q3",
-        usedFor: "Counts toward the Q3 closed-revenue forecast.",
-        consequential: false,
-        correctAction: "pass",
-        reason: "Clean, in-period deal. Keep it.",
-      },
-      {
-        kind: "batch",
-        label: "Regional CRM export (LATAM team)",
-        content:
-          "A spreadsheet from a different CRM — amounts are in mixed local currencies and the stage names don't match our model, so dropped in as-is it corrupts both the totals and the stage weighting.",
-        usedFor: "Would add the LATAM team's live Q3 pipeline to the forecast.",
-        repairedContent: "Currencies converted to GBP and stage names mapped to our model.",
-        migrationEffort: 8,
-        consequential: true,
-        correctAction: "repair",
+        type: "database",
+        label: "Learning system (LMS)",
+        summary: "The current training system with completion records per employee.",
+        preview: {
+          columns: ["Employee", "Course", "Completed", "Status"],
+          rows: [
+            ["A. Smith", "Data Protection", "2026-02-10", "Complete"],
+            ["B. Lee", "Security Basics", "2026-01-22", "Complete"],
+          ],
+        },
+        usedFor: "Current-period training completion the report draws on.",
+        volume: 5000,
+        ongoing: true,
+        migrationEffortHours: 20,
+        kind: "clean-structured",
         reason:
-          "This is real Q3 pipeline that belongs in the forecast — converting the currencies and mapping the stages (≈8 hrs) is worth it; without it the regional numbers are wrong or missing.",
-      },
-      {
-        kind: "batch",
-        label: "Scanned PDF contracts archive (2018-2021)",
-        content:
-          "Thousands of scanned, unsearchable PDF contracts — the model can't read them without OCR and manual extraction.",
-        usedFor: "Historic closed contracts; the forward forecast doesn't draw on them.",
-        repairedContent: "OCR'd and key terms extracted into structured rows.",
-        migrationEffort: 40,
-        consequential: false,
-        correctAction: "pass",
-        reason:
-          "Historic, already-closed contracts that the forward forecast doesn't need — a 40-hour OCR migration that buys the brief almost nothing. Leave it; this is the trap.",
+          "A clean, current system the report reads directly — keep it; it already covers this period's training.",
       },
     ],
     explanation:
-      "Three rows distort the forecast: the test account and the prior-year deal (bin) and the stage-less £62k deal (repair). The 'contact left' note and the repeat structure are harmless. On the batches, the LATAM CRM export is live Q3 pipeline in the wrong shape — repairing it (≈8 hrs) pays off. The scanned 2018-2021 contracts are a tempting 40-hour migration that the forward forecast doesn't need: leaving them is the calibrated call. Spend migration effort only where it changes the answer.",
+      "Migrate the incident log (the report's backbone, but messy) and OCR the signed attestation scans (legally required evidence, unreadable as images). Redirect the free-text breach emails to a structured form. Keep the clean LMS. The trap is the 2015–2019 training certificates: a huge 60-hour OCR job that's out of period and already superseded by the LMS — excluding it is the calibrated call. Spend migration effort only where it changes the report.",
   },
 };
 
 export function mockCleanThePipeRound(difficulty: number): CleanThePipeScenario {
   const d = Math.max(1, Math.min(5, Math.round(difficulty)));
-  return withItemIds(BANK[d], d);
+  return withSourceIds(BANK[d], d);
 }

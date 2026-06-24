@@ -62,24 +62,25 @@ export async function POST(request: Request) {
     })
     .run();
 
-  // Strip the ground truth — `consequential`, `correctAction`, `reason` — before
-  // sending to the client. The player sees only the items (and the neutral
-  // `usedFor` / repair preview) and decides what to do.
+  // Strip the ground truth — `kind` and `reason` — before sending to the client.
+  // The player sees only each source (its clickable preview, what the step uses
+  // it for, volume and migration cost) and decides how to feed it in.
   const safeScenario = {
     topic: scenario.topic,
     difficulty: scenario.difficulty,
     stepName: scenario.stepName,
-    datasetName: scenario.datasetName,
     brief: scenario.brief,
     goal: scenario.goal,
-    items: scenario.items.map((it) => ({
-      id: it.id,
-      kind: it.kind,
-      label: it.label,
-      content: it.content,
-      usedFor: it.usedFor,
-      repairedContent: it.repairedContent,
-      migrationEffort: it.migrationEffort,
+    sources: scenario.sources.map((s) => ({
+      id: s.id,
+      type: s.type,
+      label: s.label,
+      summary: s.summary,
+      preview: s.preview,
+      usedFor: s.usedFor,
+      volume: s.volume,
+      ongoing: s.ongoing,
+      migrationEffortHours: s.migrationEffortHours,
     })),
   };
 

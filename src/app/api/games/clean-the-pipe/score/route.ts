@@ -15,16 +15,18 @@ import {
 } from "@/lib/db/schema";
 import { getOrCreatePlayer } from "@/lib/player";
 import {
-  computeCleanThePipeImpact,
+  bestPathForKind,
+  errorsFor,
   gradeCleanThePipe,
-  type TriageAction,
+  sourceVerdict,
+  type SourcePath,
 } from "@/lib/clean-the-pipe-scoring";
 import { bonusForScoreRatio, levelForXp } from "@/lib/xp";
 
-const TRIAGE_ACTIONS = new Set<TriageAction>(["pass", "repair", "bin"]);
+const SOURCE_PATHS = new Set<SourcePath>(["keep", "redirect", "migrate", "exclude"]);
 
-/** Coerce an untrusted action map into a typed record, dropping anything unknown. */
-function cleanActions<T extends string>(
+/** Coerce an untrusted path map into a typed record, dropping anything unknown. */
+function cleanPaths<T extends string>(
   raw: unknown,
   valid: Set<T>,
 ): Record<string, T> {
@@ -41,21 +43,22 @@ function cleanActions<T extends string>(
 
 /**
  * Score a "Clean the Pipe" round. Grading is fully server-side against the
- * stored item ground truth, on two axes (see docs/GAME-RULES.md):
+ * stored source ground truth (see docs/GAME-RULES.md): a pipeline simulation is
+ * run three ways — do nothing, the player's chosen paths, and the best possible
+ * — and the round is scored on how far the player cut total errors (AI + human +
+ * omission) from the do-nothing baseline toward the best achievable, capped
+ * below the clear if a critical source is left poisoning the output.
  *
- *   accuracy = creditSum / consequentialTotal   (the gate — catch what poisons)
- *   effort   = 1 - wastedEffort / maxWaste      (calibrate cleaning to consequence)
- *   scoreRatio = 0.5 * accuracy + 0.5 * effort  (capped at 0.5 if a consequential item is left)
+ * The step's deliverable is then narrated before vs after — illustrative only;
+ * never affects the score.
  *
- * The step is then "run" on the raw vs the triaged data so the scorecard can
- * show the deliverable each produced — illustrative only; never affects the score.
- *
- * Body: { roundId: string, actions: {id: action} }
+ * Body: { roundId: string, paths: {id: path} }
  */
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   const roundId = body?.roundId as string | undefined;
-  const actions = cleanActions<TriageAction>(body?.actions, TRIAGE_ACTIONS);
+  // Accept `paths` (new) or `actions` (legacy) for resilience.
+  const paths = cleanPaths<SourcePath>(body?.paths ?? body?.actions, SOURCE_PATHS);
 
   if (!roundId) {
     return NextResponse.json({ error: "roundId is required" }, { status: 400 });
@@ -86,33 +89,39 @@ export async function POST(request: Request) {
 
   const scenario = round.scenario as unknown as CleanThePipeScenario;
 
-  const graded = gradeCleanThePipe(scenario.items, actions);
+  const graded = gradeCleanThePipe(scenario.sources, paths);
   const score = Math.round(graded.scoreRatio * challenge.maxScore);
   const xpEarned = Math.round(challenge.xpReward * graded.scoreRatio);
   const bonusXp = bonusForScoreRatio(challenge.xpReward, graded.scoreRatio);
 
-  // Run the step on the raw vs the triaged data to show what each produced.
-  const output = await generateCleanThePipeOutcome({ scenario, actions });
+  // Narrate the deliverable before vs after the player's redesign. Feedback only.
+  const output = await generateCleanThePipeOutcome({ scenario, paths });
 
-  // Plain quality + effort read of the player's triage. Feedback only.
-  const impact = computeCleanThePipeImpact(scenario.items, actions);
+  // Per-source breakdown for the debrief: the ground truth, the player's path,
+  // the best path and the error tally each produced.
+  const sources = scenario.sources.map((s) => {
+    const path = paths[s.id] ?? "keep";
+    const bestPath = bestPathForKind(s.kind);
+    return {
+      id: s.id,
+      type: s.type,
+      label: s.label,
+      summary: s.summary,
+      usedFor: s.usedFor,
+      volume: s.volume,
+      ongoing: s.ongoing,
+      migrationEffortHours: s.migrationEffortHours,
+      kind: s.kind,
+      reason: s.reason,
+      path,
+      bestPath,
+      verdict: sourceVerdict(s.kind, path, s.volume),
+      yourErrors: Math.round(errorsFor(s, path).total),
+      bestErrors: Math.round(errorsFor(s, bestPath).total),
+    };
+  });
 
-  // Per-item breakdown for the debrief: the ground truth plus what the player did.
-  const items = scenario.items.map((it) => ({
-    id: it.id,
-    kind: it.kind,
-    label: it.label,
-    content: it.content,
-    usedFor: it.usedFor,
-    repairedContent: it.repairedContent,
-    migrationEffort: it.migrationEffort,
-    consequential: it.consequential,
-    correctAction: it.correctAction,
-    reason: it.reason,
-    action: actions[it.id] ?? "pass",
-  }));
-
-  const feedback = `${graded.cleanCorrect}/${graded.consequentialTotal} consequential items handled right · ${graded.overCleaned} needless clean-up${graded.overCleaned === 1 ? "" : "s"}.`;
+  const feedback = `${graded.bestPicks}/${graded.sourcesTotal} sources on their best path · ${graded.simulation.yours.total} errors/qtr (best ${graded.simulation.best.total}).`;
 
   db.insert(attempts)
     .values({
@@ -122,7 +131,7 @@ export async function POST(request: Request) {
       score,
       xpEarned,
       bonusXp,
-      response: JSON.stringify({ roundId, actions, output }),
+      response: JSON.stringify({ roundId, paths, output }),
       evaluation: {
         score,
         feedback,
@@ -142,18 +151,17 @@ export async function POST(request: Request) {
   return NextResponse.json({
     score,
     maxScore: challenge.maxScore,
-    accuracy: Math.round(graded.accuracy * 100),
-    effort: Math.round(graded.effort * 100),
-    consequentialTotal: graded.consequentialTotal,
-    cleanCorrect: graded.cleanCorrect,
-    missedConsequential: graded.missedConsequential,
-    overCleaned: graded.overCleaned,
-    items,
+    errorReduction: Math.round(graded.errorReduction * 100),
+    gateTripped: graded.gateTripped,
+    poisonedSources: graded.poisonedSources,
+    bestPicks: graded.bestPicks,
+    overMigrated: graded.overMigrated,
+    sourcesTotal: graded.sourcesTotal,
+    simulation: graded.simulation,
+    sources,
     stepName: scenario.stepName,
-    datasetName: scenario.datasetName,
     goal: scenario.goal,
     output,
-    impact,
     explanation: scenario.explanation,
     xpEarned,
     bonusXp,

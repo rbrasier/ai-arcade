@@ -283,90 +283,86 @@ option. Implemented in
 `src/lib/right-tool-for-the-job-scoring.ts`, and `src/lib/ai/right-tool-for-the-job.ts`.
 
 **Clean the Pipe** (slug `clean-the-pipe`) runs **5 rounds** of escalating
-difficulty and is the second game of Act Three. It is the **input-side mirror of
-Spot the Hallucination**: the player is about to run an AI step on a batch of
-data, the data going in is dirty, and they **triage it before pressing run** —
-then see the deliverable the step produced from the **raw** vs the **cleaned**
-data. The lesson is that **not all dirt is equal**: catch the inputs that
-actually poison the output, and resist over-cleaning the harmless ones. Each
-round's scenario — a desk task, the AI step about to run, and the data going in —
-is generated live by the AI connector (with a deterministic mock fallback).
+difficulty and is the second game of Act Three. It teaches **data-integration
+design**: an AI step is fed by several whole **data sources** (a structured
+database, an email inbox, spreadsheets, scanned archives, an API feed) and the way
+data **flows in** is what's wrong. The player decides, **per source, how it should
+feed the step**, then **runs a pipeline simulation that is scored on the resulting
+errors** — the fewer the better, **human errors included** (re-keying / migration
+mistakes count), so over-building is a real failure, not just wasted effort. Each
+round's scenario — a colleague's hand-off, the AI step, and the sources feeding it
+— is generated live by the AI connector (with a deterministic mock fallback). Each
+source is **clickable to view its contents** (a spreadsheet/database table, an
+inbox of emails, or a note for scans/audio) so the player can **read the data
+before deciding**, and carries a neutral **`usedFor`** line, a **`volume`** (items
+per quarter), an **`ongoing`** flag and a **`migrationEffortHours`** cost.
 
-Everything is **one triage queue**. Each round presents a list of **items**, each
-with a `kind` and hidden ground truth (`consequential` + a `correctAction`,
-stripped pre-scoring), and the player triages **every** item with the **same
-three verbs** — **let through (`pass`) / repair / bin**:
+The player handles **every source** with one of **four paths**:
 
-- `pass` — let it through untouched. Correct for clean data, **harmless dirt** (a
-  cosmetic duplicate, a trivial format diff), and a **tolerable batch mismatch** —
-  touching any of these only wastes effort.
-- `repair` — consequential but **recoverable**: fix the row in place, or **convert
-  / migrate** a batch into a usable shape. The heavier clean-out. When chosen, the
-  UI shows the item's `repairedContent` (the patched value, or the converted
-  shape) so the repair is **concrete, not a bare label**.
-- `bin` — consequential and **doesn't belong / is unrecoverable**: drop a
-  wrong-category or stale row, or **exclude** an ill-fitting batch. Cheaper than
-  repair, but the data is lost.
+- `keep` — feed it in as-is. Correct for an **already-structured, clean** source.
+- `redirect` — **cut the intake over** so *new* data arrives structured, and
+  **don't re-process the old backlog**. Correct for an **ongoing messy channel**
+  whose history isn't needed (e.g. queries arriving as free-text email → a
+  structured form going forward). This is the easy-round lesson: fix the channel,
+  don't re-key the past.
+- `migrate` — **convert / backfill the existing data** into a usable shape. Correct
+  for a **historical source you genuinely need** but whose data is messy,
+  incomplete or the **wrong type** (a database with blank key fields, scanned PDFs).
+  The heavy path: it costs real hours **and introduces human error**.
+- `exclude` — **drop the source** from the step. Correct for a **wrong-scope /
+  duplicate / out-of-period** source, or one whose migration doesn't earn its cost.
 
-Item kinds:
+Each source carries a hidden **`kind`** (the only ground truth the AI authors,
+stripped pre-scoring) — `clean-structured` (→keep), `messy-ongoing-no-history`
+(→redirect), `messy-historical-needed` (→migrate), `unusable-type-needed`
+(→migrate), `irrelevant` (→exclude), `unusable-not-worth` (→exclude). Everything
+scored is **derived from the kind** via a fixed `(kind, path) → {ai, human,
+omission}` rate table (the same idea as `checkpoint-impact.ts` keying rates off
+`StepKind`), so a round can never be internally inconsistent and `bestPath` falls
+out as the **argmin**, not authored. The tier→kind mix and generator guidance live
+in `src/lib/clean-the-pipe-tiers.ts`: round 1 is a single "redirect the channel"
+call; the middle rounds add the first migration and a four-way sort; round **4**
+is a desk of historical sources (**two spreadsheets, a key-fields-missing database,
+an inbox**) each needing a migration decision; round **5 (boss)** plants an
+`unusable-not-worth` source — a tempting but **large-effort** migration the step
+copes fine without — so the player must **migrate only what pays off**.
 
-- **`record`** (every round) — a single data row, shown verbatim.
-- **`batch`** (rounds **4–5 only**) — a whole source whose data **type doesn't
-  suit the system** (e.g. audio recordings feeding a text summariser, a
-  different-schema/mixed-currency export, scanned PDFs). Its **`migrationEffort`
-  (hours)** is shown, because a batch `repair` is a migration that costs real
-  effort. Round **4 plants one** such batch (consequential → `repair`/migrate is
-  worth it); round **5 (boss) plants two** — one worth migrating and one
-  **tolerable mismatch** best left to `pass` (its large migration cost isn't worth
-  paying), so the player must spend migration effort only where it pays off.
+Grading runs a **pipeline simulation** three ways and scores the player against it:
 
-Every item also carries a neutral **`usedFor`** line — what the step actually uses
-that input for — shown **before** scoring so the player can **reason** about
-consequence against the step rather than guess (it never reveals the right call).
-The tier→shape mapping and generator guidance live in
-`src/lib/clean-the-pipe-tiers.ts`.
+- `baseline = Σ errors(source, keep)` — do nothing, the status-quo output.
+- `best = Σ errors(source, bestPath)` — the lowest errors achievable.
+- `yours = Σ errors(source, chosenPath)`.
+- `scoreRatio = clamp01((baseline − yours) / (baseline − best))` — how far you cut
+  errors toward the best possible (`1` if there was nothing to fix).
 
-Grading is fully deterministic against the stored ground truth, on two axes:
+Each source's errors fold **AI misreads** (messy/wrong-type input fed in),
+**human errors** (residual mistakes from a partly-manual migration — so migrating a
+clean source *raises* errors for no benefit) and **omission errors** (needed data
+dropped via `exclude`, or not re-processed via `redirect`). The **gate**: a source
+of a `critical` kind (`clean-structured`, `messy-historical-needed`,
+`unusable-type-needed`) whose residual errors stay **≥ `POISON_FRACTION = 0.4 ×
+volume`** is still poisoning the output → `scoreRatio` is **capped at `GATE_CAP =
+0.5`** (below the 65% clear). `score = round(scoreRatio × maxScore)`.
 
-- **accuracy** (the **gate**) — a Spot-the-Hallucination-style per-item gradient
-  over the **consequential** items: the right action → **1**; addressed with the
-  other clean-out (`PARTIAL_CREDIT = 0.5` — e.g. binned a recoverable row, or
-  excluded a batch worth converting); left to `pass` → **0**.
-  `accuracy = creditSum / consequentialTotal`.
-- **effort** (the **mastery** axis — calibrate cleaning to consequence) —
-  `1 − wastedEffort / maxWaste`. Each action's effort weight depends on the item
-  **kind** (a `batch` repair is a migration, the heavy one): a **record** is
-  `pass` **0** / `bin` **1** / `repair` **2**; a **batch** is `pass` **0** / `bin`
-  **2** / `repair` **4**. Waste = effort spent on harmless items (over-cleaning a
-  fine row, needlessly migrating a tolerable batch) plus **excess** effort on
-  consequential items (e.g. `repair` where a `bin` suffices). It is normalised
-  against an aggressive "repair-everything" strategy, so that strategy → ≈0 and
-  the ideal triage → 1; the batch repair's weight (4) makes a needless migration
-  dominate.
+So leaving a needed messy/wrong-type source on `keep` (or dropping a needed source)
+poisons the output and caps the round, **and** migrating sources that didn't need
+it pushes `yours` toward/over `baseline` → the ratio collapses (over-building
+fails). Worked outcomes: every source on its best path → **100%** (`exceptional`);
+a needed source left poisoning → capped **50%** (fails); one needless migration on
+top of an otherwise-best play → clears but loses the top tier and the `exceptional`
+rating. The ≥ 70% / ≥ 85% XP bonus tiers apply to this ratio, and a round is
+`exceptional` only when **every** source is on its best path with no poisoned
+output. Implemented in `src/app/api/games/clean-the-pipe/score/route.ts`, the
+shared pure helpers in `src/lib/clean-the-pipe-scoring.ts` (the rate table, grade
+and three-column simulation), and `src/lib/ai/clean-the-pipe.ts`.
 
-`scoreRatio = 0.5 × accuracy + 0.5 × effort`, **capped at `GATE_CAP = 0.5`** if
-**any** consequential item is left to `pass` (the output is poisoned → below the
-65% clear), and `score = round(scoreRatio × maxScore)`. So letting bad data slip
-through caps the round below the clear, **and** cleaning everything drives effort
-toward 0 → also a fail (over-cleaning is a real failure mode). Worked outcomes:
-perfect triage → **100%** (`exceptional`); leaving a consequential item to `pass`
-→ capped **50%** (fails); needlessly migrating the tolerable boss-round batch on
-top of an otherwise-ideal play → about **83%** (clears, but loses the top tier and
-the `exceptional` rating). The ≥ 70% / ≥ 85% XP bonus tiers apply to this ratio,
-and a round is `exceptional` only when **every** consequential item is handled
-with the right action and **no** harmless item is touched. Implemented in
-`src/app/api/games/clean-the-pipe/score/route.ts`, the shared pure helpers in
-`src/lib/clean-the-pipe-scoring.ts`, and `src/lib/ai/clean-the-pipe.ts`.
-
-_Consequences (feedback only — never scored)._ On submit, the step is "run" on
-the raw vs the triaged data and the debrief shows the **two deliverables side by
-side** (the signature "raw vs cleaned" read the game is built around, the same
-"what it produced" idea as Prompt Golf), each tagged with a quality band
-(`sound` / `degraded` / `poisoned`). Alongside it a deterministic **effort vs
-payoff** read (`computeCleanThePipeImpact`) reports the **hours** the player spent
-(record clean-ups + migration) against the calibrated target — so leaving a
-consequential batch as-is reads as "cheap but broken" and migrating a tolerable
-batch as "expensive for nothing." None of this touches the score.
+_Consequences (feedback only — never scored)._ The debrief shows the scored
+**three-column simulation** (do nothing vs your redesign vs best possible, each
+broken into AI / human / omission errors per quarter) and, alongside it, an AI
+**before-vs-after narration** (`generateCleanThePipeOutcome`) of the deliverable
+the step produced — the same illustrative "what it produced" idea as Prompt Golf.
+The narration never touches the score; the deterministic error simulation is what
+grades the round.
 
 **Trace the Flow** (slug `trace-the-flow`) runs **5 rounds** of escalating
 *shape* complexity and opens Act Three (Seeing Work as a System). It is the

@@ -1,65 +1,82 @@
 /**
- * Difficulty shaping for "Clean the Pipe" (input hygiene).
+ * Difficulty shaping for "Clean the Pipe" (data-integration design).
  *
- * Every round is ONE triage queue of `items`, each triaged with the same three
- * verbs (pass / repair / bin). The five rounds escalate the kind of dirt and how
- * tempting it is to over-clean — and, from round 4, introduce `batch` items:
- * whole sources whose data type doesn't suit the system, where a repair is a
- * migration that costs real hours, so the player must weigh leaving the data as
- * it is against converting it. Round 4 plants ONE such batch; round 5 (the boss)
- * plants TWO — one worth migrating and one tolerable mismatch best left alone —
- * so the player must spend migration effort only where it pays off.
+ * Every round hands the player a set of whole DATA SOURCES feeding an AI step,
+ * each handled with one of four paths (keep / redirect / migrate / exclude). The
+ * five rounds escalate from a single clear "fix the channel going forward"
+ * decision to a desk full of historical sources each needing its own migration
+ * call — and a boss round that plants a tempting-but-not-worth-it migration so
+ * the player must spend conversion effort only where it pays off.
  *
  * Pure and dependency-free so it can be shared by the client component, the
  * generator and the route code alike.
  */
+
+import type { SourceKind } from "./clean-the-pipe-scoring";
 
 export interface PipeTierInfo {
   /** Short label shown on the round. */
   label: string;
   /** One-line framing used in copy and the round intro. */
   note: string;
-  /** Whether this round includes type-mismatched batch items at all. */
-  hasBatches: boolean;
-  /** Guidance handed to the generator about how to shape the round's dirt. */
+  /** The source kinds this round should be built from (length = source count). */
+  kinds: SourceKind[];
+  /** Guidance handed to the generator about how to shape the round. */
   guidance: string;
 }
 
 export const PIPE_TIERS: Record<number, PipeTierInfo> = {
   1: {
-    label: "Warm-up",
-    note: "One obvious bad row among clean ones — get the feel for triaging before you run.",
-    hasBatches: false,
+    label: "Fix the channel",
+    note: "Messy data is arriving live. Redirect the intake so new data comes structured — and don't waste time on what doesn't matter.",
+    kinds: ["messy-ongoing-no-history", "clean-structured", "irrelevant"],
     guidance:
-      "WARM-UP round. Provide 5-6 record items (kind 'record'). Make exactly ONE clearly consequential (it would visibly skew the output) and set its correctAction to 'bin' or 'repair' as fits. Every other item is genuinely fine (consequential false, correctAction 'pass'). No batch items this round.",
+      "WARM-UP. Provide EXACTLY 3 sources. (1) An ONGOING messy channel whose old data is NOT needed — e.g. customer queries arriving as free-text emails — kind 'messy-ongoing-no-history' (the answer is to REDIRECT: cut the intake over to a structured form going forward, no need to re-process old mail). (2) A clean, already-structured source the step needs — kind 'clean-structured' (KEEP). (3) A clearly wrong-scope or duplicate source — kind 'irrelevant' (EXCLUDE). Keep it simple and obvious.",
   },
   2: {
-    label: "Duplicates & blanks",
-    note: "Lots of cosmetic dirt — duplicates, blank fields — but only some of it actually matters.",
-    hasBatches: false,
+    label: "First migration",
+    note: "Most of it is fine — but one store you rely on is messy and needs converting before the step can trust it.",
+    kinds: ["clean-structured", "messy-historical-needed", "messy-ongoing-no-history"],
     guidance:
-      "Provide 6-7 record items. Include several HARMLESS bits of dirt — an exact duplicate, a record with a blank non-essential field, a trivial format inconsistency — all consequential false / correctAction 'pass' (cleaning them only wastes effort). Plant ONE consequential row: a blank in the field the step actually needs → 'repair' (give it a repairedContent), or a corrupt/duplicate row that double-counts → 'bin'. No batch items this round.",
+      "Provide EXACTLY 3 sources: one 'clean-structured' (KEEP), one 'messy-historical-needed' — an existing store the step NEEDS but whose data is messy/incomplete, e.g. a spreadsheet with inconsistent columns (the answer is MIGRATE: convert/backfill it), and one 'messy-ongoing-no-history' live channel (REDIRECT). Make clear which data is actually needed.",
   },
   3: {
-    label: "Stale record",
-    note: "A stale, out-of-date entry that quietly flips the result — amid tempting but harmless dirt.",
-    hasBatches: false,
+    label: "Sort the desk",
+    note: "Four sources, four different right answers. Keep, redirect, migrate, or drop — read each one.",
+    kinds: [
+      "clean-structured",
+      "messy-historical-needed",
+      "messy-ongoing-no-history",
+      "irrelevant",
+    ],
     guidance:
-      "Provide 6-7 record items. Plant ONE clearly consequential row that would flip or skew the output (a stale/out-of-date entry, or an entry that is actually a different category) → correctAction 'bin'. Optionally one consequential row that is recoverable → 'repair' (with a repairedContent). Surround them with TEMPTING but harmless dirt (duplicates, cosmetic format diffs) that should be left ('pass'). No batch items this round.",
+      "Provide EXACTLY 4 sources, one of EACH kind: 'clean-structured' (KEEP), 'messy-historical-needed' (MIGRATE), 'messy-ongoing-no-history' (REDIRECT), and 'irrelevant' (EXCLUDE — wrong period / duplicate / out of scope). Make the right call inferable from each source's contents and what the step uses it for, not from its position.",
   },
   4: {
-    label: "A source that doesn't fit",
-    note: "A whole source arrives in the wrong shape for the system. Pass it, repair (migrate) it for a cost, or bin it.",
-    hasBatches: true,
+    label: "Migration day",
+    note: "Two spreadsheets, a database with key fields missing, and an inbox — choose a migration path for each to turn old data into usable structured data.",
+    kinds: [
+      "messy-historical-needed",
+      "messy-historical-needed",
+      "unusable-type-needed",
+      "messy-ongoing-no-history",
+      "clean-structured",
+    ],
     guidance:
-      "Provide 5-6 record items with a MIX of harmless dirt ('pass') and 1-2 consequential rows ('repair' or 'bin'). Then add EXACTLY ONE 'batch' item: an abstract source whose data TYPE doesn't suit the system (e.g. scanned PDFs where structured fields are needed, free-text notes where a date field is expected, a different-schema export). This batch IS consequential — its mismatch would break or badly degrade the output — so correctAction is 'repair' (a migration). Give it a realistic migrationEffort in hours (e.g. 6-16), a plain 'content' mismatch line a non-technical reader can understand, and a repairedContent describing the converted shape. The lesson: a batch repair costs real effort, but here it's worth it.",
+      "HARD round. Provide EXACTLY 5 sources matching the user's brief: TWO different spreadsheets that are 'messy-historical-needed' (MIGRATE — e.g. one with inconsistent columns, one with mixed currencies/formats), a DATABASE with key fields blank that is also needed — use kind 'unusable-type-needed' OR 'messy-historical-needed' (MIGRATE/backfill), an email inbox that is 'messy-ongoing-no-history' (REDIRECT), and one 'clean-structured' system the step already reads fine (KEEP). Most sources need a migration decision here.",
   },
   5: {
     label: "Boss round",
-    note: "Two ill-fitting sources now. One is worth migrating; the other isn't. Spend effort where it pays.",
-    hasBatches: true,
+    note: "One more ill-fitting source than you have appetite for. Migrate only what pays off — leave the one that doesn't.",
+    kinds: [
+      "messy-historical-needed",
+      "unusable-type-needed",
+      "unusable-not-worth",
+      "messy-ongoing-no-history",
+      "clean-structured",
+    ],
     guidance:
-      "BOSS round. Provide 6-7 record items mixing harmless dirt ('pass') with 1-2 consequential rows ('repair' or 'bin'). Then add EXACTLY TWO 'batch' items whose data types don't suit the system. ONE is consequential and worth migrating (correctAction 'repair') — its mismatch would wreck the output. The OTHER is a tolerable mismatch (consequential false, correctAction 'pass'): the model can cope with it, or it is low-value, so its large migrationEffort is NOT worth paying — repairing it just burns effort. Give the worth-it batch a moderate migrationEffort and the tolerable one a notably LARGER migrationEffort, so leaving it is the calibrated call. Make both 'content' mismatch lines plausible and tempting, and give each a repairedContent.",
+      "BOSS round. Provide EXACTLY 5 sources: a 'messy-historical-needed' store (MIGRATE), an 'unusable-type-needed' source — wrong data TYPE but genuinely needed, e.g. scanned PDFs feeding a text step (MIGRATE: OCR/convert), and the TRAP: an 'unusable-not-worth' source — also the wrong type, with a LARGE migrationEffortHours, but low-value / redundant so the step copes fine without it (the right call is EXCLUDE; migrating it burns effort and human-error for nothing). Plus a 'messy-ongoing-no-history' channel (REDIRECT) and a 'clean-structured' system (KEEP). Make the trap genuinely tempting.",
   },
 };
 
