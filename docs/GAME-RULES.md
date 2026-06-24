@@ -476,19 +476,25 @@ produced" layer as the capstone's consequences read and **never affects the scor
 **Workflow Redesign Challenge** (slug `workflow-redesign`) is the **Act Five
 capstone**. Unlike the five escalating-difficulty games it is **not** a 5-round
 game: it runs the **2 seeded scenarios** (HR onboarding, expense review) as deep
-challenges, each played through a **four-phase loop** — **Setup** (read the as-is
-workflow and its bottlenecks), **Ideation** (free-text analysis the AI synthesises
-into insights — formative and **unscored**, via
-`src/app/api/games/workflow-redesign/ideate/route.ts`), **Build** (a drag-and-drop
-canvas — `@dnd-kit/core` — where the player drags a **capability block**
-(`summarise` / `classify` / `extract` / `flag` / `draft`) onto each stage, picks an
-**implementation tier** (`rules` / `llm` / `custom-app`) and toggles a **human
-checkpoint**) and **Validate** (an AI **technical + governance critique** of the
-finished design — illustrative narration that **never affects the score**, the same
-"what it produced" idea as Prompt Golf).
+challenges, each played through a **four-phase loop** — **Setup & Ideation**
+(shown **side by side**: the as-is workflow and its bottlenecks on the left, and a
+**multi-turn chat with an AI coach** on the right that the player thinks the
+redesign through in — formative and **unscored**, via
+`src/app/api/games/workflow-redesign/ideate/route.ts`, which returns the coach's
+next reply **and** a refreshed list of **top takeaways** distilled from the whole
+conversation), **Build** (a **two-column current-vs-redesigned editor** — the
+as-is process on the left, and on the right a click-based **"Update step"** control
+per stage where the player picks the AI **capability** (`summarise` / `classify` /
+`extract` / `flag` / `draft`) **or leaves the step manual**, picks an
+**implementation tier** (`rules` / `llm` / `custom-app`, labelled for the chosen
+capability) and toggles a **human checkpoint**; the ideation **takeaways** are
+pinned at the top and the chat can be **re-opened in a modal** to keep iterating)
+and **Validate** (an AI **technical + governance critique** of the finished
+design — illustrative narration that **never affects the score**, the same "what it
+produced" idea as Prompt Golf).
 
-The canvas is organised as **one slot per as-is stage** so the free-feeling build
-still maps 1:1 to stored ground truth. Grading is fully deterministic against each
+The build is organised as **one editor per as-is stage** so the redesign still
+maps 1:1 to stored ground truth. Grading is fully deterministic against each
 stage's hidden `bestCapability` / `acceptableCapabilities`, `bestImpl` /
 `acceptableImpls` and governance `checkpointKind` (`critical` / `trap` / `safe` /
 `optional`), on **three axes** — one per decision the player makes per stage:

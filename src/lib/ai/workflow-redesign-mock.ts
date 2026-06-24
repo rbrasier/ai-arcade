@@ -1,5 +1,7 @@
 import {
   withStageIds,
+  type IdeationChatResult,
+  type IdeationMessage,
   type RawWorkflowRedesignScenario,
   type ValidationCritique,
   type WorkflowRedesignScenario,
@@ -232,6 +234,49 @@ export function mockIdeationSynthesis(
     );
   }
   return insights.slice(0, 4);
+}
+
+/**
+ * Deterministic stand-in for the conversational Ideation chat (offline / mock).
+ * Builds a short coaching reply that reacts to the player's latest message and a
+ * refreshed list of takeaways distilled from everything they've said so far.
+ */
+export function mockIdeationChat(
+  scenario: WorkflowRedesignScenario,
+  messages: IdeationMessage[],
+): IdeationChatResult {
+  const userTurns = messages.filter((m) => m.role === "user");
+  const latest = userTurns[userTurns.length - 1]?.content.trim() ?? "";
+  const allNotes = userTurns.map((m) => m.content).join(" ");
+
+  const slow = [...scenario.stages].sort(
+    (a, b) => b.manualMinutes - a.manualMinutes,
+  )[0];
+  const critical = scenario.stages.find((s) => s.checkpointKind === "critical");
+
+  let reply: string;
+  if (!latest) {
+    reply = `Let's think about ${scenario.workflowName}. Where do you feel the most time is lost today — and which steps are genuine judgement calls rather than mechanical ones?`;
+  } else {
+    const parts: string[] = [
+      "Good — you're zeroing in on where the real drag is.",
+    ];
+    if (slow) {
+      parts.push(
+        `"${slow.name}" is the heaviest manual step here, so a ${CAPABILITY_BY_KIND[
+          slow.bestCapability
+        ].label.toLowerCase()} capability could take a lot of that load off.`,
+      );
+    }
+    if (critical) {
+      parts.push(
+        `One to watch: "${critical.name}" reaches a real outcome, so think about keeping a human accountable there rather than fully automating it. What would you do with that step?`,
+      );
+    }
+    reply = parts.join(" ");
+  }
+
+  return { reply, takeaways: mockIdeationSynthesis(scenario, allNotes) };
 }
 
 /** Deterministic stand-in for the Validate critique (offline / mock path). */

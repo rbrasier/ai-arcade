@@ -3,7 +3,7 @@ import { z } from "zod";
 import { generateJson, generatePlainText, isConfigured } from "./connector";
 import {
   mockWorkflowRedesignScenario,
-  mockIdeationSynthesis,
+  mockIdeationChat,
   mockValidationCritique,
   mockWorkflowRedesignOutcome,
 } from "./workflow-redesign-mock";
@@ -21,10 +21,11 @@ import { CAPABILITY_BY_KIND, IMPL_BY_TIER } from "../workflow-redesign-blocks";
  * The Act Five capstone, "Workflow Redesign Challenge", generates a realistic,
  * recognisable corporate workflow (HR onboarding, expense review, …) that the
  * player redesigns around AI's strengths across four phases: Setup (read the
- * as-is workflow and its bottlenecks), Ideation (free-text analysis the AI
- * synthesises into insights), Build (a drag-and-drop canvas of capability blocks
- * + implementation tiers + human checkpoints) and Validate (an AI critique on
- * technical and governance dimensions, on top of a deterministic score).
+ * as-is workflow and its bottlenecks), Ideation (a multi-turn chat with an AI
+ * coach that distils top takeaways), Build (a two-column current-vs-redesigned
+ * editor of capabilities + implementation tiers + human checkpoints) and Validate
+ * (an AI critique on technical and governance dimensions, on top of a
+ * deterministic score).
  *
  * The scenario carries hidden ground truth on every stage — the capability and
  * implementation tier that best fit the bottleneck, and whether a human
@@ -208,40 +209,57 @@ export async function generateWorkflowRedesignRound(
   }
 }
 
+/** One turn of the Ideation chat. */
+export interface IdeationMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+export interface IdeationChatResult {
+  /** The coach's conversational reply to the latest user message. */
+  reply: string;
+  /** A running list of 2-4 top takeaways distilled from the conversation so far. */
+  takeaways: string[];
+}
+
 /**
- * Phase 2 (Ideation): take the player's free-text analysis of the workflow and
- * synthesise it into 2-4 short, structured insight bullets that prime the Build.
- * Formative and unscored. Falls back to a deterministic synthesis offline.
+ * Phase 2 (Ideation), conversational: the player thinks the workflow through in a
+ * back-and-forth chat with an AI coach. Each call returns the coach's next reply
+ * AND a refreshed list of "top takeaways" distilled from the whole conversation,
+ * which the player carries into the Build phase. Formative and UNSCORED. Falls
+ * back to a deterministic stand-in offline (or on error).
  */
-export async function synthesiseIdeation(args: {
+export async function chatIdeation(args: {
   scenario: WorkflowRedesignScenario;
-  notes: string;
-}): Promise<string[]> {
-  const { scenario, notes } = args;
-  const trimmed = notes.trim();
+  messages: IdeationMessage[];
+}): Promise<IdeationChatResult> {
+  const { scenario, messages } = args;
 
   if (!isConfigured()) {
-    return mockIdeationSynthesis(scenario, trimmed);
+    return mockIdeationChat(scenario, messages);
   }
 
   const stageLines = scenario.stages
     .map((s) => `- ${s.name}: ${s.painPoint} (${s.timeCost})`)
     .join("\n");
+  const transcript = messages
+    .map((m) => `${m.role === "user" ? "PLAYER" : "COACH"}: ${m.content}`)
+    .join("\n");
 
-  const insightSchema = z.object({
-    insights: z.array(z.string()).min(2).max(4),
+  const chatSchema = z.object({
+    reply: z.string(),
+    takeaways: z.array(z.string()).min(2).max(4),
   });
 
   try {
-    const out = await generateJson(insightSchema, {
+    return await generateJson(chatSchema, {
       system:
-        "You are a workflow-redesign coach. The player has written free-form notes analysing where an AI could add value to a workflow. Synthesise THEIR thinking into 2-4 short, sharp insight bullets (each one sentence) that will guide their redesign — name the bottleneck and the kind of AI capability that fits it. Build on what they wrote; gently fill an obvious gap if they missed a major bottleneck, but do not lecture or grade.",
-      prompt: `Workflow: ${scenario.workflowName}\nGoal: ${scenario.goal}\n\nCurrent stages:\n${stageLines}\n\nThe player's notes:\n"""${trimmed || "(they left this blank)"}"""`,
-      maxOutputTokens: 400,
+        "You are a workflow-redesign coach helping a player think through where AI could add value to a workflow, BEFORE they redesign it. Keep replies short and conversational (2-4 sentences) — ask a sharp follow-up question or build on their point, name bottlenecks and the kind of AI capability (summarise / classify / extract / flag / draft) that fits, and flag where a human must stay accountable (irreversible or person-affecting steps). Coach, never lecture, and never tell them the 'correct' full design — prompt their own thinking. Separately, return 'takeaways': 2-4 short one-sentence insights distilled from the WHOLE conversation so far, which the player will carry into their build.",
+      prompt: `Workflow: ${scenario.workflowName}\nGoal: ${scenario.goal}\n\nCurrent stages:\n${stageLines}\n\nConversation so far:\n${transcript}\n\nReply to the player's latest message, then give the refreshed takeaways.`,
+      maxOutputTokens: 600,
     });
-    return out.insights;
   } catch {
-    return mockIdeationSynthesis(scenario, trimmed);
+    return mockIdeationChat(scenario, messages);
   }
 }
 

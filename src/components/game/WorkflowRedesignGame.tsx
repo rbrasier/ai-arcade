@@ -3,22 +3,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-  DndContext,
-  DragOverlay,
-  PointerSensor,
-  useDraggable,
-  useDroppable,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-  type DragStartEvent,
-} from "@dnd-kit/core";
 
 import {
   CAPABILITIES,
   CAPABILITY_BY_KIND,
-  IMPL_TIERS,
   IMPL_BY_TIER,
 } from "@/lib/workflow-redesign-blocks";
 import {
@@ -141,7 +129,41 @@ interface ScoreResult {
   player: { xp: number; level: number };
 }
 
-type Phase = "intro" | "loading" | "setup" | "ideation" | "build";
+type Phase = "intro" | "loading" | "setup" | "build";
+
+interface ChatMsg {
+  role: "user" | "assistant";
+  content: string;
+}
+
+/** Placeholder prompts that cycle in the empty ideation input to spark thinking. */
+const IDEATION_PROMPTS = [
+  "What are the consequences of automating this step…",
+  "Give me some ideas about how I can speed up…",
+  "Which steps here are judgement calls a human should keep…",
+  "Where could an AI go wrong in this workflow…",
+];
+
+/** Contextual label for an implementation choice, given the step's capability. */
+function implChoiceLabel(tier: ImplTier, cap: CapabilityKind | null): string {
+  if (tier === "llm") return "Manually use an LLM";
+  if (tier === "custom-app") return "Custom application";
+  // rules — phrase it around what the step does
+  switch (cap) {
+    case "classify":
+      return "Rules-based classifier";
+    case "extract":
+      return "Rules-based extraction";
+    case "flag":
+      return "Rules-based checks";
+    case "summarise":
+      return "Templated summary";
+    case "draft":
+      return "Templated draft";
+    default:
+      return "Rules-based workflow";
+  }
+}
 
 interface HistoryEntry {
   score: number;
@@ -193,12 +215,12 @@ export function WorkflowRedesignGame({ rounds }: { rounds: RoundRef[] }) {
 
   // Build state, keyed by stage id.
   const [design, setDesign] = useState<Record<string, StageDesign>>({});
-  const [activeCap, setActiveCap] = useState<CapabilityKind | null>(null);
 
-  // Ideation state.
-  const [notes, setNotes] = useState("");
-  const [insights, setInsights] = useState<string[] | null>(null);
-  const [ideating, setIdeating] = useState(false);
+  // Ideation chat state.
+  const [messages, setMessages] = useState<ChatMsg[]>([]);
+  const [takeaways, setTakeaways] = useState<string[]>([]);
+  const [chatBusy, setChatBusy] = useState(false);
+  const [chatModalOpen, setChatModalOpen] = useState(false);
 
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<ScoreResult | null>(null);
@@ -268,8 +290,9 @@ export function WorkflowRedesignGame({ rounds }: { rounds: RoundRef[] }) {
       setRoundId(null);
       setResult(null);
       setDesign({});
-      setNotes("");
-      setInsights(null);
+      setMessages([]);
+      setTakeaways([]);
+      setChatModalOpen(false);
       setLoadError(null);
       try {
         const data = await prefetchRound(index);
@@ -286,28 +309,41 @@ export function WorkflowRedesignGame({ rounds }: { rounds: RoundRef[] }) {
     [rounds, prefetchRound],
   );
 
-  // ---- ideation ----
-  const synthesise = useCallback(async () => {
-    if (!roundId) return;
-    setIdeating(true);
-    try {
-      const res = await fetch("/api/games/workflow-redesign/ideate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ roundId, notes }),
-      });
-      if (!res.ok) throw new Error(`Request failed (${res.status})`);
-      const data = (await res.json()) as { insights: string[] };
-      setInsights(data.insights);
-    } catch {
-      setInsights([
-        "Match each bottleneck to the AI capability that fits it, then choose the lightest implementation that does the job.",
-        "Keep a human in the loop wherever a decision becomes irreversible or reaches a real person.",
-      ]);
-    } finally {
-      setIdeating(false);
-    }
-  }, [roundId, notes]);
+  // ---- ideation chat (multi-turn, formative & unscored) ----
+  const sendChat = useCallback(
+    async (text: string) => {
+      const trimmed = text.trim();
+      if (!roundId || !trimmed || chatBusy) return;
+      const next = [...messages, { role: "user" as const, content: trimmed }];
+      setMessages(next);
+      setChatBusy(true);
+      try {
+        const res = await fetch("/api/games/workflow-redesign/ideate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ roundId, messages: next }),
+        });
+        if (!res.ok) throw new Error(`Request failed (${res.status})`);
+        const data = (await res.json()) as { reply: string; takeaways: string[] };
+        setMessages((m) => [...m, { role: "assistant", content: data.reply }]);
+        if (Array.isArray(data.takeaways) && data.takeaways.length) {
+          setTakeaways(data.takeaways);
+        }
+      } catch {
+        setMessages((m) => [
+          ...m,
+          {
+            role: "assistant",
+            content:
+              "I couldn't reach the coach just now — keep going in your own words. Match each bottleneck to the capability that fits it, and keep a human wherever a decision is irreversible or reaches a person.",
+          },
+        ]);
+      } finally {
+        setChatBusy(false);
+      }
+    },
+    [roundId, messages, chatBusy],
+  );
 
   // ---- build canvas helpers ----
   const setCapability = useCallback((stageId: string, cap: CapabilityKind) => {
@@ -331,35 +367,23 @@ export function WorkflowRedesignGame({ rounds }: { rounds: RoundRef[] }) {
       },
     }));
   }, []);
-  const clearStage = useCallback((stageId: string) => {
+  // "Leave it manual" — clear the capability/impl so the step stays by hand.
+  const setManual = useCallback((stageId: string) => {
     setDesign((prev) => ({ ...prev, [stageId]: emptyDesign() }));
   }, []);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-  );
-  const onDragStart = useCallback((e: DragStartEvent) => {
-    const id = String(e.active.id);
-    if (id.startsWith("cap:")) setActiveCap(id.slice(4) as CapabilityKind);
-  }, []);
-  const onDragEnd = useCallback(
-    (e: DragEndEvent) => {
-      setActiveCap(null);
-      const { active, over } = e;
-      if (!over) return;
-      const activeId = String(active.id);
-      const overId = String(over.id);
-      if (activeId.startsWith("cap:") && overId.startsWith("stage:")) {
-        setCapability(overId.slice(6), activeId.slice(4) as CapabilityKind);
-      }
-    },
-    [setCapability],
-  );
-
   const stages = scenario?.stages ?? [];
-  const allAssigned =
+  // Every stage with a capability must also have an implementation (a bare
+  // capability is half-built), and at least one step must actually be redesigned
+  // — so the player can't validate an all-manual "non-redesign".
+  const noHalfBuilt =
     stages.length > 0 &&
-    stages.every((s) => design[s.id]?.capability && design[s.id]?.impl);
+    stages.every((s) => {
+      const d = design[s.id];
+      return !d?.capability || Boolean(d.impl);
+    });
+  const anyRedesigned = stages.some((s) => design[s.id]?.capability);
+  const allDecided = noHalfBuilt && anyRedesigned;
 
   const submit = useCallback(async () => {
     if (!roundId || !scenario) return;
@@ -416,8 +440,9 @@ export function WorkflowRedesignGame({ rounds }: { rounds: RoundRef[] }) {
     setRoundId(null);
     setResult(null);
     setDesign({});
-    setNotes("");
-    setInsights(null);
+    setMessages([]);
+    setTakeaways([]);
+    setChatModalOpen(false);
   }, []);
 
   // ===================== RENDER =====================
@@ -432,7 +457,7 @@ export function WorkflowRedesignGame({ rounds }: { rounds: RoundRef[] }) {
 
   return (
     <div style={pageStyle}>
-      <div style={{ maxWidth: 820, margin: "0 auto" }}>
+      <div style={{ maxWidth: 1040, margin: "0 auto" }}>
         {/* ===== TOP BAR ===== */}
         <div
           style={{
@@ -543,49 +568,49 @@ export function WorkflowRedesignGame({ rounds }: { rounds: RoundRef[] }) {
                 </div>
               )}
 
-              {/* SETUP */}
+              {/* SETUP + IDEATION (side by side) */}
               {phase === "setup" && scenario && (
-                <SetupView scenario={scenario} onNext={() => setPhase("ideation")} />
-              )}
-
-              {/* IDEATION */}
-              {phase === "ideation" && scenario && (
-                <IdeationView
+                <SetupView
                   scenario={scenario}
-                  notes={notes}
-                  setNotes={setNotes}
-                  insights={insights}
-                  ideating={ideating}
-                  onSynthesise={synthesise}
-                  onContinue={() => setPhase("build")}
+                  messages={messages}
+                  takeaways={takeaways}
+                  chatBusy={chatBusy}
+                  onSend={sendChat}
+                  onNext={() => setPhase("build")}
                 />
               )}
 
               {/* BUILD */}
               {phase === "build" && scenario && (
-                <DndContext
-                  sensors={sensors}
-                  onDragStart={onDragStart}
-                  onDragEnd={onDragEnd}
-                >
-                  <BuildView
-                    scenario={scenario}
-                    design={design}
-                    setImpl={setImpl}
-                    toggleCheckpoint={toggleCheckpoint}
-                    clearStage={clearStage}
-                    allAssigned={allAssigned}
-                    submitting={submitting}
-                    onSubmit={submit}
-                    loadError={loadError}
-                  />
-                  <DragOverlay dropAnimation={null}>
-                    {activeCap ? <CapabilityChip kind={activeCap} dragging /> : null}
-                  </DragOverlay>
-                </DndContext>
+                <BuildView
+                  scenario={scenario}
+                  design={design}
+                  takeaways={takeaways}
+                  setCapability={setCapability}
+                  setImpl={setImpl}
+                  toggleCheckpoint={toggleCheckpoint}
+                  setManual={setManual}
+                  allDecided={allDecided}
+                  submitting={submitting}
+                  onSubmit={submit}
+                  onOpenChat={() => setChatModalOpen(true)}
+                  loadError={loadError}
+                />
               )}
             </div>
           </div>
+        )}
+
+        {/* ===== IDEATION CHAT MODAL (re-open from Build) ===== */}
+        {chatModalOpen && scenario && (
+          <ChatModal
+            scenario={scenario}
+            messages={messages}
+            takeaways={takeaways}
+            chatBusy={chatBusy}
+            onSend={sendChat}
+            onClose={() => setChatModalOpen(false)}
+          />
         )}
 
         {/* ===== DEBRIEF ===== */}
@@ -611,13 +636,12 @@ export function WorkflowRedesignGame({ rounds }: { rounds: RoundRef[] }) {
 // ===================== phase rail =====================
 
 const PHASES: { key: Phase; label: string }[] = [
-  { key: "setup", label: "Setup" },
-  { key: "ideation", label: "Ideation" },
-  { key: "build", label: "Build" },
+  { key: "setup", label: "Explore & ideate" },
+  { key: "build", label: "Build & validate" },
 ];
 
 function PhaseRail({ phase, workflowName }: { phase: Phase; workflowName?: string }) {
-  const order = ["setup", "ideation", "build"];
+  const order = ["setup", "build"];
   const activeIdx = order.indexOf(phase);
   return (
     <div
@@ -669,9 +693,10 @@ function PhaseRail({ phase, workflowName }: { phase: Phase; workflowName?: strin
   );
 }
 
-// ===================== setup =====================
+// ===================== setup + ideation (two columns) =====================
 
-function SetupView({ scenario, onNext }: { scenario: SafeScenario; onNext: () => void }) {
+/** Read-only summary of the current workflow — the left column of Setup. */
+function CurrentWorkflow({ scenario }: { scenario: SafeScenario }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       {/* the brief, as a DM */}
@@ -703,7 +728,7 @@ function SetupView({ scenario, onNext }: { scenario: SafeScenario; onNext: () =>
           </div>
           <div
             style={{
-              fontSize: 15.5,
+              fontSize: 15,
               lineHeight: 1.55,
               border: "1px solid #cfe5e0",
               borderRadius: 14,
@@ -720,7 +745,7 @@ function SetupView({ scenario, onNext }: { scenario: SafeScenario; onNext: () =>
       {/* the goal */}
       <div style={{ border: "1px solid #ddefeb", borderRadius: 14, background: "#f2faf8", padding: "13px 15px" }}>
         <div style={kicker}>the goal</div>
-        <div style={{ fontSize: 15.5, fontWeight: 700, color: "#13211f" }}>🎯 {scenario.goal}</div>
+        <div style={{ fontSize: 15, fontWeight: 700, color: "#13211f" }}>🎯 {scenario.goal}</div>
       </div>
 
       {/* current state */}
@@ -750,107 +775,78 @@ function SetupView({ scenario, onNext }: { scenario: SafeScenario; onNext: () =>
                     ⏱ {s.timeCost}
                   </span>
                 </div>
-                <div style={{ fontSize: 14, color: "#4a615d", marginTop: 4, lineHeight: 1.45 }}>{s.painPoint}</div>
+                <div style={{ fontSize: 13.5, color: "#4a615d", marginTop: 4, lineHeight: 1.45 }}>{s.painPoint}</div>
               </div>
             </div>
           );
         })}
       </div>
-
-      <div>
-        <button onClick={onNext} style={primaryBtn}>
-          MAP THE BOTTLENECKS →
-        </button>
-      </div>
     </div>
   );
 }
 
-// ===================== ideation =====================
-
-function IdeationView({
+function SetupView({
   scenario,
-  notes,
-  setNotes,
-  insights,
-  ideating,
-  onSynthesise,
-  onContinue,
+  messages,
+  takeaways,
+  chatBusy,
+  onSend,
+  onNext,
 }: {
   scenario: SafeScenario;
-  notes: string;
-  setNotes: (s: string) => void;
-  insights: string[] | null;
-  ideating: boolean;
-  onSynthesise: () => void;
-  onContinue: () => void;
+  messages: ChatMsg[];
+  takeaways: string[];
+  chatBusy: boolean;
+  onSend: (text: string) => void;
+  onNext: () => void;
 }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-      <div>
-        <div style={kicker}>think it through</div>
-        <p style={{ fontSize: 15, lineHeight: 1.5, color: "#2c423e", margin: 0 }}>
-          Before you rebuild <b>{scenario.workflowName}</b>, analyse it in your own words. Where is
-          time lost? Which steps are judgement calls and which are mechanical? Where could AI add
-          value — and where must a human stay accountable?
-        </p>
-      </div>
-
-      <textarea
-        value={notes}
-        onChange={(e) => setNotes(e.target.value)}
-        placeholder="e.g. Reading documents by hand is the biggest drain… the right-to-work check is a judgement call we can't fully automate…"
-        rows={5}
+    <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+      <div
         style={{
-          width: "100%",
-          fontFamily: BODY,
-          fontSize: 15,
-          lineHeight: 1.5,
-          color: "#13211f",
-          border: "1.5px solid #cfe5e0",
-          borderRadius: 14,
-          padding: "13px 15px",
-          background: "#fff",
-          resize: "vertical",
-          boxSizing: "border-box",
+          display: "grid",
+          gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)",
+          gap: 22,
+          alignItems: "start",
         }}
-      />
+      >
+        {/* LEFT — read the as-is workflow */}
+        <CurrentWorkflow scenario={scenario} />
 
-      <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-        <button
-          onClick={onSynthesise}
-          disabled={ideating}
-          style={{ ...secondaryBtn, opacity: ideating ? 0.6 : 1, cursor: ideating ? "default" : "pointer" }}
-        >
-          {ideating ? "SYNTHESISING…" : insights ? "↻ RE-SYNTHESISE" : "SYNTHESISE MY THINKING"}
-        </button>
-        <span style={{ fontFamily: MONO, fontSize: 12, color: "#5d7c77" }}>
-          AI turns your notes into sharp insights — unscored, just to prime your build
-        </span>
-      </div>
-
-      {insights && (
+        {/* RIGHT — think it through with the AI coach */}
         <div
           style={{
-            border: `1.5px solid color-mix(in srgb, ${ACCENT} 32%, #cfe5e0)`,
-            background: `color-mix(in srgb, ${ACCENT} 6%, #fffdfb)`,
+            border: "1px solid #cfe5e0",
             borderRadius: 16,
-            padding: "15px 17px",
+            background: "#f7fbfa",
+            padding: "14px 15px",
+            display: "flex",
+            flexDirection: "column",
+            gap: 12,
+            position: "sticky",
+            top: 8,
           }}
         >
-          <div style={{ fontFamily: MONO, fontSize: 11, fontWeight: 700, letterSpacing: ".06em", color: ACCENT, textTransform: "uppercase", marginBottom: 10 }}>
-            Insights to carry into the build
+          <div>
+            <div style={kicker}>think it through · with an AI coach</div>
+            <p style={{ fontSize: 13.5, lineHeight: 1.5, color: "#2c423e", margin: "2px 0 0" }}>
+              Chat it out before you rebuild <b>{scenario.workflowName}</b>: where is time lost,
+              which steps are judgement calls, where could AI help — and where must a human stay
+              accountable? It&apos;s unscored, just to sharpen your thinking.
+            </p>
           </div>
-          <ul style={{ margin: 0, paddingLeft: 18, display: "flex", flexDirection: "column", gap: 8 }}>
-            {insights.map((h, i) => (
-              <li key={i} style={{ fontSize: 14.5, lineHeight: 1.45, color: "#2c423e" }}>{h}</li>
-            ))}
-          </ul>
+          <IdeationChat
+            messages={messages}
+            takeaways={takeaways}
+            chatBusy={chatBusy}
+            onSend={onSend}
+            minHeight={300}
+          />
         </div>
-      )}
+      </div>
 
       <div>
-        <button onClick={onContinue} style={primaryBtn}>
+        <button onClick={onNext} style={primaryBtn}>
           BUILD THE REDESIGN →
         </button>
       </div>
@@ -858,152 +854,377 @@ function IdeationView({
   );
 }
 
-// ===================== build canvas =====================
+// ===================== ideation chat =====================
 
-function CapabilityChip({ kind, dragging }: { kind: CapabilityKind; dragging?: boolean }) {
-  const info = CAPABILITY_BY_KIND[kind];
+/** Cycle through placeholder prompts every few seconds while the input is empty. */
+function useCyclingPlaceholder(active: boolean): string {
+  const [i, setI] = useState(0);
+  useEffect(() => {
+    if (!active) return;
+    const id = setInterval(
+      () => setI((n) => (n + 1) % IDEATION_PROMPTS.length),
+      3200,
+    );
+    return () => clearInterval(id);
+  }, [active]);
+  return IDEATION_PROMPTS[i];
+}
+
+function IdeationChat({
+  messages,
+  takeaways,
+  chatBusy,
+  onSend,
+  minHeight = 260,
+}: {
+  messages: ChatMsg[];
+  takeaways: string[];
+  chatBusy: boolean;
+  onSend: (text: string) => void;
+  minHeight?: number;
+}) {
+  const [input, setInput] = useState("");
+  const placeholder = useCyclingPlaceholder(input.length === 0);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
+  }, [messages, chatBusy]);
+
+  const submit = () => {
+    if (!input.trim() || chatBusy) return;
+    onSend(input);
+    setInput("");
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      {/* transcript */}
+      <div
+        ref={scrollRef}
+        style={{
+          minHeight,
+          maxHeight: 360,
+          overflowY: "auto",
+          display: "flex",
+          flexDirection: "column",
+          gap: 10,
+          border: "1px solid #dde9e6",
+          borderRadius: 12,
+          background: "#fff",
+          padding: "12px 13px",
+        }}
+      >
+        {messages.length === 0 && (
+          <div style={{ margin: "auto", textAlign: "center", maxWidth: 260 }}>
+            <div style={{ fontSize: 24, marginBottom: 6 }}>💬</div>
+            <div style={{ fontSize: 13, lineHeight: 1.5, color: "#7c9a95" }}>
+              Start the conversation — ask anything about how to redesign this
+              workflow, and bounce ideas back and forth.
+            </div>
+          </div>
+        )}
+        {messages.map((m, i) => (
+          <ChatBubble key={i} role={m.role} content={m.content} />
+        ))}
+        {chatBusy && (
+          <div style={{ alignSelf: "flex-start" }}>
+            <div style={{ ...bubbleStyle(false), display: "inline-flex", alignItems: "center", gap: 8 }}>
+              <Dots />
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* live takeaways */}
+      {takeaways.length > 0 && (
+        <TakeawaysBanner takeaways={takeaways} compact />
+      )}
+
+      {/* composer */}
+      <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
+        <textarea
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              submit();
+            }
+          }}
+          placeholder={placeholder}
+          rows={2}
+          style={{
+            flex: 1,
+            fontFamily: BODY,
+            fontSize: 14,
+            lineHeight: 1.5,
+            color: "#13211f",
+            border: "1.5px solid #cfe5e0",
+            borderRadius: 12,
+            padding: "10px 12px",
+            background: "#fff",
+            resize: "none",
+            boxSizing: "border-box",
+          }}
+        />
+        <button
+          onClick={submit}
+          disabled={!input.trim() || chatBusy}
+          style={{
+            ...primaryBtn,
+            padding: "11px 16px",
+            opacity: !input.trim() || chatBusy ? 0.5 : 1,
+            cursor: !input.trim() || chatBusy ? "default" : "pointer",
+          }}
+        >
+          SEND
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ChatBubble({ role, content }: { role: "user" | "assistant"; content: string }) {
+  const isUser = role === "user";
+  return (
+    <div style={{ alignSelf: isUser ? "flex-end" : "flex-start", maxWidth: "88%" }}>
+      <div style={bubbleStyle(isUser)}>{content}</div>
+    </div>
+  );
+}
+
+function bubbleStyle(isUser: boolean): React.CSSProperties {
+  return {
+    fontSize: 14,
+    lineHeight: 1.5,
+    borderRadius: 13,
+    padding: "9px 12px",
+    background: isUser ? ACCENT : "#eef6f4",
+    color: isUser ? "#fff" : "#2c423e",
+    border: isUser ? "none" : "1px solid #dde9e6",
+    whiteSpace: "pre-wrap",
+  };
+}
+
+/** The distilled "top takeaways" — shown live under the chat and atop the Build. */
+function TakeawaysBanner({
+  takeaways,
+  compact,
+  onOpenChat,
+}: {
+  takeaways: string[];
+  compact?: boolean;
+  onOpenChat?: () => void;
+}) {
   return (
     <div
       style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 8,
-        fontFamily: BODY,
-        fontSize: 14,
+        border: `1.5px solid color-mix(in srgb, ${ACCENT} 32%, #cfe5e0)`,
+        background: `color-mix(in srgb, ${ACCENT} 6%, #fffdfb)`,
+        borderRadius: 14,
+        padding: compact ? "11px 13px" : "14px 16px",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 10,
+          marginBottom: 8,
+        }}
+      >
+        <div
+          style={{
+            fontFamily: MONO,
+            fontSize: 11,
+            fontWeight: 700,
+            letterSpacing: ".06em",
+            color: ACCENT,
+            textTransform: "uppercase",
+          }}
+        >
+          ★ Top takeaways
+        </div>
+        {onOpenChat && (
+          <button onClick={onOpenChat} style={{ ...secondaryBtn, padding: "6px 12px", fontSize: 11.5 }}>
+            💬 Revisit / continue chat
+          </button>
+        )}
+      </div>
+      <ul style={{ margin: 0, paddingLeft: 18, display: "flex", flexDirection: "column", gap: 6 }}>
+        {takeaways.map((t, i) => (
+          <li key={i} style={{ fontSize: compact ? 13.5 : 14.5, lineHeight: 1.45, color: "#2c423e" }}>
+            {t}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function ChatModal({
+  scenario,
+  messages,
+  takeaways,
+  chatBusy,
+  onSend,
+  onClose,
+}: {
+  scenario: SafeScenario;
+  messages: ChatMsg[];
+  takeaways: string[];
+  chatBusy: boolean;
+  onSend: (text: string) => void;
+  onClose: () => void;
+}) {
+  return (
+    <div style={overlay()} onClick={onClose}>
+      <div style={{ ...modalCard(600) }} onClick={(e) => e.stopPropagation()}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 12 }}>
+          <div style={modalKicker}>ideation · {scenario.workflowName}</div>
+          <button onClick={onClose} style={{ ...miniBtn, fontSize: 13, color: "#5d7c77" }}>
+            ✕ close
+          </button>
+        </div>
+        <IdeationChat
+          messages={messages}
+          takeaways={takeaways}
+          chatBusy={chatBusy}
+          onSend={onSend}
+          minHeight={320}
+        />
+      </div>
+    </div>
+  );
+}
+
+// ===================== build canvas =====================
+
+/** A small option button used across the redesign editor. */
+function OptionButton({
+  on,
+  onClick,
+  children,
+  title,
+}: {
+  on: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+  title?: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      title={title}
+      style={{
+        fontFamily: MONO,
+        fontSize: 11.5,
         fontWeight: 700,
-        color: "#0b3d38",
-        background: dragging ? "color-mix(in srgb, var(--accent) 22%, #fff)" : "#e7f5f2",
-        border: `1.5px solid color-mix(in srgb, ${ACCENT} 38%, #cfe5e0)`,
-        borderRadius: 11,
-        padding: "9px 13px",
-        boxShadow: dragging ? "0 14px 28px -12px rgba(13,148,136,.7)" : "none",
-        cursor: "grab",
+        letterSpacing: ".01em",
+        color: on ? "#fff" : "#3a5450",
+        background: on ? ACCENT : "#eef6f4",
+        border: `1.5px solid ${on ? ACCENT : "#d3e6e2"}`,
+        borderRadius: 9,
+        padding: "7px 11px",
+        cursor: "pointer",
         whiteSpace: "nowrap",
       }}
     >
-      <span style={{ fontSize: 16, color: ACCENT }}>{info.glyph}</span>
-      {info.label}
-    </div>
+      {children}
+    </button>
   );
 }
 
-function DraggableCapability({ kind }: { kind: CapabilityKind }) {
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: `cap:${kind}` });
-  return (
-    <div
-      ref={setNodeRef}
-      {...listeners}
-      {...attributes}
-      style={{ opacity: isDragging ? 0.35 : 1, touchAction: "none" }}
-    >
-      <CapabilityChip kind={kind} />
-    </div>
-  );
-}
-
-function StageSlot({
+/**
+ * One redesigned step on the right column — a click-based "Update step" editor
+ * (no drag). The player picks what the AI should do at this step (or leaves it
+ * manual), how it should run (rules / LLM / custom app — labelled for the chosen
+ * capability), and whether a human checkpoints it.
+ */
+function RedesignStepCard({
   stage,
   index,
   last,
   d,
+  setCapability,
   setImpl,
   toggleCheckpoint,
-  clearStage,
+  setManual,
 }: {
   stage: Stage;
   index: number;
   last: boolean;
   d: StageDesign;
+  setCapability: (stageId: string, cap: CapabilityKind) => void;
   setImpl: (stageId: string, impl: ImplTier) => void;
   toggleCheckpoint: (stageId: string) => void;
-  clearStage: (stageId: string) => void;
+  setManual: (stageId: string) => void;
 }) {
-  const { setNodeRef, isOver } = useDroppable({ id: `stage:${stage.id}` });
   const cap = d.capability ? CAPABILITY_BY_KIND[d.capability] : null;
+  const redesigned = Boolean(cap);
 
   return (
     <div style={{ display: "flex", gap: 12 }}>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: "none", width: 26 }}>
-        <div style={railNode(Boolean(cap))}>{index + 1}</div>
+        <div style={railNode(redesigned)}>{index + 1}</div>
         {!last && <div style={{ flex: 1, width: 2, background: "#cfe5e0", minHeight: 14 }} />}
       </div>
 
       <div
-        ref={setNodeRef}
         style={{
           flex: 1,
+          minWidth: 0,
           marginBottom: 12,
-          border: `1.5px solid ${isOver ? ACCENT : cap ? "color-mix(in srgb, var(--accent) 32%, #cfe5e0)" : "#dde9e6"}`,
+          border: `1.5px solid ${redesigned ? "color-mix(in srgb, var(--accent) 32%, #cfe5e0)" : "#dde9e6"}`,
           borderRadius: 14,
           padding: "13px 15px",
-          background: isOver ? "color-mix(in srgb, var(--accent) 10%, #fff)" : cap ? "color-mix(in srgb, var(--accent) 5%, #fff)" : "#fff",
+          background: redesigned ? "color-mix(in srgb, var(--accent) 5%, #fff)" : "#fff",
           transition: "border-color .14s, background .14s",
         }}
       >
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: "#13211f" }}>{stage.name}</div>
-          <span style={{ fontFamily: MONO, fontSize: 11, color: AMBER, whiteSpace: "nowrap" }}>⏱ {stage.timeCost}</span>
-        </div>
-        <div style={{ fontSize: 13.5, color: "#4a615d", marginTop: 3, lineHeight: 1.4 }}>{stage.painPoint}</div>
+        <div style={{ fontSize: 15, fontWeight: 700, color: "#13211f" }}>{stage.name}</div>
 
-        {/* capability target */}
-        {!cap ? (
-          <div
-            style={{
-              marginTop: 11,
-              border: `1.5px dashed ${isOver ? ACCENT : "#bcd6d1"}`,
-              borderRadius: 11,
-              padding: "12px 14px",
-              textAlign: "center",
-              fontFamily: MONO,
-              fontSize: 12,
-              color: isOver ? ACCENT : "#7c9a95",
-              background: isOver ? "color-mix(in srgb, var(--accent) 8%, #fff)" : "#f7fbfa",
-            }}
-          >
-            {isOver ? "drop to assign →" : "drag a capability block here"}
-          </div>
-        ) : (
-          <div style={{ marginTop: 11, display: "flex", flexDirection: "column", gap: 10 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-              <CapabilityChip kind={d.capability!} />
-              <button
-                onClick={() => clearStage(stage.id)}
-                style={{ ...miniBtn, color: "#7c9a95" }}
-                title="remove block"
-              >
-                ✕ clear
-              </button>
+        <div style={{ marginTop: 11, display: "flex", flexDirection: "column", gap: 11 }}>
+          {/* 1 — what should happen here */}
+          <div>
+            <div style={miniLabel}>update step · what should AI do?</div>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              <OptionButton on={!redesigned} onClick={() => setManual(stage.id)} title="Leave this step to a person">
+                ✋ Keep manual
+              </OptionButton>
+              {CAPABILITIES.map((c) => (
+                <OptionButton
+                  key={c.kind}
+                  on={d.capability === c.kind}
+                  onClick={() => setCapability(stage.id, c.kind)}
+                  title={c.blurb}
+                >
+                  {c.glyph} {c.label}
+                </OptionButton>
+              ))}
             </div>
+            {cap && (
+              <div style={{ fontSize: 12.5, color: "#5d7c77", marginTop: 6, lineHeight: 1.4 }}>{cap.blurb}</div>
+            )}
+          </div>
 
-            {/* implementation tier */}
+          {/* 2 — how it's built (only once a capability is chosen) */}
+          {redesigned && (
             <div>
-              <div style={{ ...miniLabel }}>implementation</div>
-              <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
-                {IMPL_TIERS.map((t) => {
-                  const on = d.impl === t.tier;
-                  return (
-                    <button
-                      key={t.tier}
-                      onClick={() => setImpl(stage.id, t.tier)}
-                      title={t.blurb}
-                      style={{
-                        fontFamily: MONO,
-                        fontSize: 11.5,
-                        fontWeight: 700,
-                        letterSpacing: ".01em",
-                        color: on ? "#fff" : "#3a5450",
-                        background: on ? ACCENT : "#eef6f4",
-                        border: `1.5px solid ${on ? ACCENT : "#d3e6e2"}`,
-                        borderRadius: 9,
-                        padding: "7px 11px",
-                        cursor: "pointer",
-                      }}
-                    >
-                      {t.label}
-                    </button>
-                  );
-                })}
+              <div style={miniLabel}>how should it run?</div>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                {(["rules", "llm", "custom-app"] as ImplTier[]).map((t) => (
+                  <OptionButton
+                    key={t}
+                    on={d.impl === t}
+                    onClick={() => setImpl(stage.id, t)}
+                    title={IMPL_BY_TIER[t].blurb}
+                  >
+                    {implChoiceLabel(t, d.capability)}
+                  </OptionButton>
+                ))}
               </div>
               {d.impl && (
                 <div style={{ fontSize: 12.5, color: "#5d7c77", marginTop: 6, lineHeight: 1.4 }}>
@@ -1011,8 +1232,10 @@ function StageSlot({
                 </div>
               )}
             </div>
+          )}
 
-            {/* checkpoint */}
+          {/* 3 — human checkpoint (only meaningful once automated) */}
+          {redesigned && (
             <button
               onClick={() => toggleCheckpoint(stage.id)}
               style={{
@@ -1033,8 +1256,37 @@ function StageSlot({
             >
               {d.checkpoint ? "🧑 human reviews here ✓" : "+ add human checkpoint"}
             </button>
-          </div>
-        )}
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Compact read-only current-state stage — the left column of the Build view. */
+function CurrentStepCard({ stage, index, last }: { stage: Stage; index: number; last: boolean }) {
+  return (
+    <div style={{ display: "flex", gap: 12 }}>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: "none", width: 26 }}>
+        <div style={railNode(false)}>{index + 1}</div>
+        {!last && <div style={{ flex: 1, width: 2, background: "#cfe5e0", minHeight: 14 }} />}
+      </div>
+      <div
+        style={{
+          flex: 1,
+          minWidth: 0,
+          marginBottom: 12,
+          border: "1px solid #dde9e6",
+          borderRadius: 13,
+          padding: "12px 14px",
+          background: "#fbfdfc",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
+          <div style={{ fontSize: 14.5, fontWeight: 700, color: "#13211f" }}>{stage.name}</div>
+          <span style={{ fontFamily: MONO, fontSize: 10.5, color: AMBER, whiteSpace: "nowrap" }}>⏱ {stage.timeCost}</span>
+        </div>
+        <div style={{ fontSize: 13, color: "#4a615d", marginTop: 3, lineHeight: 1.4 }}>{stage.painPoint}</div>
       </div>
     </div>
   );
@@ -1108,80 +1360,94 @@ function LiveSpeedBar({
 function BuildView({
   scenario,
   design,
+  takeaways,
+  setCapability,
   setImpl,
   toggleCheckpoint,
-  clearStage,
-  allAssigned,
+  setManual,
+  allDecided,
   submitting,
   onSubmit,
+  onOpenChat,
   loadError,
 }: {
   scenario: SafeScenario;
   design: Record<string, StageDesign>;
+  takeaways: string[];
+  setCapability: (stageId: string, cap: CapabilityKind) => void;
   setImpl: (stageId: string, impl: ImplTier) => void;
   toggleCheckpoint: (stageId: string) => void;
-  clearStage: (stageId: string) => void;
-  allAssigned: boolean;
+  setManual: (stageId: string) => void;
+  allDecided: boolean;
   submitting: boolean;
   onSubmit: () => void;
+  onOpenChat: () => void;
   loadError: string | null;
 }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-      {/* palette */}
-      <div
-        style={{
-          position: "sticky",
-          top: 8,
-          zIndex: 5,
-          border: "1px solid #ddefeb",
-          borderRadius: 14,
-          background: "#f2faf8",
-          padding: "12px 14px",
-        }}
-      >
-        <div style={{ ...miniLabel, marginBottom: 8 }}>capability blocks · drag onto a stage</div>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          {CAPABILITIES.map((c) => (
-            <DraggableCapability key={c.kind} kind={c.kind} />
-          ))}
+      {/* top takeaways carried from ideation + a way back into the chat */}
+      {takeaways.length > 0 ? (
+        <TakeawaysBanner takeaways={takeaways} onOpenChat={onOpenChat} />
+      ) : (
+        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+          <button onClick={onOpenChat} style={{ ...secondaryBtn, padding: "8px 14px" }}>
+            💬 Open ideation chat
+          </button>
         </div>
-      </div>
+      )}
 
       <LiveSpeedBar scenario={scenario} design={design} />
 
-      <div style={kicker}>your redesigned pipeline · assign a block, pick how it&apos;s built, gate where needed</div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-        {scenario.stages.map((s, i) => (
-          <StageSlot
-            key={s.id}
-            stage={s}
-            index={i}
-            last={i === scenario.stages.length - 1}
-            d={design[s.id] ?? emptyDesign()}
-            setImpl={setImpl}
-            toggleCheckpoint={toggleCheckpoint}
-            clearStage={clearStage}
-          />
-        ))}
+      {/* two columns: current process → redesigned process */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "minmax(0, 0.85fr) minmax(0, 1.15fr)",
+          gap: 22,
+          alignItems: "start",
+        }}
+      >
+        <div>
+          <div style={{ ...kicker, marginBottom: 10 }}>current process · by hand</div>
+          {scenario.stages.map((s, i) => (
+            <CurrentStepCard key={s.id} stage={s} index={i} last={i === scenario.stages.length - 1} />
+          ))}
+        </div>
+        <div>
+          <div style={{ ...kicker, marginBottom: 10 }}>redesigned process · update each step</div>
+          {scenario.stages.map((s, i) => (
+            <RedesignStepCard
+              key={s.id}
+              stage={s}
+              index={i}
+              last={i === scenario.stages.length - 1}
+              d={design[s.id] ?? emptyDesign()}
+              setCapability={setCapability}
+              setImpl={setImpl}
+              toggleCheckpoint={toggleCheckpoint}
+              setManual={setManual}
+            />
+          ))}
+        </div>
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
         <button
           onClick={onSubmit}
-          disabled={submitting || !allAssigned}
+          disabled={submitting || !allDecided}
           style={{
             ...primaryBtn,
-            opacity: submitting || !allAssigned ? 0.5 : 1,
-            cursor: submitting || !allAssigned ? "default" : "pointer",
+            opacity: submitting || !allDecided ? 0.5 : 1,
+            cursor: submitting || !allDecided ? "default" : "pointer",
           }}
         >
           {submitting ? "VALIDATING…" : "VALIDATE DESIGN →"}
         </button>
         <div style={{ fontFamily: MONO, fontSize: 12, color: "#5d7c77" }}>
-          {allAssigned
+          {allDecided
             ? "AI will critique it on technical & governance risk"
-            : "assign a capability and implementation to every stage first"}
+            : "redesign at least one step, and finish picking how each redesigned step runs"}
         </div>
       </div>
       {loadError && <div style={{ color: RED, fontFamily: MONO, fontSize: 12 }}>{loadError}</div>}
@@ -1414,9 +1680,8 @@ function IntroModal({ onStart }: { onStart: () => void }) {
         </p>
 
         <ol style={{ margin: "14px 0 0", paddingLeft: 20, display: "flex", flexDirection: "column", gap: 7, fontSize: 14.5, lineHeight: 1.45, color: "#2c423e" }}>
-          <li><b>Setup</b> — read the current, hand-cranked workflow and where it&apos;s slow.</li>
-          <li><b>Ideation</b> — analyse it in your own words; AI sharpens your thinking into insights.</li>
-          <li><b>Build</b> — drag capability blocks onto each stage, pick how each is built, and add human checkpoints.</li>
+          <li><b>Explore &amp; ideate</b> — read the hand-cranked workflow and chat it through with an AI coach to sharpen your thinking.</li>
+          <li><b>Build</b> — go step by step: choose what AI does at each one, how it runs (manual, rules, an LLM or a custom app) and where a human checks.</li>
           <li><b>Validate</b> — AI critiques your design on technical and governance risk.</li>
         </ol>
 
