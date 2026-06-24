@@ -357,9 +357,12 @@ source as "expensive for nothing." None of this touches the score.
 of discrete steps and the data flowing between them. Each round is a messy,
 real-world hand-off from a colleague (the brief). The player is given the
 workflow's steps as a **shuffled tray**, each carrying a short **input** ("needs")
-and **output** ("produces"), and must **reconstruct the chain in order** (tap to
-place, reorder, remove) and **flag the broken hand-offs** — a boundary where a
-step's input doesn't match the previous step's output. The rounds are **framed by
+and **output** ("produces"), and must **reconstruct the chain in order** —
+**dragging each step from the tray onto a Visio-style flow canvas** (a two-column
+build: unordered steps on the left, the vertical flow with dotted connectors and
+empty drop spots on the right; tap-to-place, reorder and remove still work) — and
+**flag the broken hand-offs** — a boundary where a step's input doesn't match the
+previous step's output. The rounds are **framed by
 shape tier** — round 1 a clean straight line, round 2 a hand-off that **loses**
 information, round 3 one that **reformats** it (subtler), round 4 a **parallel
 branch**, round 5 a **loop-back** (a rework loop) — the tier→shape mapping, copy

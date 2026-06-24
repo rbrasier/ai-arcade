@@ -3,6 +3,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  useDraggable,
+  useDroppable,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragStartEvent,
+} from "@dnd-kit/core";
 
 import {
   SHAPE_TIER_INFO,
@@ -123,6 +134,12 @@ export function TraceFlowGame({ rounds }: { rounds: RoundRef[] }) {
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<ScoreResult | null>(null);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
+
+  // ---- drag-and-drop (drag a step from the tray onto the flow canvas) ----
+  const [activeDragId, setActiveDragId] = useState<string | null>(null);
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+  );
 
   // ---- round prefetch (all five warmed behind the intro, sequentially, so each
   // can be told the topics already used and pick a fresh theme) ----
@@ -253,6 +270,20 @@ export function TraceFlowGame({ rounds }: { rounds: RoundRef[] }) {
     });
   }, []);
 
+  const onDragStart = useCallback((e: DragStartEvent) => {
+    setActiveDragId(String(e.active.id));
+  }, []);
+  const onDragEnd = useCallback(
+    (e: DragEndEvent) => {
+      setActiveDragId(null);
+      const { active, over } = e;
+      if (!over) return;
+      const aid = String(active.id);
+      if (aid.startsWith("tray:")) place(aid.slice(5));
+    },
+    [place],
+  );
+
   const submit = useCallback(async () => {
     if (!roundId || !scenario) return;
     setSubmitting(true);
@@ -333,6 +364,10 @@ export function TraceFlowGame({ rounds }: { rounds: RoundRef[] }) {
     [scenario, order],
   );
   const allPlaced = scenario ? order.length === scenario.steps.length : false;
+  const activeStep =
+    activeDragId && activeDragId.startsWith("tray:")
+      ? stepById.get(activeDragId.slice(5))
+      : null;
 
   // ===================== RENDER =====================
   const pageStyle: React.CSSProperties = {
@@ -531,149 +566,161 @@ export function TraceFlowGame({ rounds }: { rounds: RoundRef[] }) {
                     </div>
                   </div>
 
-                  {/* tray of unplaced steps */}
-                  <div>
-                    <div style={kicker}>steps to place · tap to add to your sequence</div>
-                    {unplaced.length === 0 ? (
-                      <div
-                        style={{
-                          fontFamily: MONO,
-                          fontSize: 12,
-                          color: GREEN,
-                          padding: "8px 2px",
-                        }}
-                      >
-                        ✓ all steps placed — fix the order below if you need to
-                      </div>
-                    ) : (
-                      <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
-                        {unplaced.map((s) => (
-                          <button
-                            key={s.id}
-                            onClick={() => place(s.id)}
-                            style={trayCard}
+                  {/* ===== two columns: steps to place (left) → the flow (right) ===== */}
+                  <DndContext
+                    sensors={sensors}
+                    onDragStart={onDragStart}
+                    onDragEnd={onDragEnd}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: 16,
+                        alignItems: "flex-start",
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      {/* LEFT — unordered tray of steps to drag in */}
+                      <div style={{ flex: "1 1 270px", minWidth: 0 }}>
+                        <div style={kicker}>steps to place · drag into the flow →</div>
+                        {unplaced.length === 0 ? (
+                          <div
+                            style={{
+                              fontFamily: MONO,
+                              fontSize: 12,
+                              color: GREEN,
+                              padding: "8px 2px",
+                            }}
                           >
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ fontSize: 14.5, fontWeight: 700, color: "#152230" }}>
-                                {s.title}
-                              </div>
-                              <div style={{ fontSize: 13, color: "#46586b", marginTop: 2, lineHeight: 1.4 }}>
-                                {s.detail}
-                              </div>
-                              <IoLine input={s.input} output={s.output} />
-                            </div>
-                            <span style={placeChip}>+ PLACE</span>
-                          </button>
-                        ))}
+                            ✓ all steps placed — tidy the order on the right if you need to
+                          </div>
+                        ) : (
+                          <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
+                            {unplaced.map((s) => (
+                              <TrayStepCard key={s.id} step={s} onPlace={place} />
+                            ))}
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
 
-                  {/* the sequence the player is building */}
-                  {order.length > 0 && (
-                    <div>
-                      <div style={kicker}>your sequence · order the steps and flag any broken hand-off</div>
-                      <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-                        {order.map((id, i) => {
-                          const s = stepById.get(id);
-                          if (!s) return null;
-                          const last = i === order.length - 1;
-                          const nextId = order[i + 1];
-                          const broken = nextId
-                            ? flags.has(pairKey(id, nextId))
-                            : false;
-                          const isParallel = parallelIds.has(id);
-                          return (
-                            <div key={id}>
-                              {/* step card with rail */}
-                              <div style={{ display: "flex", gap: 12 }}>
-                                <div style={railCol}>
-                                  <div style={railNode(false)}>{i + 1}</div>
-                                </div>
-                                <div
-                                  style={{
-                                    flex: 1,
-                                    border: `1.5px solid ${isParallel ? ACCENT : "#dbe6ef"}`,
-                                    background: isParallel
-                                      ? "color-mix(in srgb, var(--accent) 7%, #fff)"
-                                      : "#fff",
-                                    borderRadius: 13,
-                                    padding: "11px 14px",
-                                  }}
-                                >
-                                  <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-                                    <div style={{ flex: 1, minWidth: 0 }}>
-                                      <div style={{ fontSize: 14.5, fontWeight: 700, color: "#152230" }}>
-                                        {s.title}
-                                      </div>
-                                      <IoLine input={s.input} output={s.output} />
+                      {/* RIGHT — the flow canvas (Visio-style): drop steps in order */}
+                      <div style={{ flex: "1 1 320px", minWidth: 0 }}>
+                        <div style={kicker}>the flow · drop steps in order &amp; flag broken hand-offs</div>
+                        <FlowCanvas>
+                          {Array.from({ length: scenario.steps.length }).map((_, i) => {
+                            const id = order[i];
+                            const prevId = order[i - 1];
+                            const placed = Boolean(id);
+                            const s = id ? stepById.get(id) : null;
+                            const last = i === order.length - 1;
+                            const isParallel = id ? parallelIds.has(id) : false;
+                            const handoffBroken =
+                              id && prevId ? flags.has(pairKey(prevId, id)) : false;
+                            const isNextSpot = i === order.length;
+                            return (
+                              <div key={i}>
+                                {/* dotted connector into this node */}
+                                {i > 0 && (
+                                  <div style={{ display: "flex", gap: 12 }}>
+                                    <div style={railCol}>
+                                      <div style={connectorLine(handoffBroken)} />
                                     </div>
-                                    <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: "none" }}>
-                                      <button
-                                        onClick={() => move(i, -1)}
-                                        disabled={i === 0}
-                                        style={iconBtn(i === 0)}
-                                        aria-label="Move up"
-                                      >
-                                        ▲
-                                      </button>
-                                      <button
-                                        onClick={() => move(i, 1)}
-                                        disabled={last}
-                                        style={iconBtn(last)}
-                                        aria-label="Move down"
-                                      >
-                                        ▼
-                                      </button>
-                                      <button
-                                        onClick={() => unplace(id)}
-                                        style={iconBtn(false)}
-                                        aria-label="Remove"
-                                      >
-                                        ✕
-                                      </button>
+                                    <div
+                                      style={{
+                                        flex: 1,
+                                        display: "flex",
+                                        alignItems: "center",
+                                        padding: "2px 0",
+                                      }}
+                                    >
+                                      {prevId && id && (
+                                        <button
+                                          onClick={() => toggleFlag(prevId, id)}
+                                          style={handoffChip(handoffBroken)}
+                                        >
+                                          {handoffBroken
+                                            ? "⚠ broken hand-off — flagged"
+                                            : "hand-off ok · flag if broken"}
+                                        </button>
+                                      )}
                                     </div>
                                   </div>
-                                  {scenario.shape === "parallel" && (
-                                    <button
-                                      onClick={() => toggleParallel(id)}
-                                      style={parallelToggle(isParallel)}
+                                )}
+
+                                {/* the row — a placed step card, or an empty spot */}
+                                <div style={{ display: "flex", gap: 12 }}>
+                                  <div style={railCol}>
+                                    <div style={railNode(!placed)}>{i + 1}</div>
+                                  </div>
+                                  {placed && s ? (
+                                    <div
+                                      style={{
+                                        flex: 1,
+                                        border: `1.5px solid ${isParallel ? ACCENT : "#dbe6ef"}`,
+                                        background: isParallel
+                                          ? "color-mix(in srgb, var(--accent) 7%, #fff)"
+                                          : "#fff",
+                                        borderRadius: 13,
+                                        padding: "11px 14px",
+                                      }}
                                     >
-                                      {isParallel ? "∥ runs in parallel ✓" : "∥ mark as parallel"}
-                                    </button>
+                                      <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                          <div style={{ fontSize: 14.5, fontWeight: 700, color: "#152230" }}>
+                                            {s.title}
+                                          </div>
+                                          <IoLine input={s.input} output={s.output} />
+                                        </div>
+                                        <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: "none" }}>
+                                          <button
+                                            onClick={() => move(i, -1)}
+                                            disabled={i === 0}
+                                            style={iconBtn(i === 0)}
+                                            aria-label="Move up"
+                                          >
+                                            ▲
+                                          </button>
+                                          <button
+                                            onClick={() => move(i, 1)}
+                                            disabled={last}
+                                            style={iconBtn(last)}
+                                            aria-label="Move down"
+                                          >
+                                            ▼
+                                          </button>
+                                          <button
+                                            onClick={() => unplace(id)}
+                                            style={iconBtn(false)}
+                                            aria-label="Remove"
+                                          >
+                                            ✕
+                                          </button>
+                                        </div>
+                                      </div>
+                                      {scenario.shape === "parallel" && (
+                                        <button
+                                          onClick={() => toggleParallel(id)}
+                                          style={parallelToggle(isParallel)}
+                                        >
+                                          {isParallel ? "∥ runs in parallel ✓" : "∥ mark as parallel"}
+                                        </button>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <FlowDropSpot active={isNextSpot} />
                                   )}
                                 </div>
                               </div>
-
-                              {/* connector / hand-off flag */}
-                              {!last && nextId && (
-                                <div style={{ display: "flex", gap: 12 }}>
-                                  <div style={railCol}>
-                                    <div
-                                      style={{
-                                        width: 2,
-                                        height: 34,
-                                        background: broken ? RED : "#cfe0ec",
-                                        margin: "0 auto",
-                                      }}
-                                    />
-                                  </div>
-                                  <div style={{ flex: 1, display: "flex", alignItems: "center", padding: "4px 0" }}>
-                                    <button
-                                      onClick={() => toggleFlag(id, nextId)}
-                                      style={handoffChip(broken)}
-                                    >
-                                      {broken ? "⚠ broken hand-off — flagged" : "hand-off ok · flag if broken"}
-                                    </button>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
+                            );
+                          })}
+                        </FlowCanvas>
                       </div>
                     </div>
-                  )}
+
+                    <DragOverlay dropAnimation={null}>
+                      {activeStep ? <DragGhost step={activeStep} /> : null}
+                    </DragOverlay>
+                  </DndContext>
 
                   {/* loop-back picker (round 5) */}
                   {scenario.shape === "loopback" && order.length > 1 && (
@@ -822,6 +869,87 @@ function IoLine({ input, output }: { input: string; output: string }) {
       </div>
       <div style={{ fontSize: 12, color: "#6c7b8c", lineHeight: 1.35 }}>
         <span style={ioTag("color-mix(in srgb, var(--accent) 16%, #fff)", ACCENT)}>produces</span> {output}
+      </div>
+    </div>
+  );
+}
+
+// A draggable step in the left-hand tray. Dragging it onto the flow places it;
+// a plain tap/click still works as a fallback (and for keyboard/touch).
+function TrayStepCard({
+  step,
+  onPlace,
+}: {
+  step: TrayStep;
+  onPlace: (id: string) => void;
+}) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: `tray:${step.id}`,
+  });
+  return (
+    <div
+      ref={setNodeRef}
+      {...listeners}
+      {...attributes}
+      onClick={() => onPlace(step.id)}
+      style={{
+        ...trayCard,
+        opacity: isDragging ? 0.35 : 1,
+        touchAction: "none",
+        cursor: "grab",
+      }}
+    >
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 14.5, fontWeight: 700, color: "#152230" }}>
+          {step.title}
+        </div>
+        <div style={{ fontSize: 13, color: "#46586b", marginTop: 2, lineHeight: 1.4 }}>
+          {step.detail}
+        </div>
+        <IoLine input={step.input} output={step.output} />
+      </div>
+      <span style={placeChip}>⇢ DRAG</span>
+    </div>
+  );
+}
+
+// The Visio-style flow canvas — a dotted-grid drop surface the steps land on.
+function FlowCanvas({ children }: { children: React.ReactNode }) {
+  const { setNodeRef, isOver } = useDroppable({ id: "flow" });
+  return (
+    <div ref={setNodeRef} style={flowCanvas(isOver)}>
+      {children}
+    </div>
+  );
+}
+
+// An empty spot in the flow waiting for a step. The next one to fill is
+// highlighted; later ones sit faint to show the shape of the chain to come.
+function FlowDropSpot({ active }: { active: boolean }) {
+  return (
+    <div style={emptySpot(active)}>
+      {active ? "drop a step here" : "·"}
+    </div>
+  );
+}
+
+// The card that follows the cursor while dragging.
+function DragGhost({ step }: { step: TrayStep }) {
+  return (
+    <div
+      style={{
+        ...trayCard,
+        cursor: "grabbing",
+        boxShadow: "0 18px 36px -16px rgba(20,40,70,.55)",
+        borderColor: ACCENT,
+        width: 280,
+      }}
+    >
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 14.5, fontWeight: 700, color: "#152230" }}>
+          {step.title}
+        </div>
+        <IoLine input={step.input} output={step.output} />
       </div>
     </div>
   );
@@ -987,6 +1115,51 @@ function railNode(muted: boolean): React.CSSProperties {
   };
 }
 
+function flowCanvas(isOver: boolean): React.CSSProperties {
+  return {
+    border: `1.5px dashed ${isOver ? ACCENT : "#b9d0e2"}`,
+    borderRadius: 16,
+    background: isOver
+      ? "color-mix(in srgb, var(--accent) 6%, #f7fbfe)"
+      : "#f7fbfe",
+    // subtle dotted grid, like a Visio diagram canvas
+    backgroundImage: "radial-gradient(#cfe0ee 1.4px, transparent 1.4px)",
+    backgroundSize: "15px 15px",
+    backgroundPosition: "8px 8px",
+    padding: "16px 16px",
+    minHeight: 210,
+    transition: "border-color .14s, background .14s",
+  };
+}
+
+function emptySpot(active: boolean): React.CSSProperties {
+  return {
+    flex: 1,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: active ? 56 : 40,
+    border: `1.5px dashed ${active ? ACCENT : "#c4d6e6"}`,
+    borderRadius: 13,
+    background: active ? "color-mix(in srgb, var(--accent) 6%, #fff)" : "transparent",
+    color: active ? ACCENT : "#aebfce",
+    fontFamily: MONO,
+    fontSize: active ? 12 : 14,
+    fontWeight: 700,
+    letterSpacing: ".03em",
+    opacity: active ? 1 : 0.6,
+  };
+}
+
+function connectorLine(broken: boolean): React.CSSProperties {
+  return {
+    width: 0,
+    height: 30,
+    borderLeft: `2px dashed ${broken ? RED : "#b9cee0"}`,
+    margin: "0 auto",
+  };
+}
+
 function iconBtn(disabled: boolean): React.CSSProperties {
   return {
     width: 24,
@@ -1139,9 +1312,9 @@ function IntroModal({ onStart }: { onStart: () => void }) {
         <p style={{ fontSize: 15.5, lineHeight: 1.5, color: "#39516a", marginTop: 10 }}>
           Before you can redesign work, you have to <b>see it</b>. A colleague describes how a task
           really gets done — in a messy, half-remembered way. Your job is to rebuild it into a clean{" "}
-          <b>chain of steps</b>: tap each step to place it, then put them in the order the work
-          actually flows. Read each step&apos;s <b>needs</b> and <b>produces</b> to work out what
-          comes next.
+          <b>chain of steps</b>: drag each step from the tray onto the flow, building it in the
+          order the work actually flows. Read each step&apos;s <b>needs</b> and <b>produces</b> to
+          work out what comes next.
         </p>
 
         <div
