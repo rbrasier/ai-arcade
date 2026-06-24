@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { pickRound } from "@/lib/rounds/bank";
+
 import { generateJson, isConfigured } from "./connector";
 import { mockChainOfThoughtRound } from "./chain-of-thought-mock";
 
@@ -130,9 +132,17 @@ export function withOptionIds(raw: RawChainOfThoughtScenario): ChainOfThoughtSce
  */
 export async function generateChainOfThoughtRound(
   difficulty: number,
-  opts: { avoidTopics?: string[] } = {},
+  opts: { avoidTopics?: string[]; fromBank?: boolean } = {},
 ): Promise<ChainOfThoughtScenario> {
   const d = Math.max(1, Math.min(5, Math.round(difficulty)));
+
+  // Prefer a pre-generated round from the static bank (see src/lib/rounds).
+  if (opts.fromBank !== false) {
+    const picked = pickRound<ChainOfThoughtScenario>("chain-of-thought", d, {
+      avoidTopics: opts.avoidTopics,
+    });
+    if (picked) return picked;
+  }
 
   if (!isConfigured()) {
     return mockChainOfThoughtRound(d);

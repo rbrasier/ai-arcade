@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { pickRound } from "@/lib/rounds/bank";
+
 import { generateJson, generatePlainText, isConfigured } from "./connector";
 import { mockContextCalibrationRound } from "./context-calibration-mock";
 import type { ContextItemKind } from "../context-calibration-scoring";
@@ -125,9 +127,19 @@ export function withItemIds(raw: RawContextCalibrationScenario): ContextCalibrat
  */
 export async function generateContextCalibrationRound(
   difficulty: number,
-  opts: { avoidTopics?: string[] } = {},
+  opts: { avoidTopics?: string[]; fromBank?: boolean } = {},
 ): Promise<ContextCalibrationScenario> {
   const d = Math.max(1, Math.min(5, Math.round(difficulty)));
+
+  // Prefer a pre-generated round from the static bank (see src/lib/rounds).
+  if (opts.fromBank !== false) {
+    const picked = pickRound<ContextCalibrationScenario>(
+      "context-calibration",
+      d,
+      { avoidTopics: opts.avoidTopics },
+    );
+    if (picked) return picked;
+  }
 
   if (!isConfigured()) {
     return mockContextCalibrationRound(d);

@@ -13,6 +13,7 @@
     "db:seed": "tsx src/lib/db/seed.ts",
     "db:seed:if-empty": "tsx src/lib/db/seed.ts --if-empty",
     "db:studio": "drizzle-kit studio",
+    "rounds:generate": "tsx scripts/generate-round-banks.ts",
     "release": "drizzle-kit push --force && npm run db:seed:if-empty",
     "start:railway": "npm run release && next start -p ${PORT:-3000}"
   },

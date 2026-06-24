@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { pickRound } from "@/lib/rounds/bank";
+
 import { generateJson, generatePlainText, isConfigured } from "./connector";
 import { mockCleanThePipeRound } from "./clean-the-pipe-mock";
 import { pipeTierForDifficulty } from "../clean-the-pipe-tiers";
@@ -207,9 +209,17 @@ export function withSourceIds(
  */
 export async function generateCleanThePipeRound(
   difficulty: number,
-  opts: { avoidTopics?: string[] } = {},
+  opts: { avoidTopics?: string[]; fromBank?: boolean } = {},
 ): Promise<CleanThePipeScenario> {
   const d = Math.max(1, Math.min(5, Math.round(difficulty)));
+
+  // Prefer a pre-generated round from the static bank (see src/lib/rounds).
+  if (opts.fromBank !== false) {
+    const picked = pickRound<CleanThePipeScenario>("clean-the-pipe", d, {
+      avoidTopics: opts.avoidTopics,
+    });
+    if (picked) return picked;
+  }
   const tier = pipeTierForDifficulty(d);
 
   if (!isConfigured()) {

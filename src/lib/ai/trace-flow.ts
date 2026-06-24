@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { pickRound } from "@/lib/rounds/bank";
+
 import { generateJson, generatePlainText, isConfigured } from "./connector";
 import { mockTraceFlowRound } from "./trace-flow-mock";
 import {
@@ -232,9 +234,17 @@ export function withFlow(
  */
 export async function generateTraceFlowRound(
   difficulty: number,
-  opts: { avoidTopics?: string[] } = {},
+  opts: { avoidTopics?: string[]; fromBank?: boolean } = {},
 ): Promise<TraceFlowScenario> {
   const d = Math.max(1, Math.min(5, Math.round(difficulty)));
+
+  // Prefer a pre-generated round from the static bank (see src/lib/rounds).
+  if (opts.fromBank !== false) {
+    const picked = pickRound<TraceFlowScenario>("trace-flow", d, {
+      avoidTopics: opts.avoidTopics,
+    });
+    if (picked) return picked;
+  }
   const tier = tierInfoForDifficulty(d);
 
   if (!isConfigured()) {

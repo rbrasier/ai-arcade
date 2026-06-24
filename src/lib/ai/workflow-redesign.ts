@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { pickRound } from "@/lib/rounds/bank";
+
 import { generateJson, generatePlainText, isConfigured } from "./connector";
 import {
   mockWorkflowRedesignScenario,
@@ -180,8 +182,19 @@ export function withStageIds(
  */
 export async function generateWorkflowRedesignRound(
   scenarioKey: string,
-  opts: { avoidTopics?: string[] } = {},
+  opts: { avoidTopics?: string[]; fromBank?: boolean } = {},
 ): Promise<WorkflowRedesignScenario> {
+  // Prefer a pre-generated round from the static bank, keyed by scenarioKey
+  // (see src/lib/rounds).
+  if (opts.fromBank !== false) {
+    const picked = pickRound<WorkflowRedesignScenario>(
+      "workflow-redesign",
+      scenarioKey,
+      { avoidTopics: opts.avoidTopics },
+    );
+    if (picked) return picked;
+  }
+
   if (!isConfigured()) {
     return mockWorkflowRedesignScenario(scenarioKey);
   }
