@@ -282,34 +282,37 @@ const GAMES: SeedGame[] = [
     act: "Act Three — Seeing Work as a System",
     title: "Clean the Pipe",
     description:
-      "Before you run an AI step, triage the data going in. Catch the dirt that actually poisons the output — not all dirt is equal — then compare what the AI made from the raw vs the cleaned data. Five rounds, the input-side mirror of Spot the Hallucination.",
+      "An AI step is fed by several data sources in different shapes. Design how each one feeds in — keep it, redirect the intake, migrate the old data, or leave it out — then run the pipeline and score on the errors, human mistakes included. Five rounds of data-integration design.",
     estMinutes: 15,
     challenges: [
       {
-        title: "Round 1 — Warm-up",
-        prompt: "Triage the inputs, then run the step and compare the outputs.",
+        title: "Round 1 — Fix the Channel",
+        prompt:
+          "Choose how each source feeds the step, then run the pipeline and see the errors.",
         config: { difficulty: 1 },
       },
       {
-        title: "Round 2 — Duplicates & Blanks",
-        prompt: "Triage the inputs, then run the step and compare the outputs.",
+        title: "Round 2 — First Migration",
+        prompt:
+          "Choose how each source feeds the step, then run the pipeline and see the errors.",
         config: { difficulty: 2 },
       },
       {
-        title: "Round 3 — Stale Record",
-        prompt: "Triage the inputs, then run the step and compare the outputs.",
+        title: "Round 3 — Sort the Desk",
+        prompt:
+          "Keep, redirect, migrate or exclude each source, then run the pipeline and see the errors.",
         config: { difficulty: 3 },
       },
       {
-        title: "Round 4 — A Source That Doesn't Fit",
+        title: "Round 4 — Migration Day",
         prompt:
-          "Triage the rows, then decide what to do with a source whose data type doesn't suit the system — leave it, or migrate it for a cost.",
+          "Two spreadsheets, a database with missing fields and an inbox — choose a migration path for each, then run the pipeline.",
         config: { difficulty: 4 },
       },
       {
         title: "Round 5 — Boss Round",
         prompt:
-          "Triage the rows, then weigh two ill-fitting sources: migrate the one that pays off and leave the one that doesn't.",
+          "Design the whole pipeline and migrate only what pays off — one source is a big job for almost no benefit.",
         config: { difficulty: 5 },
       },
     ],

@@ -4,13 +4,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import {
-  actionEffort,
-  type CleanThePipeImpact,
-  type ItemKind,
-  type QualityBand,
-  type TriageAction,
+import type {
+  SourceKind,
+  SourcePath,
+  SourceVerdict,
 } from "@/lib/clean-the-pipe-scoring";
+import type { SourcePreview, SourceType } from "@/lib/ai/clean-the-pipe";
 import { VideoPlaceholder } from "./VideoExplainer";
 import { EXPLAINER_SCRIPTS } from "@/lib/game-explainer-scripts";
 
@@ -21,26 +20,28 @@ const MONO = "var(--font-space-mono), monospace";
 const GREEN = "#1f8a5b";
 const RED = "#c0563a";
 const AMBER = "#c9933f";
+const BLUE = "#3b82c4";
 
 export interface RoundRef {
   id: string;
   difficulty: number;
 }
 
-interface PipeItemView {
+interface SourceView {
   id: string;
-  kind: ItemKind;
+  type: SourceType;
   label: string;
-  content: string;
+  summary: string;
+  preview: SourcePreview;
   usedFor: string;
-  repairedContent?: string;
-  migrationEffort?: number;
+  volume: number;
+  ongoing: boolean;
+  migrationEffortHours: number;
 }
 interface SafeScenario {
   topic: string;
   difficulty: number;
   stepName: string;
-  datasetName: string;
   brief: {
     senderName: string;
     senderRole: string;
@@ -48,31 +49,40 @@ interface SafeScenario {
     message: string;
   };
   goal: string;
-  items: PipeItemView[];
+  sources: SourceView[];
 }
 
-interface ResultItem extends PipeItemView {
-  consequential: boolean;
-  correctAction: TriageAction;
+interface SimColumn {
+  ai: number;
+  human: number;
+  omission: number;
+  total: number;
+}
+
+interface ResultSource extends Omit<SourceView, "preview"> {
+  kind: SourceKind;
   reason: string;
-  action: TriageAction;
+  path: SourcePath;
+  bestPath: SourcePath;
+  verdict: SourceVerdict;
+  yourErrors: number;
+  bestErrors: number;
 }
 
 interface ScoreResult {
   score: number;
   maxScore: number;
-  accuracy: number;
-  effort: number;
-  consequentialTotal: number;
-  cleanCorrect: number;
-  missedConsequential: number;
-  overCleaned: number;
-  items: ResultItem[];
+  errorReduction: number;
+  gateTripped: boolean;
+  poisonedSources: number;
+  bestPicks: number;
+  overMigrated: number;
+  sourcesTotal: number;
+  simulation: { baseline: SimColumn; yours: SimColumn; best: SimColumn };
+  sources: ResultSource[];
   stepName: string;
-  datasetName: string;
   goal: string;
-  output: { raw: string; cleaned: string };
-  impact: CleanThePipeImpact;
+  output: { before: string; after: string };
   explanation: string;
   xpEarned: number;
   bonusXp: number;
@@ -80,31 +90,43 @@ interface ScoreResult {
   player: { xp: number; level: number };
 }
 
-type Phase = "intro" | "loading" | "modal" | "triage";
+type Phase = "intro" | "loading" | "modal" | "design";
 
 interface HistoryEntry {
   score: number;
   xp: number;
-  accuracy: number;
-  effort: number;
+  errorReduction: number;
+  gateTripped: boolean;
   exceptional: boolean;
 }
 
-const TRIAGE_OPTIONS: {
-  value: TriageAction;
+const PATH_OPTIONS: {
+  value: SourcePath;
   label: string;
   icon: string;
   color: string;
+  desc: string;
 }[] = [
-  { value: "pass", label: "Let through", icon: "✓", color: "#4f6c64" },
-  { value: "repair", label: "Repair", icon: "✎", color: ACCENT },
-  { value: "bin", label: "Bin", icon: "✕", color: RED },
+  { value: "keep", label: "Keep", icon: "=", color: "#4f6c64", desc: "feed it in as-is — it's already structured" },
+  { value: "redirect", label: "Redirect", icon: "⤳", color: BLUE, desc: "cut the intake over so new data arrives structured" },
+  { value: "migrate", label: "Migrate", icon: "⮕", color: ACCENT, desc: "convert / backfill the existing data (costs hours)" },
+  { value: "exclude", label: "Exclude", icon: "✕", color: RED, desc: "leave it out of the step" },
 ];
 
-const QUALITY_META: Record<QualityBand, { label: string; color: string; bg: string; border: string }> = {
-  sound: { label: "Sound", color: GREEN, bg: "#eef7ec", border: "#cfe6d4" },
-  degraded: { label: "Degraded", color: AMBER, bg: "#fdf8ee", border: "#efe2c9" },
-  poisoned: { label: "Poisoned", color: RED, bg: "#fdf1ee", border: "#efd2c9" },
+const PATH_META: Record<SourcePath, { label: string; color: string }> = {
+  keep: { label: "Keep", color: "#4f6c64" },
+  redirect: { label: "Redirect", color: BLUE },
+  migrate: { label: "Migrate", color: ACCENT },
+  exclude: { label: "Exclude", color: RED },
+};
+
+const TYPE_META: Record<SourceType, { icon: string; label: string }> = {
+  database: { icon: "🗄️", label: "Database" },
+  spreadsheet: { icon: "📊", label: "Spreadsheet" },
+  email: { icon: "✉️", label: "Inbox" },
+  forms: { icon: "📝", label: "Forms" },
+  scans: { icon: "📄", label: "Scans" },
+  api: { icon: "🔌", label: "API feed" },
 };
 
 export function CleanThePipeGame({ rounds }: { rounds: RoundRef[] }) {
@@ -117,8 +139,9 @@ export function CleanThePipeGame({ rounds }: { rounds: RoundRef[] }) {
   const [scenario, setScenario] = useState<SafeScenario | null>(null);
   const [roundId, setRoundId] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [openSourceId, setOpenSourceId] = useState<string | null>(null);
 
-  const [actions, setActions] = useState<Record<string, TriageAction>>({});
+  const [paths, setPaths] = useState<Record<string, SourcePath>>({});
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<ScoreResult | null>(null);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
@@ -188,13 +211,14 @@ export function CleanThePipeGame({ rounds }: { rounds: RoundRef[] }) {
       setScenario(null);
       setRoundId(null);
       setResult(null);
-      setActions({});
+      setPaths({});
+      setOpenSourceId(null);
       setLoadError(null);
       try {
         const data = await prefetchRound(index);
-        const init: Record<string, TriageAction> = {};
-        for (const it of data.scenario.items) init[it.id] = "pass";
-        setActions(init);
+        const init: Record<string, SourcePath> = {};
+        for (const s of data.scenario.sources) init[s.id] = "keep";
+        setPaths(init);
         setScenario(data.scenario);
         setRoundId(data.roundId);
         setPhase("modal");
@@ -205,8 +229,8 @@ export function CleanThePipeGame({ rounds }: { rounds: RoundRef[] }) {
     [rounds, prefetchRound],
   );
 
-  const setAction = useCallback((id: string, action: TriageAction) => {
-    setActions((prev) => ({ ...prev, [id]: action }));
+  const setPath = useCallback((id: string, path: SourcePath) => {
+    setPaths((prev) => ({ ...prev, [id]: path }));
   }, []);
 
   const submit = useCallback(async () => {
@@ -216,7 +240,7 @@ export function CleanThePipeGame({ rounds }: { rounds: RoundRef[] }) {
       const res = await fetch("/api/games/clean-the-pipe/score", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ roundId, actions }),
+        body: JSON.stringify({ roundId, paths }),
       });
       if (!res.ok) throw new Error(`Request failed (${res.status})`);
       const data = (await res.json()) as ScoreResult;
@@ -226,8 +250,8 @@ export function CleanThePipeGame({ rounds }: { rounds: RoundRef[] }) {
         {
           score: data.score,
           xp: data.xpEarned + data.bonusXp,
-          accuracy: data.accuracy,
-          effort: data.effort,
+          errorReduction: data.errorReduction,
+          gateTripped: data.gateTripped,
           exceptional: data.exceptional,
         },
       ]);
@@ -238,7 +262,7 @@ export function CleanThePipeGame({ rounds }: { rounds: RoundRef[] }) {
     } finally {
       setSubmitting(false);
     }
-  }, [roundId, actions, router]);
+  }, [roundId, paths, router]);
 
   const nextRound = useCallback(() => {
     if (roundIndex + 1 >= total) {
@@ -261,19 +285,22 @@ export function CleanThePipeGame({ rounds }: { rounds: RoundRef[] }) {
     setScenario(null);
     setRoundId(null);
     setResult(null);
-    setActions({});
+    setPaths({});
+    setOpenSourceId(null);
   }, []);
 
-  // Live triage tallies (no ground truth — just what the player has done so far).
-  const touchedCount = scenario
-    ? scenario.items.filter((it) => (actions[it.id] ?? "pass") !== "pass").length
+  // Live read (no ground truth — just what the player has set so far).
+  const changedCount = scenario
+    ? scenario.sources.filter((s) => (paths[s.id] ?? "keep") !== "keep").length
     : 0;
-  const effortSpent = scenario
-    ? scenario.items.reduce(
-        (n, it) => n + actionEffort(it.kind, actions[it.id] ?? "pass"),
+  const migrationHours = scenario
+    ? scenario.sources.reduce(
+        (n, s) => n + ((paths[s.id] ?? "keep") === "migrate" ? s.migrationEffortHours : 0),
         0,
       )
     : 0;
+
+  const openSource = scenario?.sources.find((s) => s.id === openSourceId) ?? null;
 
   // ===================== RENDER =====================
   const pageStyle: React.CSSProperties = {
@@ -287,7 +314,7 @@ export function CleanThePipeGame({ rounds }: { rounds: RoundRef[] }) {
 
   return (
     <div style={pageStyle}>
-      <div style={{ maxWidth: 780, margin: "0 auto" }}>
+      <div style={{ maxWidth: 820, margin: "0 auto" }}>
         {/* ===== TOP BAR ===== */}
         <div
           style={{
@@ -392,11 +419,11 @@ export function CleanThePipeGame({ rounds }: { rounds: RoundRef[] }) {
                   {scenario ? scenario.stepName : "AI step"}
                 </div>
                 <div style={{ fontFamily: MONO, fontSize: 11, color: "#6f8a83", letterSpacing: ".02em" }}>
-                  triage the inputs before you run it
+                  design how each source feeds the step, then run the pipeline
                 </div>
               </div>
-              {scenario && phase === "triage" && (
-                <span style={countBadge}>{touchedCount} cleaned</span>
+              {scenario && phase === "design" && (
+                <span style={countBadge}>{changedCount} changed</span>
               )}
             </div>
 
@@ -433,13 +460,13 @@ export function CleanThePipeGame({ rounds }: { rounds: RoundRef[] }) {
                   ) : (
                     <>
                       <Dots big />
-                      <div style={{ marginTop: 12 }}>Pulling the data…</div>
+                      <div style={{ marginTop: 12 }}>Pulling the sources…</div>
                     </>
                   )}
                 </div>
               )}
 
-              {scenario && phase === "triage" && (
+              {scenario && phase === "design" && (
                 <>
                   {/* the goal */}
                   <div
@@ -456,28 +483,29 @@ export function CleanThePipeGame({ rounds }: { rounds: RoundRef[] }) {
                     </div>
                   </div>
 
-                  {/* verb legend */}
-                  <VerbLegend />
+                  {/* path legend */}
+                  <PathLegend />
 
-                  {/* the queue */}
+                  {/* the sources */}
                   <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
-                    <div style={kicker}>the inputs going in · {scenario.datasetName}</div>
+                    <div style={kicker}>the sources feeding the step</div>
                     <div style={{ fontFamily: MONO, fontSize: 12, color: "#6f8a83", whiteSpace: "nowrap" }}>
-                      let through · repair · bin
+                      keep · redirect · migrate · exclude
                     </div>
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    {scenario.items.map((it) => (
-                      <ItemCard
-                        key={it.id}
-                        item={it}
-                        action={actions[it.id] ?? "pass"}
-                        onChange={(v) => setAction(it.id, v)}
+                    {scenario.sources.map((s) => (
+                      <SourceCard
+                        key={s.id}
+                        source={s}
+                        path={paths[s.id] ?? "keep"}
+                        onChange={(v) => setPath(s.id, v)}
+                        onView={() => setOpenSourceId(s.id)}
                       />
                     ))}
                   </div>
 
-                  {/* live effort read */}
+                  {/* live read */}
                   <div
                     style={{
                       display: "flex",
@@ -491,10 +519,10 @@ export function CleanThePipeGame({ rounds }: { rounds: RoundRef[] }) {
                     }}
                   >
                     <span style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, color: "#26413b" }}>
-                      effort spent: {effortSpent}
+                      migration effort: ≈ {migrationHours} hrs
                     </span>
                     <span style={{ fontSize: 12.5, color: "#6f8a83", flex: 1, minWidth: 200 }}>
-                      Spend it only where it changes the output — repairing or binning the harmless stuff is wasted effort.
+                      Migrating is real work and introduces human error — only convert a source the step actually needs.
                     </span>
                   </div>
 
@@ -508,10 +536,10 @@ export function CleanThePipeGame({ rounds }: { rounds: RoundRef[] }) {
                         cursor: submitting ? "default" : "pointer",
                       }}
                     >
-                      {submitting ? "RUNNING…" : "RUN THE STEP →"}
+                      {submitting ? "RUNNING…" : "RUN THE PIPELINE →"}
                     </button>
                     <div style={{ fontFamily: MONO, fontSize: 12, color: "#6f8a83" }}>
-                      not all dirt is equal — clean only what matters
+                      fewest errors wins — fix the intake, migrate what pays off
                     </div>
                   </div>
                 </>
@@ -524,7 +552,7 @@ export function CleanThePipeGame({ rounds }: { rounds: RoundRef[] }) {
                 <div style={modalCard(440)}>
                   <div style={modalKicker}>
                     <span style={{ width: 7, height: 7, borderRadius: "50%", background: ACCENT, display: "inline-block" }} />{" "}
-                    new dataset · {scenario.topic}
+                    new task · {scenario.topic}
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 13, marginTop: 14 }}>
                     <div
@@ -569,13 +597,18 @@ export function CleanThePipeGame({ rounds }: { rounds: RoundRef[] }) {
                     {scenario.brief.message}
                   </div>
                   <button
-                    onClick={() => setPhase("triage")}
+                    onClick={() => setPhase("design")}
                     style={{ ...primaryBtn, width: "100%", marginTop: 18, justifyContent: "center" }}
                   >
-                    OPEN THE DATA →
+                    SEE THE SOURCES →
                   </button>
                 </div>
               </div>
+            )}
+
+            {/* SOURCE CONTENTS MODAL */}
+            {openSource && (
+              <SourceContentsModal source={openSource} onClose={() => setOpenSourceId(null)} />
             )}
           </div>
         )}
@@ -602,12 +635,7 @@ export function CleanThePipeGame({ rounds }: { rounds: RoundRef[] }) {
 
 // ===================== sub-components =====================
 
-function VerbLegend() {
-  const items: { icon: string; label: string; color: string; desc: string }[] = [
-    { icon: "✓", label: "Let through", color: "#4f6c64", desc: "fine, or harmless dirt — do nothing" },
-    { icon: "✎", label: "Repair", color: ACCENT, desc: "consequential but recoverable — fix / convert" },
-    { icon: "✕", label: "Bin", color: RED, desc: "doesn't belong / unrecoverable — leave it out" },
-  ];
+function PathLegend() {
   return (
     <div
       style={{
@@ -620,8 +648,8 @@ function VerbLegend() {
         padding: "10px 12px",
       }}
     >
-      {items.map((i) => (
-        <div key={i.label} style={{ display: "flex", alignItems: "center", gap: 7, flex: "1 1 200px", minWidth: 0 }}>
+      {PATH_OPTIONS.map((p) => (
+        <div key={p.value} style={{ display: "flex", alignItems: "center", gap: 7, flex: "1 1 240px", minWidth: 0 }}>
           <span
             style={{
               flex: "none",
@@ -629,7 +657,7 @@ function VerbLegend() {
               fontWeight: 700,
               fontSize: 12,
               color: "#fff",
-              background: i.color,
+              background: p.color,
               borderRadius: 6,
               width: 20,
               height: 20,
@@ -638,10 +666,10 @@ function VerbLegend() {
               justifyContent: "center",
             }}
           >
-            {i.icon}
+            {p.icon}
           </span>
           <span style={{ fontSize: 12.5, color: "#26413b", lineHeight: 1.3 }}>
-            <b>{i.label}</b> — {i.desc}
+            <b>{p.label}</b> — {p.desc}
           </span>
         </div>
       ))}
@@ -649,127 +677,95 @@ function VerbLegend() {
   );
 }
 
-function ItemCard({
-  item,
-  action,
+function SourceCard({
+  source,
+  path,
   onChange,
+  onView,
 }: {
-  item: PipeItemView;
-  action: TriageAction;
-  onChange: (v: TriageAction) => void;
+  source: SourceView;
+  path: SourcePath;
+  onChange: (v: SourcePath) => void;
+  onView: () => void;
 }) {
-  const touched = action !== "pass";
-  const isBatch = item.kind === "batch";
+  const touched = path !== "keep";
+  const meta = TYPE_META[source.type];
   return (
     <div
       style={{
-        border: `1.5px solid ${touched ? ACCENT : isBatch ? "#e0d7c2" : "#dde7e4"}`,
+        border: `1.5px solid ${touched ? PATH_META[path].color : "#dde7e4"}`,
         borderRadius: 13,
-        padding: "12px 14px",
-        background: touched
-          ? "color-mix(in srgb, var(--accent) 7%, #fff)"
-          : isBatch
-            ? "#fdfaf2"
-            : "#fff",
+        padding: "13px 15px",
+        background: touched ? `color-mix(in srgb, ${PATH_META[path].color} 6%, #fff)` : "#fff",
         transition: "border-color .14s, background .14s",
       }}
     >
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "flex-start", flexWrap: "wrap" }}>
-        <div style={{ flex: 1, minWidth: 200 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
+        <div style={{ flex: 1, minWidth: 220 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
-            {isBatch && <span style={{ fontSize: 13 }}>⚠️</span>}
-            <span
-              style={{
-                fontFamily: MONO,
-                fontSize: 10.5,
-                fontWeight: 700,
-                letterSpacing: ".04em",
-                textTransform: "uppercase",
-                color: "#6f8a83",
-              }}
-            >
-              {item.label}
-            </span>
-            {isBatch && (
-              <span
-                style={{
-                  fontFamily: MONO,
-                  fontSize: 9.5,
-                  fontWeight: 700,
-                  letterSpacing: ".05em",
-                  textTransform: "uppercase",
-                  color: AMBER,
-                  background: "#fdf8ee",
-                  border: "1px solid #efe2c9",
-                  borderRadius: 999,
-                  padding: "1px 7px",
-                }}
-              >
-                whole source
+            <span style={{ fontSize: 15 }}>{meta.icon}</span>
+            <span style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: 15, color: "#162824" }}>{source.label}</span>
+            <span style={typePill}>{meta.label}</span>
+            <span style={dataPill}>{source.volume.toLocaleString()}/qtr</span>
+            <span style={dataPill}>{source.ongoing ? "ongoing" : "archive"}</span>
+          </div>
+          <div style={{ fontSize: 13.5, color: "#26413b", lineHeight: 1.45 }}>{source.summary}</div>
+          <div style={{ fontSize: 12.5, color: "#6f8a83", lineHeight: 1.4, marginTop: 5 }}>
+            ↳ the step uses this: {source.usedFor}
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 9, flexWrap: "wrap" }}>
+            <button onClick={onView} style={viewBtn}>
+              🔍 View contents
+            </button>
+            {path === "migrate" && (
+              <span style={{ fontFamily: MONO, fontSize: 11.5, color: ACCENT, fontWeight: 700 }}>
+                migration ≈ {source.migrationEffortHours} hrs
+              </span>
+            )}
+            {path === "redirect" && (
+              <span style={{ fontFamily: MONO, fontSize: 11.5, color: BLUE, fontWeight: 700 }}>
+                → new intake structured; old data left as-is
+              </span>
+            )}
+            {path === "exclude" && (
+              <span style={{ fontFamily: MONO, fontSize: 11.5, color: RED, fontWeight: 700 }}>
+                → left out of the step
               </span>
             )}
           </div>
-          <div style={{ fontSize: 14.5, color: "#26413b", lineHeight: 1.45 }}>{item.content}</div>
-          <div style={{ fontSize: 12.5, color: "#6f8a83", lineHeight: 1.4, marginTop: 5 }}>
-            ↳ the step uses this: {item.usedFor}
-          </div>
-          {isBatch && item.migrationEffort != null && (
-            <div style={{ fontFamily: MONO, fontSize: 11.5, color: AMBER, fontWeight: 700, marginTop: 6 }}>
-              repairing this ≈ {item.migrationEffort} hrs of migration
-            </div>
-          )}
-          {action === "repair" && (
-            <div
-              style={{
-                marginTop: 8,
-                fontSize: 13,
-                color: ACCENT,
-                background: "color-mix(in srgb, var(--accent) 8%, #fff)",
-                border: "1px dashed color-mix(in srgb, var(--accent) 40%, #cfe6e0)",
-                borderRadius: 9,
-                padding: "7px 10px",
-                lineHeight: 1.4,
-              }}
-            >
-              → repaired: {item.repairedContent ?? "patched in place so the step can use it."}
-            </div>
-          )}
-          {action === "bin" && (
-            <div style={{ marginTop: 8, fontFamily: MONO, fontSize: 11.5, color: RED, fontWeight: 700 }}>
-              → left out of the run
-            </div>
-          )}
         </div>
-        <TriageSegmented value={action} onChange={onChange} />
+        <PathSegmented value={path} onChange={onChange} />
       </div>
     </div>
   );
 }
 
-function TriageSegmented({
+function PathSegmented({
   value,
   onChange,
 }: {
-  value: TriageAction;
-  onChange: (v: TriageAction) => void;
+  value: SourcePath;
+  onChange: (v: SourcePath) => void;
 }) {
   return (
     <div
       style={{
         display: "inline-flex",
         flex: "none",
+        flexWrap: "wrap",
         border: "1px solid #dde7e4",
         borderRadius: 10,
         overflow: "hidden",
         background: "#f1f9f6",
       }}
     >
-      {TRIAGE_OPTIONS.map((opt) => {
+      {PATH_OPTIONS.map((opt) => {
         const on = value === opt.value;
         return (
           <button
             key={opt.value}
             onClick={() => onChange(opt.value)}
+            title={opt.desc}
             style={{
               fontFamily: MONO,
               fontSize: 11.5,
@@ -778,7 +774,7 @@ function TriageSegmented({
               color: on ? "#fff" : "#5b7269",
               background: on ? opt.color : "transparent",
               border: "none",
-              padding: "8px 12px",
+              padding: "8px 11px",
               cursor: "pointer",
               whiteSpace: "nowrap",
               transition: "background .12s, color .12s",
@@ -788,6 +784,123 @@ function TriageSegmented({
           </button>
         );
       })}
+    </div>
+  );
+}
+
+function SourceContentsModal({
+  source,
+  onClose,
+}: {
+  source: SourceView;
+  onClose: () => void;
+}) {
+  const meta = TYPE_META[source.type];
+  return (
+    <div style={overlay("fixed")} onClick={onClose}>
+      <div style={{ ...modalCard(560) }} onClick={(e) => e.stopPropagation()}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 9, minWidth: 0 }}>
+            <span style={{ fontSize: 19 }}>{meta.icon}</span>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: 18, lineHeight: 1.1 }}>{source.label}</div>
+              <div style={{ fontFamily: MONO, fontSize: 11, color: "#6f8a83" }}>
+                {meta.label} · {source.volume.toLocaleString()}/qtr · {source.ongoing ? "ongoing" : "archive"}
+              </div>
+            </div>
+          </div>
+          <button onClick={onClose} style={closeBtn}>✕</button>
+        </div>
+        <div style={{ fontSize: 13.5, color: "#26413b", lineHeight: 1.45, margin: "12px 0 4px" }}>
+          {source.summary}
+        </div>
+        <div style={{ marginTop: 12 }}>
+          <PreviewBlock preview={source.preview} />
+        </div>
+        <div style={{ fontSize: 12.5, color: "#6f8a83", lineHeight: 1.4, marginTop: 12 }}>
+          ↳ the step uses this for: {source.usedFor}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PreviewBlock({ preview }: { preview: SourcePreview }) {
+  if (preview.columns && preview.rows) {
+    return (
+      <div style={{ overflowX: "auto", border: "1px solid #dde7e4", borderRadius: 11 }}>
+        <table style={{ borderCollapse: "collapse", width: "100%", fontFamily: MONO, fontSize: 12 }}>
+          <thead>
+            <tr>
+              {preview.columns.map((c, i) => (
+                <th
+                  key={i}
+                  style={{
+                    textAlign: "left",
+                    padding: "8px 11px",
+                    background: "#f1f9f6",
+                    borderBottom: "1px solid #dde7e4",
+                    color: "#4f6c64",
+                    whiteSpace: "nowrap",
+                    fontWeight: 700,
+                  }}
+                >
+                  {c}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {preview.rows.map((row, ri) => (
+              <tr key={ri}>
+                {row.map((cell, ci) => (
+                  <td
+                    key={ci}
+                    style={{
+                      padding: "8px 11px",
+                      borderBottom: ri === preview.rows!.length - 1 ? "none" : "1px solid #eef3f1",
+                      color: cell === "" ? "#c0563a" : "#26413b",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {cell === "" ? "— blank —" : cell}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  }
+  if (preview.messages) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {preview.messages.map((m, i) => (
+          <div key={i} style={{ border: "1px solid #dde7e4", borderRadius: 11, padding: "10px 13px", background: "#fff" }}>
+            <div style={{ display: "flex", gap: 8, alignItems: "baseline", flexWrap: "wrap" }}>
+              <span style={{ fontFamily: MONO, fontSize: 11.5, fontWeight: 700, color: "#4f6c64" }}>{m.from}</span>
+              {m.subject && <span style={{ fontSize: 12.5, fontWeight: 700, color: "#162824" }}>{m.subject}</span>}
+            </div>
+            <div style={{ fontSize: 13, color: "#26413b", lineHeight: 1.45, marginTop: 4 }}>{m.body}</div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  return (
+    <div
+      style={{
+        border: "1px dashed #cdbf9f",
+        borderRadius: 11,
+        padding: "13px 15px",
+        background: "#fdfaf2",
+        fontSize: 13.5,
+        color: "#5b5230",
+        lineHeight: 1.5,
+      }}
+    >
+      {preview.note ?? "No readable preview — this source isn't in a shape the step can open."}
     </div>
   );
 }
@@ -835,6 +948,59 @@ const backChip: React.CSSProperties = {
   padding: "7px 12px",
   borderRadius: 9,
   whiteSpace: "nowrap",
+};
+
+const typePill: React.CSSProperties = {
+  fontFamily: MONO,
+  fontSize: 9.5,
+  fontWeight: 700,
+  letterSpacing: ".05em",
+  textTransform: "uppercase",
+  color: "#6f8a83",
+  background: "#f1f9f6",
+  border: "1px solid #d7e8e3",
+  borderRadius: 999,
+  padding: "1px 8px",
+};
+
+const dataPill: React.CSSProperties = {
+  fontFamily: MONO,
+  fontSize: 9.5,
+  fontWeight: 700,
+  letterSpacing: ".03em",
+  color: "#7c8f89",
+  background: "#fbfdfc",
+  border: "1px solid #e3eeeb",
+  borderRadius: 999,
+  padding: "1px 8px",
+};
+
+const viewBtn: React.CSSProperties = {
+  fontFamily: MONO,
+  fontSize: 11.5,
+  fontWeight: 700,
+  letterSpacing: ".02em",
+  color: "#26413b",
+  background: "#f1f9f6",
+  border: "1px solid #cfe6e0",
+  borderRadius: 8,
+  padding: "6px 11px",
+  cursor: "pointer",
+  whiteSpace: "nowrap",
+};
+
+const closeBtn: React.CSSProperties = {
+  flex: "none",
+  fontFamily: MONO,
+  fontSize: 13,
+  fontWeight: 700,
+  color: "#6f8a83",
+  background: "#f1f9f6",
+  border: "1px solid #cfe6e0",
+  borderRadius: 8,
+  width: 30,
+  height: 30,
+  cursor: "pointer",
 };
 
 const kicker: React.CSSProperties = {
@@ -950,11 +1116,11 @@ function IntroModal({ onStart }: { onStart: () => void }) {
           Clean the Pipe
         </h2>
         <p style={{ fontSize: 15.5, lineHeight: 1.5, color: "#26413b", marginTop: 10 }}>
-          You&apos;re about to run an AI step on a batch of data — but the data going in is{" "}
-          <b>dirty</b>. Garbage in, garbage out. Triage the inputs first: for each one, decide{" "}
-          <b>let through</b> (it&apos;s fine), <b>repair</b> (broken but recoverable — you&apos;ll
-          see it patched), or <b>bin</b> (it doesn&apos;t belong) — then run the step and see what
-          it produced.
+          An AI step is fed by several <b>data sources</b> — a database, an inbox, spreadsheets,
+          scans — and the way data flows in is what&apos;s wrong. For each source, decide how it
+          should feed the step: <b>keep</b> it as-is, <b>redirect</b> the intake so new data
+          arrives structured, <b>migrate</b> the existing data into shape, or <b>exclude</b> it.
+          Then <b>run the pipeline</b> and see the errors.
         </p>
 
         <div
@@ -969,14 +1135,14 @@ function IntroModal({ onStart }: { onStart: () => void }) {
             padding: "13px 15px",
           }}
         >
-          <span style={{ fontSize: 20, lineHeight: 1.1 }}>🧪</span>
+          <span style={{ fontSize: 20, lineHeight: 1.1 }}>🔧</span>
           <div style={{ fontSize: 14, lineHeight: 1.45, color: "#26413b" }}>
-            <b style={{ color: ACCENT }}>Not all dirt is equal.</b> A cosmetic duplicate barely
-            matters; a wrong-category or stale record poisons the whole result. Each item shows{" "}
-            <b>what the step uses it for</b> — use that to judge whether it changes the output, and
-            resist scrubbing the harmless stuff. Later rounds add whole <b>sources in the wrong
-            shape</b> for the system (e.g. audio for a text summariser) — repairing one is a{" "}
-            <b>migration that costs real hours</b>, so only do it when it pays off.
+            <b style={{ color: ACCENT }}>Fewest errors wins — and human errors count.</b> Often the
+            fix is to <b>redirect the channel</b> going forward (don&apos;t re-process the old
+            backlog). Historical data you actually need must be <b>migrated</b> — but migration is
+            real work that introduces its own mistakes, so <b>don&apos;t migrate a source that
+            doesn&apos;t earn it</b>. Click <b>View contents</b> to read each source before you
+            decide.
           </div>
         </div>
 
@@ -994,15 +1160,15 @@ function IntroModal({ onStart }: { onStart: () => void }) {
             <div style={{ padding: "0 16px 14px", fontSize: 14, lineHeight: 1.5, color: "#26413b" }}>
               <p style={{ marginTop: 0, fontWeight: 600 }}>You&apos;ll practise:</p>
               <ul style={{ margin: "4px 0 12px", paddingLeft: 18 }}>
-                <li>Recognising garbage-in-garbage-out as a data problem, not an AI problem.</li>
-                <li>Triaging which input flaws actually change the output.</li>
-                <li>Calibrating cleaning effort to consequence rather than tidiness.</li>
+                <li>Designing how data is fed into an AI step, source by source.</li>
+                <li>Fixing the intake going forward vs migrating historical data.</li>
+                <li>Spending migration effort only where it lowers errors.</li>
               </ul>
               <p style={{ marginTop: 0, fontWeight: 600 }}>How you score:</p>
               <ul style={{ margin: "4px 0 12px", paddingLeft: 18 }}>
-                <li><b>Accuracy</b> is the gate — handle every item that would poison the output, or you can&apos;t clear.</li>
-                <li><b>Effort</b> earns the rest — repairing or binning harmless dirt, or migrating a source that wasn&apos;t worth it, costs you.</li>
-                <li>Cleaning <i>everything</i> fails just like missing the dirt that mattered.</li>
+                <li>The pipeline is <b>simulated</b> and scored on total <b>errors</b> — AI misreads, human migration mistakes, and dropped data.</li>
+                <li>Leaving a needed source feeding garbage <b>poisons the output</b> and caps you below the clear.</li>
+                <li>Migrating a source that didn&apos;t need it <b>adds human errors</b> — over-building fails too.</li>
               </ul>
               <p style={{ marginTop: 0, fontWeight: 600 }}>Common arcade rules:</p>
               <ul style={{ margin: "4px 0 0", paddingLeft: 18 }}>
@@ -1056,28 +1222,13 @@ function Verdict({ ok, label }: { ok: boolean; label: string }) {
 }
 
 type Tone = "good" | "bad" | "warn";
-const ACTION_LABEL: Record<TriageAction, string> = {
-  pass: "let through",
-  repair: "repaired",
-  bin: "binned",
-};
 
-function itemVerdict(it: ResultItem): { ok: boolean; tone: Tone; tag: string } {
-  if (it.consequential) {
-    if (it.action === it.correctAction) return { ok: true, tone: "good", tag: "mattered — handled right" };
-    if (it.action === "pass") return { ok: false, tone: "bad", tag: "missed — poisoned the output" };
-    return { ok: false, tone: "warn", tag: "neutralised, but handled suboptimally" };
-  }
-  if (it.action === "pass") return { ok: true, tone: "good", tag: "harmless — rightly left alone" };
-  if (it.kind === "batch") {
-    return {
-      ok: false,
-      tone: "warn",
-      tag: `needless migration — ${it.migrationEffort ?? "extra"} hrs wasted`,
-    };
-  }
-  return { ok: false, tone: "warn", tag: "over-cleaned — wasted effort" };
-}
+const VERDICT_META: Record<SourceVerdict, { tone: Tone; tag: string }> = {
+  best: { tone: "good", tag: "best path" },
+  ok: { tone: "good", tag: "acceptable" },
+  poisoned: { tone: "bad", tag: "left poisoning the output" },
+  wasteful: { tone: "warn", tag: "migration didn't pay off" },
+};
 
 const TONE_COLOR: Record<Tone, { c: string; bg: string; b: string }> = {
   good: { c: GREEN, bg: "#eef7ec", b: "#cfe6d4" },
@@ -1085,17 +1236,85 @@ const TONE_COLOR: Record<Tone, { c: string; bg: string; b: string }> = {
   warn: { c: AMBER, bg: "#fdf8ee", b: "#efe2c9" },
 };
 
-/** The signature raw-vs-cleaned read: the deliverable the step produced both ways. */
-function OutputContrast({ result }: { result: ScoreResult }) {
-  const raw = QUALITY_META[result.impact.rawQuality];
-  const yours = QUALITY_META[result.impact.yourQuality];
-  const cols: { title: string; band: typeof raw; text: string; accent: boolean }[] = [
-    { title: "From the raw data", band: raw, text: result.output.raw, accent: false },
-    { title: "From your triaged data", band: yours, text: result.output.cleaned, accent: true },
+/** The scored simulation: three pipeline runs compared by error count. */
+function SimulationChart({ sim }: { sim: ScoreResult["simulation"] }) {
+  const max = Math.max(sim.baseline.total, sim.yours.total, sim.best.total, 1);
+  const rows: { title: string; col: SimColumn; accent: boolean }[] = [
+    { title: "Do nothing (status quo)", col: sim.baseline, accent: false },
+    { title: "Your redesign", col: sim.yours, accent: true },
+    { title: "Best possible", col: sim.best, accent: false },
+  ];
+  const SEG: { key: keyof SimColumn; label: string; color: string }[] = [
+    { key: "ai", label: "AI misreads", color: "#c0563a" },
+    { key: "human", label: "Human errors", color: "#c9933f" },
+    { key: "omission", label: "Dropped data", color: "#6f8a83" },
   ];
   return (
     <div style={{ marginTop: 24 }}>
-      <div style={kicker}>What the step produced — raw vs cleaned</div>
+      <div style={kicker}>The pipeline, simulated — errors per quarter</div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 10 }}>
+        {rows.map((r) => (
+          <div
+            key={r.title}
+            style={{
+              border: `1px solid ${r.accent ? "color-mix(in srgb, #1f9488 35%, #cfe6e0)" : "#dde7e4"}`,
+              borderRadius: 12,
+              padding: "11px 13px",
+              background: r.accent ? "color-mix(in srgb, #1f9488 4%, #fff)" : "#fff",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}>
+              <span style={{ fontFamily: MONO, fontSize: 11.5, fontWeight: 700, letterSpacing: ".03em", textTransform: "uppercase", color: r.accent ? ACCENT : "#6f8a83" }}>
+                {r.title}
+              </span>
+              <span style={{ fontFamily: MONO, fontSize: 15, fontWeight: 700, color: "#162824" }}>
+                {r.col.total.toLocaleString()} <span style={{ fontSize: 11, color: "#6f8a83" }}>errors</span>
+              </span>
+            </div>
+            <div
+              style={{
+                display: "flex",
+                height: 14,
+                marginTop: 8,
+                borderRadius: 7,
+                overflow: "hidden",
+                background: "#f1f5f4",
+                width: `${Math.max(6, (r.col.total / max) * 100)}%`,
+                minWidth: 6,
+              }}
+            >
+              {SEG.map((s) => {
+                const v = r.col[s.key];
+                if (v <= 0) return null;
+                return <div key={s.key} style={{ width: `${(v / r.col.total) * 100}%`, background: s.color }} />;
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginTop: 10 }}>
+        {SEG.map((s) => (
+          <span key={s.key} style={{ display: "inline-flex", alignItems: "center", gap: 6, fontFamily: MONO, fontSize: 11, color: "#5b7269" }}>
+            <span style={{ width: 10, height: 10, borderRadius: 3, background: s.color, display: "inline-block" }} /> {s.label}
+          </span>
+        ))}
+      </div>
+      <p style={{ fontSize: 11.5, color: "#9ab3ac", margin: "10px 0 0", fontStyle: "italic" }}>
+        Your score is how far your redesign cut errors from the status quo toward the best possible — human migration errors included.
+      </p>
+    </div>
+  );
+}
+
+/** The before-vs-after deliverable narration (illustrative). */
+function OutputContrast({ output }: { output: ScoreResult["output"] }) {
+  const cols: { title: string; text: string; accent: boolean }[] = [
+    { title: "Status-quo output", text: output.before, accent: false },
+    { title: "After your redesign", text: output.after, accent: true },
+  ];
+  return (
+    <div style={{ marginTop: 24 }}>
+      <div style={kicker}>What the step produced — before vs after</div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 10 }}>
         {cols.map((c) => (
           <div
@@ -1109,90 +1328,34 @@ function OutputContrast({ result }: { result: ScoreResult }) {
           >
             <div
               style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 8,
                 padding: "9px 13px",
                 borderBottom: "1px solid #eef3f1",
                 background: "#f6faf8",
+                fontFamily: MONO,
+                fontSize: 10.5,
+                fontWeight: 700,
+                letterSpacing: ".03em",
+                textTransform: "uppercase",
+                color: c.accent ? ACCENT : "#6f8a83",
               }}
             >
-              <span style={{ fontFamily: MONO, fontSize: 10.5, fontWeight: 700, letterSpacing: ".03em", textTransform: "uppercase", color: c.accent ? ACCENT : "#6f8a83" }}>
-                {c.title}
-              </span>
-              <span
-                style={{
-                  fontFamily: MONO,
-                  fontSize: 9.5,
-                  fontWeight: 700,
-                  letterSpacing: ".03em",
-                  textTransform: "uppercase",
-                  color: c.band.color,
-                  background: c.band.bg,
-                  border: `1px solid ${c.band.border}`,
-                  borderRadius: 999,
-                  padding: "3px 9px",
-                }}
-              >
-                {c.band.label}
-              </span>
+              {c.title}
             </div>
-            <div style={{ padding: "12px 13px", fontSize: 13.5, lineHeight: 1.5, color: "#26413b" }}>
-              {c.text}
-            </div>
+            <div style={{ padding: "12px 13px", fontSize: 13.5, lineHeight: 1.5, color: "#26413b" }}>{c.text}</div>
           </div>
         ))}
       </div>
-
-      {/* effort read */}
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: 16,
-          marginTop: 12,
-          border: "1px solid #dde7e4",
-          borderRadius: 12,
-          padding: "11px 15px",
-          background: "#f6faf8",
-        }}
-      >
-        <span style={{ fontFamily: MONO, fontSize: 12.5, color: "#26413b" }}>
-          <b>{result.impact.effortHours} hrs</b> effort spent
-        </span>
-        <span style={{ fontFamily: MONO, fontSize: 12.5, color: "#6f8a83" }}>
-          calibrated target ≈ <b>{result.impact.idealEffortHours} hrs</b>
-        </span>
-        <span style={{ fontSize: 13, color: "#4f6c64", flex: 1, minWidth: 200 }}>
-          {result.impact.verdict}
-        </span>
-      </div>
       <p style={{ fontSize: 11.5, color: "#9ab3ac", margin: "8px 0 0", fontStyle: "italic" }}>
-        Illustrative — the deliverable and the effort read show what your triage did to the result. They never affect your score.
+        Illustrative — shows what your pipeline design did to the deliverable. It never affects your score.
       </p>
     </div>
   );
 }
 
-function ItemRow({
-  title,
-  detail,
-  tag,
-  tone,
-  ok,
-  actionLabel,
-  reason,
-}: {
-  title: string;
-  detail: string;
-  tag: string;
-  tone: Tone;
-  ok: boolean;
-  actionLabel: string;
-  reason: string;
-}) {
-  const t = TONE_COLOR[tone];
+function SourceReviewRow({ source }: { source: ResultSource }) {
+  const v = VERDICT_META[source.verdict];
+  const t = TONE_COLOR[v.tone];
+  const ok = v.tone === "good";
   return (
     <div
       style={{
@@ -1208,7 +1371,9 @@ function ItemRow({
       <span style={{ flex: "none", fontSize: 15, color: t.c, marginTop: 1 }}>{ok ? "✓" : "✕"}</span>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-          <span style={{ fontSize: 14.5, fontWeight: 700, color: "#162824" }}>{title}</span>
+          <span style={{ fontSize: 14.5, fontWeight: 700, color: "#162824" }}>
+            {TYPE_META[source.type].icon} {source.label}
+          </span>
           <span
             style={{
               fontFamily: MONO,
@@ -1222,16 +1387,40 @@ function ItemRow({
               padding: "2px 8px",
             }}
           >
-            {tag}
-          </span>
-          <span style={{ fontFamily: MONO, fontSize: 10, fontWeight: 700, letterSpacing: ".04em", color: "#9ab3ac" }}>
-            you {actionLabel}
+            {v.tag}
           </span>
         </div>
-        {detail && <div style={{ fontSize: 13, color: "#5b7269", marginTop: 3, lineHeight: 1.4 }}>{detail}</div>}
-        <div style={{ fontSize: 13, color: "#4f6c64", marginTop: 4, lineHeight: 1.45 }}>{reason}</div>
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginTop: 5 }}>
+          <PathChip path={source.path} prefix="you" />
+          {source.path !== source.bestPath && <PathChip path={source.bestPath} prefix="best" />}
+          <span style={{ fontFamily: MONO, fontSize: 10.5, color: "#7c8f89" }}>
+            {source.yourErrors.toLocaleString()} errors{source.path !== source.bestPath ? ` · best ${source.bestErrors.toLocaleString()}` : ""}
+          </span>
+        </div>
+        <div style={{ fontSize: 13, color: "#4f6c64", marginTop: 5, lineHeight: 1.45 }}>{source.reason}</div>
       </div>
     </div>
+  );
+}
+
+function PathChip({ path, prefix }: { path: SourcePath; prefix: string }) {
+  const m = PATH_META[path];
+  return (
+    <span
+      style={{
+        fontFamily: MONO,
+        fontSize: 10,
+        fontWeight: 700,
+        letterSpacing: ".03em",
+        color: m.color,
+        background: `color-mix(in srgb, ${m.color} 10%, #fff)`,
+        border: `1px solid color-mix(in srgb, ${m.color} 35%, #fff)`,
+        borderRadius: 999,
+        padding: "2px 9px",
+      }}
+    >
+      {prefix}: {m.label.toLowerCase()}
+    </span>
   );
 }
 
@@ -1249,8 +1438,8 @@ function Debrief({
   onNext: () => void;
 }) {
   const cleared = result.score >= result.maxScore * 0.65;
-  const caughtAll = result.missedConsequential === 0;
-  const stayedLean = result.overCleaned === 0;
+  const noPoison = !result.gateTripped;
+  const noWaste = result.overMigrated === 0;
 
   return (
     <div
@@ -1271,8 +1460,8 @@ function Debrief({
       </div>
 
       <div style={{ display: "flex", gap: 10, marginTop: 14, flexWrap: "wrap" }}>
-        <Verdict ok={caughtAll} label={caughtAll ? "caught the dirt that mattered" : "let bad data slip through"} />
-        <Verdict ok={stayedLean} label={stayedLean ? "no needless cleaning" : "over-cleaned"} />
+        <Verdict ok={noPoison} label={noPoison ? "no poisoned output" : "left a source poisoning the output"} />
+        <Verdict ok={noWaste} label={noWaste ? "no wasted migrations" : "migrated what didn't pay off"} />
         {result.exceptional && (
           <span
             style={{
@@ -1299,8 +1488,8 @@ function Debrief({
           `${Math.round((result.score / result.maxScore) * 100)}%`,
           cleared ? "round cleared" : "below clear",
         )}
-        {statCard("#cfe6e0", "#f1f9f6", "#162824", `${result.accuracy}%`, "accuracy (the gate)")}
-        {statCard("#cfe6e0", "#f1f9f6", "#162824", `${result.effort}%`, "effort (calibrate)")}
+        {statCard("#cfe6e0", "#f1f9f6", "#162824", `${result.errorReduction}%`, "errors cut vs status quo")}
+        {statCard("#cfe6e0", "#f1f9f6", "#162824", `${result.bestPicks}/${result.sourcesTotal}`, "sources on best path")}
       </div>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 14, alignItems: "center", marginTop: 12 }}>
@@ -1313,27 +1502,18 @@ function Debrief({
         </span>
       </div>
 
-      {/* what the step produced, raw vs cleaned */}
-      <OutputContrast result={result} />
+      {/* the scored simulation */}
+      <SimulationChart sim={result.simulation} />
 
-      {/* per-item breakdown */}
-      <div style={{ ...kicker, marginTop: 24 }}>The inputs, reviewed</div>
+      {/* what the step produced, before vs after */}
+      <OutputContrast output={result.output} />
+
+      {/* per-source breakdown */}
+      <div style={{ ...kicker, marginTop: 24 }}>The sources, reviewed</div>
       <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 9 }}>
-        {result.items.map((it) => {
-          const v = itemVerdict(it);
-          return (
-            <ItemRow
-              key={it.id}
-              title={it.kind === "batch" ? `⚠️ ${it.label}` : it.label}
-              detail={it.content}
-              tag={v.tag}
-              tone={v.tone}
-              ok={v.ok}
-              actionLabel={ACTION_LABEL[it.action]}
-              reason={it.reason}
-            />
-          );
-        })}
+        {result.sources.map((s) => (
+          <SourceReviewRow key={s.id} source={s} />
+        ))}
       </div>
 
       {/* why */}
@@ -1355,21 +1535,21 @@ function Debrief({
 
 function buildImprovementHints(history: HistoryEntry[]): string[] {
   if (history.length === 0) return [];
-  const missed = history.filter((h) => h.accuracy < 100).length;
-  const overCleaned = history.filter((h) => h.effort < 100).length;
+  const poisoned = history.filter((h) => h.gateTripped).length;
+  const lowReduction = history.filter((h) => !h.gateTripped && h.errorReduction < 100).length;
   const hints: string[] = [];
-  if (missed > 0) {
+  if (poisoned > 0) {
     hints.push(
-      `Bad data slipped through on ${missed} round${missed === 1 ? "" : "s"} — accuracy is the gate. If an item would change the output (wrong category, stale, a source in the wrong shape), it has to be repaired or binned before you run.`,
+      `You left a needed source feeding garbage on ${poisoned} round${poisoned === 1 ? "" : "s"} — that poisons the output and caps you below the clear. A messy or wrong-type source the step relies on has to be migrated, not kept.`,
     );
   }
-  if (overCleaned > 0) {
+  if (lowReduction > 0) {
     hints.push(
-      `You over-cleaned on ${overCleaned} round${overCleaned === 1 ? "" : "s"} — repairing a cosmetic duplicate or migrating a source that wasn't worth it just burns effort. Calibrate cleaning to consequence.`,
+      `On ${lowReduction} round${lowReduction === 1 ? "" : "s"} you left errors on the table — either by not redirecting a messy live channel, or by migrating a source that didn't earn it (which adds human errors). Match the path to the source.`,
     );
   }
   hints.push(
-    "The skill is triage: repair or bin the dirt that poisons the result, migrate only the sources that pay off, and let the harmless stuff through.",
+    "The skill is integration design: keep what's clean, redirect messy live channels going forward, migrate the historical data you genuinely need, and exclude the rest.",
   );
   return hints.slice(0, 3);
 }
@@ -1398,7 +1578,7 @@ function FinalSummary({
           game complete
         </div>
         <h2 style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: 34, letterSpacing: "-0.02em", margin: "8px 0 0" }}>
-          {avg >= 85 ? "Data Wrangler 🏆" : avg >= 65 ? "Clean enough 🧽" : "Keep practising 🔁"}
+          {avg >= 85 ? "Pipeline Architect 🏆" : avg >= 65 ? "Solid plumbing 🔧" : "Keep practising 🔁"}
         </h2>
         <p style={{ fontSize: 15.5, color: "#4f6c64", marginTop: 6 }}>
           You cleared <b style={{ color: "#162824" }}>{cleared} of {total}</b> rounds, with{" "}
@@ -1423,7 +1603,7 @@ function FinalSummary({
           </div>
         ) : (
           <p style={{ fontSize: 14.5, color: GREEN, fontWeight: 600, marginTop: 18 }}>
-            Sharp triage — you caught the dirt that mattered, migrated only what paid off, and let the harmless stuff through.
+            Sharp integration design — you kept what was clean, redirected the messy channels, migrated only what paid off, and dropped the rest.
           </p>
         )}
 
