@@ -9,9 +9,9 @@ import { getOrCreatePlayer } from "@/lib/player";
 
 /**
  * Generate a fresh "Clean the Pipe" round. The full scenario — including each
- * record's and source's `consequential` flag, `correctAction` and `reason` — is
- * persisted server-side; the response strips that ground truth so the client
- * never learns which items matter (or the right call) before scoring.
+ * item's `consequential` flag, `correctAction` and `reason` — is persisted
+ * server-side; the response strips that ground truth so the client never learns
+ * which items matter (or the right call) before scoring.
  *
  * Body: { challengeId: string, difficulty?: number, avoidTopics?: string[] }
  */
@@ -63,7 +63,8 @@ export async function POST(request: Request) {
     .run();
 
   // Strip the ground truth — `consequential`, `correctAction`, `reason` — before
-  // sending to the client. The player sees only the data and decides what to do.
+  // sending to the client. The player sees only the items (and the neutral
+  // `usedFor` / repair preview) and decides what to do.
   const safeScenario = {
     topic: scenario.topic,
     difficulty: scenario.difficulty,
@@ -71,16 +72,14 @@ export async function POST(request: Request) {
     datasetName: scenario.datasetName,
     brief: scenario.brief,
     goal: scenario.goal,
-    records: scenario.records.map((r) => ({
-      id: r.id,
-      label: r.label,
-      content: r.content,
-    })),
-    sources: scenario.sources.map((s) => ({
-      id: s.id,
-      name: s.name,
-      mismatch: s.mismatch,
-      migrationEffort: s.migrationEffort,
+    items: scenario.items.map((it) => ({
+      id: it.id,
+      kind: it.kind,
+      label: it.label,
+      content: it.content,
+      usedFor: it.usedFor,
+      repairedContent: it.repairedContent,
+      migrationEffort: it.migrationEffort,
     })),
   };
 

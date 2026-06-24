@@ -4,11 +4,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import type {
-  CleanThePipeImpact,
-  QualityBand,
-  RecordAction,
-  SourceAction,
+import {
+  actionEffort,
+  type CleanThePipeImpact,
+  type ItemKind,
+  type QualityBand,
+  type TriageAction,
 } from "@/lib/clean-the-pipe-scoring";
 import { VideoPlaceholder } from "./VideoExplainer";
 import { EXPLAINER_SCRIPTS } from "@/lib/game-explainer-scripts";
@@ -26,16 +27,14 @@ export interface RoundRef {
   difficulty: number;
 }
 
-interface RecordItem {
+interface PipeItemView {
   id: string;
+  kind: ItemKind;
   label: string;
   content: string;
-}
-interface SourceItem {
-  id: string;
-  name: string;
-  mismatch: string;
-  migrationEffort: number;
+  usedFor: string;
+  repairedContent?: string;
+  migrationEffort?: number;
 }
 interface SafeScenario {
   topic: string;
@@ -49,21 +48,14 @@ interface SafeScenario {
     message: string;
   };
   goal: string;
-  records: RecordItem[];
-  sources: SourceItem[];
+  items: PipeItemView[];
 }
 
-interface ResultRecord extends RecordItem {
+interface ResultItem extends PipeItemView {
   consequential: boolean;
-  correctAction: RecordAction;
+  correctAction: TriageAction;
   reason: string;
-  action: RecordAction;
-}
-interface ResultSource extends SourceItem {
-  consequential: boolean;
-  correctAction: SourceAction;
-  reason: string;
-  action: SourceAction;
+  action: TriageAction;
 }
 
 interface ScoreResult {
@@ -75,8 +67,7 @@ interface ScoreResult {
   cleanCorrect: number;
   missedConsequential: number;
   overCleaned: number;
-  records: ResultRecord[];
-  sources: ResultSource[];
+  items: ResultItem[];
   stepName: string;
   datasetName: string;
   goal: string;
@@ -99,10 +90,15 @@ interface HistoryEntry {
   exceptional: boolean;
 }
 
-const RECORD_OPTIONS: { value: RecordAction; label: string; icon: string }[] = [
-  { value: "keep", label: "Keep", icon: "✓" },
-  { value: "fix", label: "Fix", icon: "✎" },
-  { value: "drop", label: "Drop", icon: "✕" },
+const TRIAGE_OPTIONS: {
+  value: TriageAction;
+  label: string;
+  icon: string;
+  color: string;
+}[] = [
+  { value: "pass", label: "Let through", icon: "✓", color: "#4f6c64" },
+  { value: "repair", label: "Repair", icon: "✎", color: ACCENT },
+  { value: "bin", label: "Bin", icon: "✕", color: RED },
 ];
 
 const QUALITY_META: Record<QualityBand, { label: string; color: string; bg: string; border: string }> = {
@@ -122,8 +118,7 @@ export function CleanThePipeGame({ rounds }: { rounds: RoundRef[] }) {
   const [roundId, setRoundId] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  const [recordActions, setRecordActions] = useState<Record<string, RecordAction>>({});
-  const [sourceActions, setSourceActions] = useState<Record<string, SourceAction>>({});
+  const [actions, setActions] = useState<Record<string, TriageAction>>({});
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<ScoreResult | null>(null);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
@@ -193,17 +188,13 @@ export function CleanThePipeGame({ rounds }: { rounds: RoundRef[] }) {
       setScenario(null);
       setRoundId(null);
       setResult(null);
-      setRecordActions({});
-      setSourceActions({});
+      setActions({});
       setLoadError(null);
       try {
         const data = await prefetchRound(index);
-        const init: Record<string, RecordAction> = {};
-        for (const r of data.scenario.records) init[r.id] = "keep";
-        const sinit: Record<string, SourceAction> = {};
-        for (const s of data.scenario.sources) sinit[s.id] = "leave";
-        setRecordActions(init);
-        setSourceActions(sinit);
+        const init: Record<string, TriageAction> = {};
+        for (const it of data.scenario.items) init[it.id] = "pass";
+        setActions(init);
         setScenario(data.scenario);
         setRoundId(data.roundId);
         setPhase("modal");
@@ -214,14 +205,8 @@ export function CleanThePipeGame({ rounds }: { rounds: RoundRef[] }) {
     [rounds, prefetchRound],
   );
 
-  const setRecordAction = useCallback((id: string, action: RecordAction) => {
-    setRecordActions((prev) => ({ ...prev, [id]: action }));
-  }, []);
-  const toggleSource = useCallback((id: string) => {
-    setSourceActions((prev) => ({
-      ...prev,
-      [id]: prev[id] === "migrate" ? "leave" : "migrate",
-    }));
+  const setAction = useCallback((id: string, action: TriageAction) => {
+    setActions((prev) => ({ ...prev, [id]: action }));
   }, []);
 
   const submit = useCallback(async () => {
@@ -231,7 +216,7 @@ export function CleanThePipeGame({ rounds }: { rounds: RoundRef[] }) {
       const res = await fetch("/api/games/clean-the-pipe/score", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ roundId, recordActions, sourceActions }),
+        body: JSON.stringify({ roundId, actions }),
       });
       if (!res.ok) throw new Error(`Request failed (${res.status})`);
       const data = (await res.json()) as ScoreResult;
@@ -253,7 +238,7 @@ export function CleanThePipeGame({ rounds }: { rounds: RoundRef[] }) {
     } finally {
       setSubmitting(false);
     }
-  }, [roundId, recordActions, sourceActions, router]);
+  }, [roundId, actions, router]);
 
   const nextRound = useCallback(() => {
     if (roundIndex + 1 >= total) {
@@ -276,13 +261,19 @@ export function CleanThePipeGame({ rounds }: { rounds: RoundRef[] }) {
     setScenario(null);
     setRoundId(null);
     setResult(null);
-    setRecordActions({});
-    setSourceActions({});
+    setActions({});
   }, []);
 
-  const cleanedCount =
-    Object.values(recordActions).filter((a) => a !== "keep").length +
-    Object.values(sourceActions).filter((a) => a === "migrate").length;
+  // Live triage tallies (no ground truth — just what the player has done so far).
+  const touchedCount = scenario
+    ? scenario.items.filter((it) => (actions[it.id] ?? "pass") !== "pass").length
+    : 0;
+  const effortSpent = scenario
+    ? scenario.items.reduce(
+        (n, it) => n + actionEffort(it.kind, actions[it.id] ?? "pass"),
+        0,
+      )
+    : 0;
 
   // ===================== RENDER =====================
   const pageStyle: React.CSSProperties = {
@@ -401,13 +392,11 @@ export function CleanThePipeGame({ rounds }: { rounds: RoundRef[] }) {
                   {scenario ? scenario.stepName : "AI step"}
                 </div>
                 <div style={{ fontFamily: MONO, fontSize: 11, color: "#6f8a83", letterSpacing: ".02em" }}>
-                  triage the data before you run it
+                  triage the inputs before you run it
                 </div>
               </div>
               {scenario && phase === "triage" && (
-                <span style={countBadge}>
-                  {cleanedCount} cleaned
-                </span>
+                <span style={countBadge}>{touchedCount} cleaned</span>
               )}
             </div>
 
@@ -467,107 +456,47 @@ export function CleanThePipeGame({ rounds }: { rounds: RoundRef[] }) {
                     </div>
                   </div>
 
-                  {/* records */}
+                  {/* verb legend */}
+                  <VerbLegend />
+
+                  {/* the queue */}
                   <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
-                    <div style={kicker}>the data going in · {scenario.datasetName}</div>
+                    <div style={kicker}>the inputs going in · {scenario.datasetName}</div>
                     <div style={{ fontFamily: MONO, fontSize: 12, color: "#6f8a83", whiteSpace: "nowrap" }}>
-                      keep · fix · drop
+                      let through · repair · bin
                     </div>
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    {scenario.records.map((r) => {
-                      const action = recordActions[r.id] ?? "keep";
-                      const touched = action !== "keep";
-                      return (
-                        <div
-                          key={r.id}
-                          style={{
-                            border: `1.5px solid ${touched ? ACCENT : "#dde7e4"}`,
-                            borderRadius: 13,
-                            padding: "12px 14px",
-                            background: touched ? "color-mix(in srgb, var(--accent) 7%, #fff)" : "#fff",
-                            transition: "border-color .14s, background .14s",
-                          }}
-                        >
-                          <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "flex-start", flexWrap: "wrap" }}>
-                            <div style={{ flex: 1, minWidth: 180 }}>
-                              <div style={{ fontFamily: MONO, fontSize: 10.5, fontWeight: 700, letterSpacing: ".04em", textTransform: "uppercase", color: "#6f8a83", marginBottom: 4 }}>
-                                {r.label}
-                              </div>
-                              <div style={{ fontSize: 14.5, color: "#26413b", lineHeight: 1.45 }}>
-                                {r.content}
-                              </div>
-                            </div>
-                            <Segmented
-                              value={action}
-                              onChange={(v) => setRecordAction(r.id, v)}
-                            />
-                          </div>
-                        </div>
-                      );
-                    })}
+                    {scenario.items.map((it) => (
+                      <ItemCard
+                        key={it.id}
+                        item={it}
+                        action={actions[it.id] ?? "pass"}
+                        onChange={(v) => setAction(it.id, v)}
+                      />
+                    ))}
                   </div>
 
-                  {/* sources that don't fit */}
-                  {scenario.sources.length > 0 && (
-                    <>
-                      <div style={{ ...kicker, marginTop: 6 }}>
-                        sources that don&apos;t fit the system · leave as-is, or migrate (for a cost)
-                      </div>
-                      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                        {scenario.sources.map((s) => {
-                          const migrate = (sourceActions[s.id] ?? "leave") === "migrate";
-                          return (
-                            <div
-                              key={s.id}
-                              style={{
-                                border: `1.5px solid ${migrate ? ACCENT : "#e0d7c2"}`,
-                                borderRadius: 13,
-                                padding: "12px 14px",
-                                background: migrate
-                                  ? "color-mix(in srgb, var(--accent) 7%, #fff)"
-                                  : "#fdfaf2",
-                              }}
-                            >
-                              <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
-                                <div style={{ flex: 1, minWidth: 200 }}>
-                                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                                    <span style={{ fontSize: 14 }}>⚠️</span>
-                                    <span style={{ fontSize: 15, fontWeight: 700, color: "#162824" }}>{s.name}</span>
-                                  </div>
-                                  <div style={{ fontSize: 13.5, color: "#5b7269", lineHeight: 1.45 }}>
-                                    {s.mismatch}
-                                  </div>
-                                  <div style={{ fontFamily: MONO, fontSize: 11.5, color: AMBER, fontWeight: 700, marginTop: 7 }}>
-                                    migration cost ≈ {s.migrationEffort} hrs of effort
-                                  </div>
-                                </div>
-                                <button
-                                  onClick={() => toggleSource(s.id)}
-                                  style={{
-                                    flex: "none",
-                                    fontFamily: MONO,
-                                    fontSize: 11.5,
-                                    fontWeight: 700,
-                                    letterSpacing: ".03em",
-                                    color: migrate ? "#fff" : ACCENT,
-                                    background: migrate ? ACCENT : "#fff",
-                                    border: `1.5px solid ${ACCENT}`,
-                                    borderRadius: 10,
-                                    padding: "9px 14px",
-                                    cursor: "pointer",
-                                    whiteSpace: "nowrap",
-                                  }}
-                                >
-                                  {migrate ? "✓ MIGRATING" : "MIGRATE →"}
-                                </button>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </>
-                  )}
+                  {/* live effort read */}
+                  <div
+                    style={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      alignItems: "center",
+                      gap: 14,
+                      border: "1px solid #dde7e4",
+                      borderRadius: 12,
+                      background: "#f6faf8",
+                      padding: "10px 14px",
+                    }}
+                  >
+                    <span style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, color: "#26413b" }}>
+                      effort spent: {effortSpent}
+                    </span>
+                    <span style={{ fontSize: 12.5, color: "#6f8a83", flex: 1, minWidth: 200 }}>
+                      Spend it only where it changes the output — repairing or binning the harmless stuff is wasted effort.
+                    </span>
+                  </div>
 
                   <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 4, flexWrap: "wrap" }}>
                     <button
@@ -673,12 +602,156 @@ export function CleanThePipeGame({ rounds }: { rounds: RoundRef[] }) {
 
 // ===================== sub-components =====================
 
-function Segmented({
+function VerbLegend() {
+  const items: { icon: string; label: string; color: string; desc: string }[] = [
+    { icon: "✓", label: "Let through", color: "#4f6c64", desc: "fine, or harmless dirt — do nothing" },
+    { icon: "✎", label: "Repair", color: ACCENT, desc: "consequential but recoverable — fix / convert" },
+    { icon: "✕", label: "Bin", color: RED, desc: "doesn't belong / unrecoverable — leave it out" },
+  ];
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexWrap: "wrap",
+        gap: 8,
+        border: "1px solid #e3f1ed",
+        borderRadius: 12,
+        background: "#fbfdfc",
+        padding: "10px 12px",
+      }}
+    >
+      {items.map((i) => (
+        <div key={i.label} style={{ display: "flex", alignItems: "center", gap: 7, flex: "1 1 200px", minWidth: 0 }}>
+          <span
+            style={{
+              flex: "none",
+              fontFamily: MONO,
+              fontWeight: 700,
+              fontSize: 12,
+              color: "#fff",
+              background: i.color,
+              borderRadius: 6,
+              width: 20,
+              height: 20,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            {i.icon}
+          </span>
+          <span style={{ fontSize: 12.5, color: "#26413b", lineHeight: 1.3 }}>
+            <b>{i.label}</b> — {i.desc}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ItemCard({
+  item,
+  action,
+  onChange,
+}: {
+  item: PipeItemView;
+  action: TriageAction;
+  onChange: (v: TriageAction) => void;
+}) {
+  const touched = action !== "pass";
+  const isBatch = item.kind === "batch";
+  return (
+    <div
+      style={{
+        border: `1.5px solid ${touched ? ACCENT : isBatch ? "#e0d7c2" : "#dde7e4"}`,
+        borderRadius: 13,
+        padding: "12px 14px",
+        background: touched
+          ? "color-mix(in srgb, var(--accent) 7%, #fff)"
+          : isBatch
+            ? "#fdfaf2"
+            : "#fff",
+        transition: "border-color .14s, background .14s",
+      }}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "flex-start", flexWrap: "wrap" }}>
+        <div style={{ flex: 1, minWidth: 200 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
+            {isBatch && <span style={{ fontSize: 13 }}>⚠️</span>}
+            <span
+              style={{
+                fontFamily: MONO,
+                fontSize: 10.5,
+                fontWeight: 700,
+                letterSpacing: ".04em",
+                textTransform: "uppercase",
+                color: "#6f8a83",
+              }}
+            >
+              {item.label}
+            </span>
+            {isBatch && (
+              <span
+                style={{
+                  fontFamily: MONO,
+                  fontSize: 9.5,
+                  fontWeight: 700,
+                  letterSpacing: ".05em",
+                  textTransform: "uppercase",
+                  color: AMBER,
+                  background: "#fdf8ee",
+                  border: "1px solid #efe2c9",
+                  borderRadius: 999,
+                  padding: "1px 7px",
+                }}
+              >
+                whole source
+              </span>
+            )}
+          </div>
+          <div style={{ fontSize: 14.5, color: "#26413b", lineHeight: 1.45 }}>{item.content}</div>
+          <div style={{ fontSize: 12.5, color: "#6f8a83", lineHeight: 1.4, marginTop: 5 }}>
+            ↳ the step uses this: {item.usedFor}
+          </div>
+          {isBatch && item.migrationEffort != null && (
+            <div style={{ fontFamily: MONO, fontSize: 11.5, color: AMBER, fontWeight: 700, marginTop: 6 }}>
+              repairing this ≈ {item.migrationEffort} hrs of migration
+            </div>
+          )}
+          {action === "repair" && (
+            <div
+              style={{
+                marginTop: 8,
+                fontSize: 13,
+                color: ACCENT,
+                background: "color-mix(in srgb, var(--accent) 8%, #fff)",
+                border: "1px dashed color-mix(in srgb, var(--accent) 40%, #cfe6e0)",
+                borderRadius: 9,
+                padding: "7px 10px",
+                lineHeight: 1.4,
+              }}
+            >
+              → repaired: {item.repairedContent ?? "patched in place so the step can use it."}
+            </div>
+          )}
+          {action === "bin" && (
+            <div style={{ marginTop: 8, fontFamily: MONO, fontSize: 11.5, color: RED, fontWeight: 700 }}>
+              → left out of the run
+            </div>
+          )}
+        </div>
+        <TriageSegmented value={action} onChange={onChange} />
+      </div>
+    </div>
+  );
+}
+
+function TriageSegmented({
   value,
   onChange,
 }: {
-  value: RecordAction;
-  onChange: (v: RecordAction) => void;
+  value: TriageAction;
+  onChange: (v: TriageAction) => void;
 }) {
   return (
     <div
@@ -691,10 +764,8 @@ function Segmented({
         background: "#f1f9f6",
       }}
     >
-      {RECORD_OPTIONS.map((opt) => {
+      {TRIAGE_OPTIONS.map((opt) => {
         const on = value === opt.value;
-        const danger = opt.value === "drop";
-        const active = on ? (danger ? RED : ACCENT) : undefined;
         return (
           <button
             key={opt.value}
@@ -705,10 +776,11 @@ function Segmented({
               fontWeight: 700,
               letterSpacing: ".02em",
               color: on ? "#fff" : "#5b7269",
-              background: active ?? "transparent",
+              background: on ? opt.color : "transparent",
               border: "none",
               padding: "8px 12px",
               cursor: "pointer",
+              whiteSpace: "nowrap",
               transition: "background .12s, color .12s",
             }}
           >
@@ -879,9 +951,10 @@ function IntroModal({ onStart }: { onStart: () => void }) {
         </h2>
         <p style={{ fontSize: 15.5, lineHeight: 1.5, color: "#26413b", marginTop: 10 }}>
           You&apos;re about to run an AI step on a batch of data — but the data going in is{" "}
-          <b>dirty</b>. Garbage in, garbage out. Your job is to <b>triage the inputs first</b>:{" "}
-          <b>keep</b> what&apos;s fine, <b>fix</b> what&apos;s broken but recoverable, and{" "}
-          <b>drop</b> what doesn&apos;t belong — then run the step and see what it produced.
+          <b>dirty</b>. Garbage in, garbage out. Triage the inputs first: for each one, decide{" "}
+          <b>let through</b> (it&apos;s fine), <b>repair</b> (broken but recoverable — you&apos;ll
+          see it patched), or <b>bin</b> (it doesn&apos;t belong) — then run the step and see what
+          it produced.
         </p>
 
         <div
@@ -899,10 +972,11 @@ function IntroModal({ onStart }: { onStart: () => void }) {
           <span style={{ fontSize: 20, lineHeight: 1.1 }}>🧪</span>
           <div style={{ fontSize: 14, lineHeight: 1.45, color: "#26413b" }}>
             <b style={{ color: ACCENT }}>Not all dirt is equal.</b> A cosmetic duplicate barely
-            matters; a wrong-category or stale record poisons the whole result. Catch the dirt that
-            <b> changes the output</b>, and resist scrubbing the harmless stuff. Later rounds add
-            whole <b>sources that don&apos;t fit the system</b> — leave them as-is, or pay to{" "}
-            <b>migrate</b> them, only when it&apos;s worth the effort.
+            matters; a wrong-category or stale record poisons the whole result. Each item shows{" "}
+            <b>what the step uses it for</b> — use that to judge whether it changes the output, and
+            resist scrubbing the harmless stuff. Later rounds add whole <b>sources in the wrong
+            shape</b> for the system (e.g. audio for a text summariser) — repairing one is a{" "}
+            <b>migration that costs real hours</b>, so only do it when it pays off.
           </div>
         </div>
 
@@ -926,9 +1000,9 @@ function IntroModal({ onStart }: { onStart: () => void }) {
               </ul>
               <p style={{ marginTop: 0, fontWeight: 600 }}>How you score:</p>
               <ul style={{ margin: "4px 0 12px", paddingLeft: 18 }}>
-                <li><b>Accuracy</b> is the gate — handle every record or source that would poison the output, or you can&apos;t clear.</li>
-                <li><b>Effort</b> earns the rest — over-cleaning harmless dirt or migrating a source that wasn&apos;t worth it costs you.</li>
-                <li>Scrubbing <i>everything</i> fails just like missing the dirt that mattered.</li>
+                <li><b>Accuracy</b> is the gate — handle every item that would poison the output, or you can&apos;t clear.</li>
+                <li><b>Effort</b> earns the rest — repairing or binning harmless dirt, or migrating a source that wasn&apos;t worth it, costs you.</li>
+                <li>Cleaning <i>everything</i> fails just like missing the dirt that mattered.</li>
               </ul>
               <p style={{ marginTop: 0, fontWeight: 600 }}>Common arcade rules:</p>
               <ul style={{ margin: "4px 0 0", paddingLeft: 18 }}>
@@ -982,33 +1056,27 @@ function Verdict({ ok, label }: { ok: boolean; label: string }) {
 }
 
 type Tone = "good" | "bad" | "warn";
-const ACTION_LABEL: Record<RecordAction | SourceAction, string> = {
-  keep: "kept",
-  fix: "fixed",
-  drop: "dropped",
-  leave: "left as-is",
-  migrate: "migrated",
+const ACTION_LABEL: Record<TriageAction, string> = {
+  pass: "let through",
+  repair: "repaired",
+  bin: "binned",
 };
 
-function recordVerdict(r: ResultRecord): { ok: boolean; tone: Tone; tag: string } {
-  if (r.consequential) {
-    if (r.action === r.correctAction) return { ok: true, tone: "good", tag: "mattered — handled right" };
-    if (r.action === "keep") return { ok: false, tone: "bad", tag: "missed — poisoned the output" };
+function itemVerdict(it: ResultItem): { ok: boolean; tone: Tone; tag: string } {
+  if (it.consequential) {
+    if (it.action === it.correctAction) return { ok: true, tone: "good", tag: "mattered — handled right" };
+    if (it.action === "pass") return { ok: false, tone: "bad", tag: "missed — poisoned the output" };
     return { ok: false, tone: "warn", tag: "neutralised, but handled suboptimally" };
   }
-  if (r.action === "keep") return { ok: true, tone: "good", tag: "harmless — rightly left alone" };
-  return { ok: false, tone: "warn", tag: "over-cleaned — wasted effort" };
-}
-
-function sourceVerdict(s: ResultSource): { ok: boolean; tone: Tone; tag: string } {
-  if (s.consequential) {
-    return s.action === "migrate"
-      ? { ok: true, tone: "good", tag: "ill-fitting — migration paid off" }
-      : { ok: false, tone: "bad", tag: "left in — output broken" };
+  if (it.action === "pass") return { ok: true, tone: "good", tag: "harmless — rightly left alone" };
+  if (it.kind === "batch") {
+    return {
+      ok: false,
+      tone: "warn",
+      tag: `needless migration — ${it.migrationEffort ?? "extra"} hrs wasted`,
+    };
   }
-  return s.action === "leave"
-    ? { ok: true, tone: "good", tag: "tolerable — rightly left as-is" }
-    : { ok: false, tone: "warn", tag: `needless migration — ${s.migrationEffort} hrs wasted` };
+  return { ok: false, tone: "warn", tag: "over-cleaned — wasted effort" };
 }
 
 const TONE_COLOR: Record<Tone, { c: string; bg: string; b: string }> = {
@@ -1248,36 +1316,21 @@ function Debrief({
       {/* what the step produced, raw vs cleaned */}
       <OutputContrast result={result} />
 
-      {/* per-record breakdown */}
-      <div style={{ ...kicker, marginTop: 24 }}>The data, reviewed</div>
+      {/* per-item breakdown */}
+      <div style={{ ...kicker, marginTop: 24 }}>The inputs, reviewed</div>
       <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 9 }}>
-        {result.records.map((r) => {
-          const v = recordVerdict(r);
+        {result.items.map((it) => {
+          const v = itemVerdict(it);
           return (
             <ItemRow
-              key={r.id}
-              title={r.label}
-              detail={r.content}
+              key={it.id}
+              title={it.kind === "batch" ? `⚠️ ${it.label}` : it.label}
+              detail={it.content}
               tag={v.tag}
               tone={v.tone}
               ok={v.ok}
-              actionLabel={ACTION_LABEL[r.action]}
-              reason={r.reason}
-            />
-          );
-        })}
-        {result.sources.map((s) => {
-          const v = sourceVerdict(s);
-          return (
-            <ItemRow
-              key={s.id}
-              title={`⚠️ ${s.name}`}
-              detail={s.mismatch}
-              tag={v.tag}
-              tone={v.tone}
-              ok={v.ok}
-              actionLabel={ACTION_LABEL[s.action]}
-              reason={s.reason}
+              actionLabel={ACTION_LABEL[it.action]}
+              reason={it.reason}
             />
           );
         })}
@@ -1307,16 +1360,16 @@ function buildImprovementHints(history: HistoryEntry[]): string[] {
   const hints: string[] = [];
   if (missed > 0) {
     hints.push(
-      `Bad data slipped through on ${missed} round${missed === 1 ? "" : "s"} — accuracy is the gate. If a record or source would change the output (wrong category, stale, the wrong data type), it has to be handled before you run.`,
+      `Bad data slipped through on ${missed} round${missed === 1 ? "" : "s"} — accuracy is the gate. If an item would change the output (wrong category, stale, a source in the wrong shape), it has to be repaired or binned before you run.`,
     );
   }
   if (overCleaned > 0) {
     hints.push(
-      `You over-cleaned on ${overCleaned} round${overCleaned === 1 ? "" : "s"} — scrubbing a cosmetic duplicate or migrating a source that wasn't worth it just burns effort. Calibrate cleaning to consequence.`,
+      `You over-cleaned on ${overCleaned} round${overCleaned === 1 ? "" : "s"} — repairing a cosmetic duplicate or migrating a source that wasn't worth it just burns effort. Calibrate cleaning to consequence.`,
     );
   }
   hints.push(
-    "The skill is triage: fix or drop the dirt that poisons the result, migrate only the sources that pay off, and leave the harmless stuff alone.",
+    "The skill is triage: repair or bin the dirt that poisons the result, migrate only the sources that pay off, and let the harmless stuff through.",
   );
   return hints.slice(0, 3);
 }
@@ -1370,7 +1423,7 @@ function FinalSummary({
           </div>
         ) : (
           <p style={{ fontSize: 14.5, color: GREEN, fontWeight: 600, marginTop: 18 }}>
-            Sharp triage — you caught the dirt that mattered, migrated only what paid off, and left the harmless stuff alone.
+            Sharp triage — you caught the dirt that mattered, migrated only what paid off, and let the harmless stuff through.
           </p>
         )}
 

@@ -101,19 +101,21 @@ Hallucination, on the **input** side. The player is about to run an AI step (e.g
 "summarise these customer complaints into themes") and is shown the data going
 in — and it's dirty: inconsistent date formats, a half-empty row, duplicates, a
 stale 2019 record, one entry that's actually a different category entirely. The
-player triages the inputs *before* pressing run, then sees two outputs side by
-side: what the AI produced from the **raw** data versus the **cleaned** data —
-the contrast is the lesson. Scored on catching the **consequential** problems
-(a duplicate barely matters; the wrong-category record poisons the whole
+player triages the inputs *before* pressing run — a single queue where every item
+gets the same three verbs, **let through / repair / bin** — then sees two outputs
+side by side: what the AI produced from the **raw** data versus the **cleaned**
+data — the contrast is the lesson. Scored on catching the **consequential**
+problems (a duplicate barely matters; the wrong-category record poisons the whole
 summary), so it teaches that **not all dirt is equal** and heads off the
 over-correction of obsessive cleaning. Pairs deliberately with Spot the
 Hallucination: output vigilance and input hygiene are the two halves of trusting
 AI work. The **harder rounds** escalate beyond row-level dirt to whole **sources
 whose data *type* doesn't suit the system** — audio feeding a text summariser, a
-different-schema export, scanned PDFs — where the player must weigh **leaving the
-data as-is against migrating it**, with the **migration effort cost** shown
-(round 4 introduces one such source; the boss round has two, one worth migrating
-and one tolerable mismatch best left alone). The lesson lands on a second axis,
+different-schema export, scanned PDFs — which sit in the same queue: the player
+can let one through, **bin** it, or **repair** it (a migration whose **effort cost
+in hours is shown**), and must weigh that cost against the payoff (round 4
+introduces one such source; the boss round has two, one worth migrating and one
+tolerable mismatch best left alone). The lesson lands on a second axis,
 **effort**: spend cleaning and migration effort only where it actually pays off.
 
 _Learning outcomes:_ recognise garbage-in-garbage-out as a data problem, not an
