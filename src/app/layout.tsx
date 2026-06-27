@@ -11,7 +11,7 @@ import "./globals.css";
 
 import { AchievementToast } from "@/components/arcade/AchievementToast";
 import { SiteLock } from "@/components/arcade/SiteLock";
-import { computeBadges } from "@/lib/badges";
+import { badgeStatsFromGames, computeBadges } from "@/lib/badges";
 import { getOrCreatePlayer } from "@/lib/player";
 import { getGamesWithProgress } from "@/lib/progress";
 import {
@@ -67,20 +67,9 @@ export default async function RootLayout({
       const player = await getOrCreatePlayer();
       const games = getGamesWithProgress(player.id);
       const { level } = levelInfoForXp(player.xp);
-      const challengesCleared = games.reduce(
-        (sum, g) => sum + g.clearedChallenges,
-        0,
-      );
-      const gamesCompleted = games.filter(
-        (g) => g.status === "completed",
-      ).length;
-      const earnedBadges = computeBadges({
-        challengesCleared,
-        gamesCompleted,
-        totalGames: games.length,
-        level,
-        totalXp: player.xp,
-      })
+      const earnedBadges = computeBadges(
+        badgeStatsFromGames(games, level, player.xp),
+      )
         .filter((b) => b.earned)
         .map((b) => ({ id: b.id, label: b.label }));
       achievement = { level, earnedBadges };

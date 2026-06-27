@@ -25,6 +25,12 @@ export interface GameWithProgress extends Game {
   totalChallenges: number;
   clearedChallenges: number;
   xpEarned: number;
+  /**
+   * The player's best score ratio for this game, averaged across its
+   * challenges (each challenge's best attempt / maxScore). 0 when never
+   * attempted. Drives the "mastery" badges (e.g. 90%+ on a game).
+   */
+  bestScoreRatio: number;
 }
 
 /**
@@ -82,6 +88,38 @@ export function getGamesWithProgress(playerId: string): GameWithProgress[] {
     perGame.map((g) => [g.gameId, { cleared: Number(g.cleared), xp: Number(g.xp) }]),
   );
 
+  // Best score ratio per challenge for this player, so we can average them into
+  // a per-game "mastery" ratio (drives the 90%-on-a-game badges). Grouped by
+  // challenge id, then folded into a per-game mean below.
+  const bestPerChallenge = db
+    .select({
+      gameId: challenges.gameId,
+      maxScore: challenges.maxScore,
+      best: sql<number>`coalesce(max(${attempts.score}), 0)`,
+    })
+    .from(challenges)
+    .leftJoin(
+      attempts,
+      and(
+        eq(attempts.challengeId, challenges.id),
+        eq(attempts.playerId, playerId),
+      ),
+    )
+    .groupBy(challenges.id)
+    .all();
+  const ratioAcc = new Map<string, { sum: number; n: number }>();
+  for (const row of bestPerChallenge) {
+    const max = Number(row.maxScore) || 1;
+    const ratio = Number(row.best) / max;
+    const acc = ratioAcc.get(row.gameId) ?? { sum: 0, n: 0 };
+    acc.sum += ratio;
+    acc.n += 1;
+    ratioAcc.set(row.gameId, acc);
+  }
+  const bestRatioByGame = new Map(
+    [...ratioAcc].map(([gameId, { sum, n }]) => [gameId, n > 0 ? sum / n : 0]),
+  );
+
   // First pass: figure out which games are fully completed. "Coming soon" games
   // (seeded but not yet playable) can never be completed, so they are excluded
   // from the unlock gate entirely — they must not count toward, or block, the
@@ -122,6 +160,7 @@ export function getGamesWithProgress(playerId: string): GameWithProgress[] {
       totalChallenges: total,
       clearedChallenges: stats.cleared,
       xpEarned: stats.xp,
+      bestScoreRatio: bestRatioByGame.get(game.id) ?? 0,
     };
   });
 }

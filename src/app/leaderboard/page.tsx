@@ -1,33 +1,17 @@
-import { redirect } from "next/navigation";
-
-import { BadgesCard } from "@/components/arcade/BadgesCard";
-import { GameList } from "@/components/arcade/GameList";
+import { BadgeWall } from "@/components/arcade/BadgeWall";
 import { Leaderboard } from "@/components/arcade/Leaderboard";
 import { PlayerCard } from "@/components/arcade/PlayerCard";
 import { TopNav } from "@/components/arcade/TopNav";
-import { UnlockToast } from "@/components/arcade/UnlockToast";
 import { badgeStatsFromGames, computeBadges } from "@/lib/badges";
-import { enableTestMode, getOrCreatePlayer } from "@/lib/player";
+import { getOrCreatePlayer } from "@/lib/player";
 import { getGamesWithProgress, getLeaderboard } from "@/lib/progress";
 import { levelInfoForXp } from "@/lib/xp";
 
 // Reads the player cookie, so render at request time.
 export const dynamic = "force-dynamic";
 
-export default async function ArcadePage({
-  searchParams,
-}: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
+export default async function LeaderboardPage() {
   const player = await getOrCreatePlayer();
-
-  // `?testMode` permanently unlocks every game for this player (QA/testing
-  // escape hatch). Flip the flag, then redirect to a clean URL so the param
-  // doesn't linger in the address bar or get re-applied on refresh.
-  if ("testMode" in (await searchParams)) {
-    enableTestMode(player.id);
-    redirect("/");
-  }
 
   const games = getGamesWithProgress(player.id);
   const week = getLeaderboard("week");
@@ -53,27 +37,22 @@ export default async function ArcadePage({
       }}
     >
       <div className="mx-auto max-w-[1240px]">
-        <TopNav level={info.level} initial={initial} />
+        <TopNav level={info.level} initial={initial} active="leaderboard" />
 
         <div className="mt-[30px] grid grid-cols-1 items-start gap-[34px] lg:grid-cols-[1fr_272px]">
           {/* ---------- MAIN ---------- */}
           <div>
             <div className="mb-6">
               <h1 className="font-display m-0 text-[40px] font-bold leading-[1.02] tracking-[-0.02em]">
-                Train your AI instincts.
+                Leaderboard &amp; badges
               </h1>
               <p className="mt-2 max-w-[560px] text-[16px] leading-[1.45] text-[#7c766a]">
-                Short games that build the judgment to work with AI well. Each is
-                tuned to a level range — clear your range to climb, and new games
-                unlock as you level up.
+                See where you rank and the badges you&apos;ve collected. Clear
+                games, ace them at 90%+ and chase the cross-game achievements.
               </p>
             </div>
 
-            <GameList
-              games={games}
-              playerLevel={info.level}
-              needsUsername={!player.usernameSet}
-            />
+            <BadgeWall badges={badges} />
           </div>
 
           {/* ---------- SIDEBAR ---------- */}
@@ -85,19 +64,10 @@ export default async function ArcadePage({
               challengesCleared={challengesCleared}
               gamesCompleted={gamesCompleted}
             />
-            <BadgesCard badges={badges} />
             <Leaderboard week={week} all={all} currentPlayerId={player.id} />
           </aside>
         </div>
       </div>
-
-      <UnlockToast
-        games={games.map((g) => ({
-          slug: g.slug,
-          title: g.title,
-          locked: g.status === "locked",
-        }))}
-      />
     </main>
   );
 }
