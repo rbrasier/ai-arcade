@@ -6,6 +6,7 @@ import { Leaderboard } from "@/components/arcade/Leaderboard";
 import { PlayerCard } from "@/components/arcade/PlayerCard";
 import { TopNav } from "@/components/arcade/TopNav";
 import { UnlockToast } from "@/components/arcade/UnlockToast";
+import { badgeStatsFromGames, computeBadges } from "@/lib/badges";
 import { enableTestMode, getOrCreatePlayer } from "@/lib/player";
 import { getGamesWithProgress, getLeaderboard } from "@/lib/progress";
 import { levelInfoForXp } from "@/lib/xp";
@@ -39,6 +40,9 @@ export default async function ArcadePage({
   );
   const gamesCompleted = games.filter((g) => g.status === "completed").length;
   const initial = player.displayName.trim().charAt(0).toUpperCase() || "Y";
+  const badges = computeBadges(
+    badgeStatsFromGames(games, info.level, player.xp),
+  );
 
   return (
     <main
@@ -81,13 +85,7 @@ export default async function ArcadePage({
               challengesCleared={challengesCleared}
               gamesCompleted={gamesCompleted}
             />
-            <BadgesCard
-              challengesCleared={challengesCleared}
-              gamesCompleted={gamesCompleted}
-              totalGames={games.length}
-              level={info.level}
-              totalXp={player.xp}
-            />
+            <BadgesCard badges={badges} />
             <Leaderboard week={week} all={all} currentPlayerId={player.id} />
           </aside>
         </div>
